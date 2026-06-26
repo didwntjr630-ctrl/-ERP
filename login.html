@@ -405,7 +405,7 @@
   <script src="js/auth.js"></script>
   <script>
     // 이미 로그인된 경우 바로 이동
-    if (현재세션()) location.href = '입출고등록_테스트.html';
+    if (현재세션()) location.href = 'main.html';
 
     function 에러표시(메시지) {
       document.getElementById('error-msg').textContent = 메시지;
@@ -432,7 +432,7 @@
       if (!암호확인(이름, 암호)) { 에러표시('암호가 일치하지 않습니다.'); return; }
 
       로그인처리(이름, 직원.직급);
-      location.href = '입출고등록_테스트.html';
+      location.href = 'main.html';
     }
 
     function 초기화() {

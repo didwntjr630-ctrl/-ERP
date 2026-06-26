@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 메인</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #dce8f5;
+      font-family: '맑은 고딕', 'Malgun Gothic', Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* 상단 헤더 */
+    .header {
+      background: linear-gradient(180deg, #2a6496 0%, #1a4a7a 100%);
+      color: white;
+      padding: 0 24px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .header-title span { color: #ffe066; font-style: italic; }
+
+    .header-sub {
+      font-size: 12px;
+      opacity: 0.75;
+      letter-spacing: 1px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .header-user {
+      opacity: 0.9;
+    }
+
+    .btn-logout {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .btn-logout:hover { background: rgba(255,255,255,0.25); }
+
+    /* 메인 콘텐츠 */
+    .content {
+      padding: 30px 40px;
+    }
+
+    .page-title {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    /* 카테고리 카드 레이아웃 */
+    .category-grid {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .category-card {
+      background: #eaf3fb;
+      border: 1px solid #b8d4ea;
+      border-radius: 8px;
+      min-width: 200px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .category-header {
+      background: linear-gradient(180deg, #c5ddf0 0%, #b0cfe8 100%);
+      border-bottom: 1px solid #99bfda;
+      padding: 10px 16px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #1a4a7a;
+      letter-spacing: 2px;
+    }
+
+    .category-body {
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 메뉴 버튼 */
+    .menu-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #eaf3fb 100%);
+      border: 1px solid #a8cbe0;
+      border-radius: 5px;
+      font-size: 13px;
+      color: #1a3a5c;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      text-align: left;
+      transition: all 0.15s;
+      text-decoration: none;
+      width: 100%;
+    }
+
+    .menu-btn:hover {
+      background: linear-gradient(180deg, #d0e8f8 0%, #b8d8f0 100%);
+      border-color: #2a6496;
+      color: #1a3a5c;
+    }
+
+    .menu-btn:active {
+      transform: translateY(1px);
+    }
+
+    .menu-btn.disabled {
+      color: #aaa;
+      background: linear-gradient(180deg, #f5f5f5 0%, #ebebeb 100%);
+      border-color: #d0d0d0;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .menu-btn .icon {
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    /* 화살표 연결선 */
+    .arrow {
+      text-align: center;
+      color: #2a6496;
+      font-size: 16px;
+      line-height: 1;
+      margin: -2px 0;
+    }
+
+    /* 준비중 뱃지 */
+    .badge-soon {
+      font-size: 10px;
+      background: #e0e0e0;
+      color: #888;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: normal;
+    }
+
+    .badge-new {
+      font-size: 10px;
+      background: #2980b9;
+      color: white;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">삼양<span>ERP</span></div>
+      <div class="header-sub">Challenge</div>
+    </div>
+    <div class="header-right">
+      <span class="header-user" id="user-info"></span>
+      <button class="btn-logout" onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 콘텐츠 -->
+  <div class="content">
+    <div class="page-title">업무 선택</div>
+
+    <div class="category-grid">
+
+      <!-- 입출고 관리 -->
+      <div class="category-card">
+        <div class="category-header">입 출 고</div>
+        <div class="category-body">
+          <a class="menu-btn" href="입출고등록_테스트.html">
+            입출고 등록 / 조회
+            <span class="icon badge-new">사용</span>
+          </a>
+          <div class="arrow">↓</div>
+          <button class="menu-btn disabled">
+            재고 현황
+            <span class="badge-soon">준비중</span>
+          </button>
+          <div class="arrow">↓</div>
+          <button class="menu-btn disabled">
+            LOT 추적
+            <span class="badge-soon">준비중</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 경영 -->
+      <div class="category-card">
+        <div class="category-header">경 영</div>
+        <div class="category-body">
+          <button class="menu-btn disabled">
+            매입 관리
+            <span class="badge-soon">준비중</span>
+          </button>
+          <div class="arrow">↓</div>
+          <button class="menu-btn disabled">
+            매출 관리
+            <span class="badge-soon">준비중</span>
+          </button>
+          <div class="arrow">↓</div>
+          <button class="menu-btn disabled">
+            손익 현황
+            <span class="badge-soon">준비중</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 품질 -->
+      <div class="category-card">
+        <div class="category-header">품 질</div>
+        <div class="category-body">
+          <button class="menu-btn disabled">
+            출하검사 성적서
+            <span class="badge-soon">준비중</span>
+          </button>
+          <div class="arrow">↓</div>
+          <button class="menu-btn disabled">
+            불량 현황
+            <span class="badge-soon">준비중</span>
+          </button>
+          <div class="arrow">↓</div>
+          <button class="menu-btn disabled">
+            공정검사 기록
+            <span class="badge-soon">준비중</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 기준정보 -->
+      <div class="category-card">
+        <div class="category-header">기 준 정 보</div>
+        <div class="category-body">
+          <button class="menu-btn disabled">
+            품목 등록
+            <span class="badge-soon">준비중</span>
+          </button>
+          <button class="menu-btn disabled">
+            담당자 등록
+            <span class="badge-soon">준비중</span>
+          </button>
+          <button class="menu-btn disabled">
+            공정 등록
+            <span class="badge-soon">준비중</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    세션체크();
+    var 세션 = 현재세션();
+    if (세션) {
+      document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+    }
+  </script>
+</body>
+</html>
