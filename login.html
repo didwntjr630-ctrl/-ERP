@@ -304,19 +304,48 @@
     <!-- 왼쪽: 브랜드 -->
     <div class="brand-area">
       <!-- 삼양이엔지 로고 SVG -->
-      <svg viewBox="0 0 200 185" width="110" height="102" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 8px rgba(0,0,0,0.35));">
-        <!-- 왼쪽 노랑 삼각형 -->
-        <polygon points="100,8 8,176 100,176" fill="#F5A820"/>
-        <!-- 오른쪽 주황-빨강 삼각형 -->
-        <polygon points="100,8 192,176 100,176" fill="#D44B1A"/>
-        <!-- 흰색 쉐브론 (위로 향하는 V) -->
-        <polygon points="24,152 100,108 176,152 176,168 100,124 24,168" fill="white"/>
-        <!-- S -->
-        <text x="52" y="100" fill="white" font-size="30" font-weight="900" font-family="Arial Black, Arial, sans-serif">S</text>
-        <!-- Y -->
-        <text x="112" y="100" fill="white" font-size="30" font-weight="900" font-family="Arial Black, Arial, sans-serif">Y</text>
-        <!-- ENG -->
-        <text x="100" y="169" fill="white" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif" text-anchor="middle">ENG</text>
+      <svg viewBox="0 0 200 200" width="120" height="120" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 4px 10px rgba(0,0,0,0.4));">
+        <!-- 노란색 왼쪽 반 (삼각형 전체 왼쪽) -->
+        <polygon points="100,6 14,192 100,192" fill="#F5A820"/>
+        <!-- 주황-빨강 오른쪽 반 -->
+        <polygon points="100,6 186,192 100,192" fill="#D44B1A"/>
+
+        <!-- 흰색 쉐브론: 두꺼운 V자 (위로 향함) -->
+        <!-- 바깥쪽 윤곽: 왼쪽끝→꼭짓점→오른쪽끝 -->
+        <!-- 안쪽 윤곽: 왼쪽끝→내부꼭짓점→오른쪽끝 -->
+        <polygon points="
+          38,132
+          100,112
+          162,132
+          168,150
+          100,130
+          32,150
+        " fill="white"/>
+
+        <!-- S (왼쪽 노란 영역) -->
+        <text x="49" y="108"
+              fill="white"
+              font-size="30"
+              font-weight="900"
+              font-family="Arial Black, Arial, sans-serif"
+              letter-spacing="-1">S</text>
+
+        <!-- Y (오른쪽 빨간 영역) -->
+        <text x="114" y="108"
+              fill="white"
+              font-size="30"
+              font-weight="900"
+              font-family="Arial Black, Arial, sans-serif"
+              letter-spacing="-1">Y</text>
+
+        <!-- ENG (하단) -->
+        <text x="100" y="175"
+              fill="white"
+              font-size="19"
+              font-weight="900"
+              font-family="Arial Black, Arial, sans-serif"
+              text-anchor="middle"
+              letter-spacing="1">ENG</text>
       </svg>
 
       <div class="brand-main">삼양 <span>ERP</span></div>
