@@ -305,9 +305,9 @@
 
     <!-- 왼쪽: 브랜드 -->
     <div class="brand-area">
-      <div class="brand-logo">Smart ERP System</div>
-      <div class="brand-main">삼양<span>ERP</span></div>
-      <div class="brand-sub">Challenge</div>
+      <div class="brand-logo" id="brand-logo"></div>
+      <div class="brand-main" id="brand-main"></div>
+      <div class="brand-sub" id="brand-sub"></div>
     </div>
 
     <div class="divider"></div>
@@ -320,7 +320,7 @@
         <div class="fields">
           <div class="field-row">
             <label>회 사 명</label>
-            <span class="company-name">(주)삼양이엔지</span>
+            <span class="company-name" id="company-name"></span>
           </div>
           <div class="field-row">
             <label>사 원 명</label>
@@ -344,9 +344,7 @@
         <button class="btn-sm" onclick="암호생성모달열기()">암호생성 ›</button>
         <button class="btn-sm" onclick="암호변경모달열기()">암호변경 ›</button>
       </div>
-      <div style="text-align:right; margin-top:8px; font-size:11px; color:#999;">
-        서버관리자 : 대리 양주석
-      </div>
+      <div style="text-align:right; margin-top:8px; font-size:11px; color:#999;" id="admin-info"></div>
     </div>
   </div>
 
@@ -404,9 +402,18 @@
 
   <div class="copyright">Copyright (C) 삼양이엔지. All Rights Reserved.</div>
 
+  <script src="js/config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script>
+    // config 값 적용
+    document.getElementById('brand-logo').textContent = 'Smart ERP System';
+    document.getElementById('brand-main').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span>ERP</span>');
+    document.getElementById('brand-sub').textContent = APP_CONFIG.부제;
+    document.getElementById('company-name').textContent = APP_CONFIG.회사명;
+    document.getElementById('admin-info').textContent = '서버관리자 : ' + APP_CONFIG.관리자;
+    document.title = APP_CONFIG.시스템명 + ' - 로그인';
+
     // 이미 로그인된 경우 바로 이동
     if (현재세션()) location.href = 'main.html';
 

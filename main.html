@@ -196,8 +196,8 @@
   <!-- 헤더 -->
   <div class="header">
     <div class="header-left">
-<div class="header-title">삼양<span>ERP</span></div>
-      <div class="header-sub">Challenge</div>
+<div class="header-title" id="header-title"></div>
+      <div class="header-sub" id="header-sub"></div>
     </div>
     <div class="header-right">
       <span class="header-user" id="user-info"></span>
@@ -296,10 +296,14 @@
     </div>
   </div>
 
+  <script src="js/config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script>
     세션체크();
+    document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span>ERP</span>');
+    document.getElementById('header-sub').textContent = APP_CONFIG.부제;
+    document.title = APP_CONFIG.시스템명 + ' - 메인';
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
