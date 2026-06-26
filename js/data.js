@@ -1,7 +1,8 @@
 /* ===================================================
-   data.js - 데이터 저장 및 불러오기 담당 파일
-   브라우저의 localStorage에 데이터를 보관합니다.
+   data.js - 데이터 저장 및 불러오기 (Supabase)
    =================================================== */
+
+var 테이블명 = '입출고기록';
 
 /* ===== 등록된 품목 목록 (품명 + 품번) ===== */
 var 품목목록 = [
@@ -45,65 +46,70 @@ function 품목유효성확인(입력값) {
   }) || null;
 }
 
-var 저장소키 = 'erp_입출고목록';
-
 /* 출고번호 자동 생성 (예: MV2606001) */
-function 출고번호생성() {
+async function 출고번호생성() {
   var 오늘 = new Date();
-  var 연도 = String(오늘.getFullYear()).slice(2); // 26
-  var 월 = String(오늘.getMonth() + 1).padStart(2, '0'); // 06
+  var 연도 = String(오늘.getFullYear()).slice(2);
+  var 월 = String(오늘.getMonth() + 1).padStart(2, '0');
   var 접두어 = 'MV' + 연도 + 월;
 
-  var 목록 = 데이터불러오기();
-  var 같은달번호 = 목록.filter(function(항목) {
-    return 항목.출고번호 && 항목.출고번호.startsWith(접두어);
-  });
+  var { data } = await 수파베이스
+    .from(테이블명)
+    .select('출고번호')
+    .like('출고번호', 접두어 + '%');
 
-  var 다음순번 = String(같은달번호.length + 1).padStart(3, '0');
+  var 다음순번 = String((data ? data.length : 0) + 1).padStart(3, '0');
   return 접두어 + 다음순번;
 }
 
 /* 전체 목록 불러오기 */
-function 데이터불러오기() {
-  var 저장된값 = localStorage.getItem(저장소키);
-  if (!저장된값) return [];
-  try {
-    return JSON.parse(저장된값);
-  } catch (e) {
-    return [];
-  }
+async function 데이터불러오기() {
+  var { data, error } = await 수파베이스
+    .from(테이블명)
+    .select('*')
+    .order('id', { ascending: true });
+  if (error) { console.error('데이터불러오기 오류:', error); return []; }
+  return data || [];
 }
 
 /* 새 항목 저장 */
-function 데이터저장(새항목) {
-  var 목록 = 데이터불러오기();
-  새항목.id = Date.now(); // 고유 번호 (수정/삭제에 사용)
-  새항목.출고번호 = 출고번호생성();
-  목록.push(새항목);
-  localStorage.setItem(저장소키, JSON.stringify(목록));
-  return 새항목;
+async function 데이터저장(새항목) {
+  새항목.출고번호 = await 출고번호생성();
+  var { data, error } = await 수파베이스
+    .from(테이블명)
+    .insert(새항목)
+    .select()
+    .single();
+  if (error) { console.error('데이터저장 오류:', error); return null; }
+  return data;
 }
 
 /* 특정 항목 수정 */
-function 데이터수정(id, 수정값) {
-  var 목록 = 데이터불러오기();
-  var 인덱스 = 목록.findIndex(function(항목) { return 항목.id === id; });
-  if (인덱스 === -1) return false;
-  // 출고번호와 id는 유지, 나머지 덮어쓰기
-  목록[인덱스] = Object.assign(목록[인덱스], 수정값);
-  localStorage.setItem(저장소키, JSON.stringify(목록));
+async function 데이터수정(id, 수정값) {
+  var { error } = await 수파베이스
+    .from(테이블명)
+    .update(수정값)
+    .eq('id', id);
+  if (error) { console.error('데이터수정 오류:', error); return false; }
   return true;
 }
 
 /* 특정 항목 삭제 */
-function 데이터삭제(id) {
-  var 목록 = 데이터불러오기();
-  var 새목록 = 목록.filter(function(항목) { return 항목.id !== id; });
-  localStorage.setItem(저장소키, JSON.stringify(새목록));
+async function 데이터삭제(id) {
+  var { error } = await 수파베이스
+    .from(테이블명)
+    .delete()
+    .eq('id', id);
+  if (error) { console.error('데이터삭제 오류:', error); }
 }
 
 /* 특정 항목 한 개 가져오기 */
-function 데이터하나가져오기(id) {
-  var 목록 = 데이터불러오기();
-  return 목록.find(function(항목) { return 항목.id === id; }) || null;
+async function 데이터하나가져오기(id) {
+  var { data, error } = await 수파베이스
+    .from(테이블명)
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return null;
+  return data;
 }
