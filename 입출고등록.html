@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>입출고 등록 - 삼양ERP</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <a href="../index.html" class="회사명">
+      <span class="회사명_메인">삼양ERP</span>
+      <span class="회사명_부제">Challenge</span>
+    </a>
+    <nav>
+      <a href="입출고등록.html" class="활성">입출고 등록</a>
+      <a class="비활성">재고 현황</a>
+      <a class="비활성">품목 관리</a>
+    </nav>
+  </div>
+
+  <div class="내용영역">
+
+    <div id="알림박스" class="알림"></div>
+
+    <!-- 공정 선택 바 -->
+    <div class="공정선택바">
+      <span class="공정선택바_레이블">📍 현재 공정</span>
+      <button class="공정선택버튼" onclick="공정뷰선택('수입검사')">수입검사</button>
+      <button class="공정선택버튼" onclick="공정뷰선택('헤어라인')">헤어라인</button>
+      <button class="공정선택버튼" onclick="공정뷰선택('아노다이징')">아노다이징</button>
+      <button class="공정선택버튼" onclick="공정뷰선택('공정검사')">공정검사</button>
+      <button class="공정선택버튼" onclick="공정뷰선택('출하검사')">출하검사</button>
+      <button class="공정선택버튼 전체버튼" onclick="공정뷰선택(null)">전체 보기</button>
+    </div>
+
+    <!-- ① 검색 조건 카드 -->
+    <div class="카드 검색카드">
+      <div class="검색카드제목">입출고 조회</div>
+      <div class="검색행">
+
+        <div class="검색항목 검색항목_기간">
+          <label>조회 기간</label>
+          <div class="기간입력행">
+            <input type="date" id="검색_시작일">
+            <span class="기간구분">~</span>
+            <input type="date" id="검색_종료일">
+          </div>
+        </div>
+
+        <div class="검색항목">
+          <label>품명 / 품번</label>
+          <div class="검색입력행">
+            <input type="text" id="검색_품명" placeholder="품명 또는 품번" onkeydown="엔터검색(event)">
+            <button class="돋보기버튼 검색용" onclick="검색_품목팝업열기()" title="품목 조회">🔍</button>
+          </div>
+        </div>
+
+        <div class="검색항목">
+          <label>관련 공정</label>
+          <select id="검색_공정">
+            <option value="">전체</option>
+            <option value="수입검사">수입검사</option>
+            <option value="헤어라인">헤어라인</option>
+            <option value="아노다이징">아노다이징</option>
+            <option value="공정검사">공정검사</option>
+            <option value="출하검사">출하검사</option>
+          </select>
+        </div>
+
+        <div class="검색항목">
+          <label>담당자</label>
+          <select id="검색_담당자"><option value="">전체</option></select>
+        </div>
+
+        <div class="검색항목" style="flex:0; align-self:flex-end;">
+          <div style="display:flex; gap:8px;">
+            <button class="버튼 파랑" onclick="검색조회()">조회</button>
+            <button class="버튼 회색" onclick="전체보기()">전체보기</button>
+          </div>
+        </div>
+
+      </div>
+      <div id="검색결과안내" class="검색결과안내"></div>
+    </div>
+
+    <!-- ② 입출고 등록 폼 카드 -->
+    <div class="카드" id="폼카드">
+      <div class="페이지제목">입출고 등록</div>
+
+      <!-- 1행: 품명 / 일자 -->
+      <div class="폼행">
+        <div class="입력그룹" style="flex:3; min-width:220px;">
+          <label for="품명">품명 <span style="color:#888; font-weight:normal;">(품명 또는 품번으로 검색)</span></label>
+          <div class="자동완성감싸기" id="품명감싸기">
+            <div class="품명입력행">
+              <input type="text" id="품명" placeholder="예) 기아 45mm 또는 013" oninput="품명입력시()" autocomplete="off">
+              <button class="돋보기버튼" onclick="품목조회팝업열기()" title="품목 목록 조회">🔍</button>
+            </div>
+            <ul id="품명드롭다운" class="자동완성목록" style="display:none;"></ul>
+          </div>
+          <div class="품번표시" id="품명품번표시"></div>
+        </div>
+        <div class="입력그룹">
+          <label for="출고일자">일자</label>
+          <input type="date" id="출고일자">
+        </div>
+        <div class="입력그룹 lot노">
+          <label for="lot번호">LOT No. <span style="color:#888; font-weight:normal;">(더블클릭 검색)</span></label>
+          <input type="text" id="lot번호" placeholder="더블클릭 또는 직접 입력" ondblclick="lot팝업열기()">
+        </div>
+      </div>
+
+      <!-- 2행: 출발공정 + 입고수량 → 도착공정 + 출고수량 + 불량수량 -->
+      <div class="폼행 공정흐름행">
+        <div class="입력그룹">
+          <label for="출발공정">출발 공정 <span style="color:#888; font-weight:normal;">(어디서)</span></label>
+          <select id="출발공정" onchange="잔량미리보기()">
+            <option value="">선택</option>
+            <option value="외부(납품)">외부 (납품)</option>
+            <option value="수입검사">수입검사</option>
+            <option value="헤어라인">헤어라인</option>
+            <option value="아노다이징">아노다이징</option>
+            <option value="공정검사">공정검사</option>
+            <option value="출하검사">출하검사</option>
+          </select>
+        </div>
+
+        <div class="입력그룹">
+          <label for="입고수량">입고수량 <span style="color:#2a6496; font-weight:normal;">(받은 개수)</span></label>
+          <input type="number" id="입고수량" placeholder="0" min="0" oninput="잔량미리보기()">
+        </div>
+
+        <div class="공정화살표">→</div>
+
+        <div class="입력그룹">
+          <label for="도착공정">도착 공정 <span style="color:#888; font-weight:normal;">(어디로)</span></label>
+          <select id="도착공정" onchange="잔량미리보기()">
+            <option value="">선택 (생략 가능)</option>
+            <option value="수입검사">수입검사</option>
+            <option value="헤어라인">헤어라인</option>
+            <option value="아노다이징">아노다이징</option>
+            <option value="공정검사">공정검사</option>
+            <option value="출하검사">출하검사</option>
+            <option value="외부(출하)">외부 (출하)</option>
+          </select>
+        </div>
+
+        <div class="입력그룹">
+          <label for="출고수량">출고수량 <span style="color:#27ae60; font-weight:normal;">(보낸 개수)</span></label>
+          <input type="number" id="출고수량" placeholder="0" min="0" oninput="잔량미리보기()">
+        </div>
+
+        <div class="입력그룹">
+          <label for="불량수량">불량수량</label>
+          <input type="number" id="불량수량" placeholder="0" min="0" oninput="잔량미리보기()">
+        </div>
+
+        <div class="입력그룹" style="flex:0; min-width:110px;">
+          <label style="color:#888;">잔량</label>
+          <div id="잔량표시" class="순이동량">-</div>
+        </div>
+      </div>
+
+      <!-- 3행: 담당자 / 저장 -->
+      <div class="폼행" style="align-items:flex-end; margin-top:4px;">
+        <div class="입력그룹">
+          <label>담당자</label>
+          <div class="품명입력행">
+            <input type="text" id="담당자입력" placeholder="클릭하여 선택" readonly onclick="담당자조회팝업열기()" style="cursor:pointer;">
+            <button class="돋보기버튼" onclick="담당자조회팝업열기()" title="담당자 조회">🔍</button>
+          </div>
+          <div class="품번표시" id="담당자코드표시"></div>
+        </div>
+        <div style="display:flex; gap:8px; padding-bottom:1px;">
+          <button id="저장버튼" class="버튼 초록" onclick="저장하기()">저장</button>
+          <button class="버튼 회색" onclick="폼초기화()">초기화</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ③ 입출고 목록 -->
+    <div class="카드">
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px; flex-wrap:wrap;">
+        <div class="페이지제목" style="font-size:15px; margin-bottom:0;" id="목록제목">입출고 목록</div>
+        <div id="공정뷰안내" style="display:none; font-size:12px; color:#666; background:#f0f6fb; border:1px solid #c5d8ed; border-radius:4px; padding:4px 10px;">
+          🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
+        </div>
+      </div>
+      <div class="테이블감싸기">
+        <table>
+          <thead>
+            <tr>
+              <th>품명</th>
+              <th>품번</th>
+              <th>등록번호</th>
+              <th>출발 공정</th>
+              <th style="color:#2a6496;">입고수량</th>
+              <th style="color:#27ae60;">출고수량</th>
+              <th style="color:#e67e22;">불량</th>
+              <th>잔량</th>
+              <th>도착 공정</th>
+              <th>담당자</th>
+              <th>일자</th>
+              <th>LOT No.</th>
+              <th>조치</th>
+            </tr>
+          </thead>
+          <tbody id="목록테이블바디">
+            <tr><td colspan="12" class="빈목록안내">등록된 데이터가 없습니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ④ 공정별 재고 현황 -->
+    <div class="카드">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <div class="페이지제목" style="font-size:15px; margin-bottom:0;">공정별 재고 현황</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <label style="font-size:12px; color:#2a6496; font-weight:bold;">품명 필터</label>
+          <select id="재고현황_품명필터" onchange="공정별재고요약()" style="font-size:13px; padding:4px 8px; border:1px solid #c0cfe0; border-radius:3px; height:30px;">
+            <option value="">전체 품목</option>
+          </select>
+          <button class="버튼 파랑" style="height:30px; padding:0 12px; font-size:13px;" onclick="공정별재고요약()">새로고침</button>
+        </div>
+      </div>
+      <div class="재고현황설명">
+        💡 <b>출발공정</b>에서 이동수량은 <span style="color:#e74c3c;">출고</span>로 계산되고,
+        <b>도착공정</b>에 이동수량은 <span style="color:#2a6496;">입고</span>로 자동 반영됩니다.
+        불량은 출발공정의 재고에서 차감됩니다.
+      </div>
+      <div class="테이블감싸기" style="margin-top:12px;">
+        <table id="재고현황테이블">
+          <thead>
+            <tr>
+              <th>공정</th>
+              <th style="color:#2a6496;">총 입고</th>
+              <th style="color:#e74c3c;">총 출고</th>
+              <th style="color:#e67e22;">총 불량</th>
+              <th style="background:#1a3a5c; color:white;">현재 재고</th>
+            </tr>
+          </thead>
+          <tbody id="재고현황테이블바디">
+            <tr><td colspan="5" class="빈목록안내">데이터를 등록하면 재고 현황이 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 공용 조회 팝업 -->
+  <div id="조회팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="팝업배경클릭(event)">
+    <div class="팝업창">
+      <div class="팝업헤더">
+        <span id="조회팝업_제목">조회</span>
+        <button class="팝업닫기버튼" onclick="조회팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용">
+        <input type="text" id="조회팝업_검색" class="팝업검색입력" placeholder="검색..." oninput="조회팝업검색필터()">
+        <div class="팝업테이블감싸기">
+          <table>
+            <thead><tr id="조회팝업_헤더행"></tr></thead>
+            <tbody id="조회팝업_테이블바디"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="팝업하단">
+        <button class="버튼 회색" onclick="조회팝업닫기()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/입출고.js"></script>
+</body>
+</html>

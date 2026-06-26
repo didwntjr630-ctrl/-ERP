@@ -1,0 +1,781 @@
+/* ===================================================
+   입출고.js
+   데이터 모델:
+     공정      - 이 기록이 속하는 공정 (필터 기준)
+     출발공정  - 어디서 왔는지
+     입고수량  - 이 공정이 받은 수량
+     도착공정  - 어디로 보내는지
+     출고수량  - 이 공정이 보낸 수량
+     불량수량  - 이 공정에서 발생한 불량
+     완료여부  - false = 자동생성 미처리, true = 등록 완료
+   =================================================== */
+
+var 수정중인id   = null;
+var 선택된품목   = null;
+var 선택된담당자 = null;
+var 현재작업공정 = null;
+
+/* ── 페이지 로드 ── */
+document.addEventListener('DOMContentLoaded', function() {
+  데이터마이그레이션();
+  오늘날짜세팅();
+  검색기간기본값세팅();
+  담당자검색옵션채우기();
+  재고현황품명옵션채우기();
+  공정필터목록갱신();
+  공정별재고요약();
+
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById('품명감싸기').contains(e.target)) 드롭다운닫기();
+  });
+});
+
+/* ── 구버전 데이터 자동 변환 ── */
+function 데이터마이그레이션() {
+  var 저장된 = localStorage.getItem(저장소키);
+  if (!저장된) return;
+  var 목록 = JSON.parse(저장된);
+  var 변경 = false;
+  목록 = 목록.map(function(h) {
+    if (h.이동수량 !== undefined && h.입고수량 === undefined) {
+      h.입고수량 = Number(h.이동수량) || 0;
+      h.출고수량 = Number(h.이동수량) || 0;
+      delete h.이동수량;
+      변경 = true;
+    }
+    if (h.공정 === undefined) {
+      h.공정 = h.출발공정 || '';
+      변경 = true;
+    }
+    if (h.완료여부 === undefined) {
+      h.완료여부 = true;
+      변경 = true;
+    }
+    return h;
+  });
+  if (변경) localStorage.setItem(저장소키, JSON.stringify(목록));
+}
+
+/* ── 날짜 기본값 ── */
+function 오늘날짜세팅() {
+  var d = new Date();
+  var v = d.getFullYear() + '-' +
+          String(d.getMonth()+1).padStart(2,'0') + '-' +
+          String(d.getDate()).padStart(2,'0');
+  var el = document.getElementById('출고일자');
+  if (el) el.value = v;
+}
+
+/* ── 잔량 미리보기 (입고 - 출고 - 불량) ── */
+function 잔량미리보기() {
+  var 입고 = Number(document.getElementById('입고수량').value) || 0;
+  var 출고 = Number(document.getElementById('출고수량').value) || 0;
+  var 불량 = Number(document.getElementById('불량수량').value) || 0;
+  var 잔 = 입고 - 출고 - 불량;
+  var el = document.getElementById('잔량표시');
+  if (입고 === 0 && 출고 === 0 && 불량 === 0) {
+    el.textContent = '-'; el.style.color = '#888'; el.style.fontWeight = 'normal';
+  } else {
+    el.textContent = 잔;
+    el.style.color = 잔 < 0 ? '#e74c3c' : '#2a6496';
+    el.style.fontWeight = 'bold';
+  }
+}
+
+/* ══════════════════════════════════════════
+   공정 선택 모드
+══════════════════════════════════════════ */
+var 공정순서 = ['수입검사', '헤어라인', '아노다이징', '공정검사', '출하검사'];
+
+function 공정뷰선택(공정) {
+  현재작업공정 = 공정;
+
+  document.querySelectorAll('.공정선택버튼').forEach(function(b) { b.classList.remove('활성'); });
+  if (공정) {
+    document.querySelectorAll('.공정선택버튼').forEach(function(b) {
+      if (b.textContent.trim() === 공정) b.classList.add('활성');
+    });
+  } else {
+    document.querySelectorAll('.공정선택버튼.전체버튼').forEach(function(b) { b.classList.add('활성'); });
+  }
+
+  var 폼제목 = document.querySelector('#폼카드 .페이지제목');
+  var 목록제목 = document.getElementById('목록제목');
+  var 안내박스 = document.getElementById('공정뷰안내');
+
+  if (공정) {
+    if (폼제목)  폼제목.textContent  = 공정 + ' 입출고 등록';
+    if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
+    if (안내박스) 안내박스.style.display = 'block';
+    document.getElementById('출발공정').value = 공정;
+    document.getElementById('검색_공정').value = 공정;
+  } else {
+    if (폼제목)  폼제목.textContent  = '입출고 등록';
+    if (목록제목) 목록제목.textContent = '입출고 목록';
+    if (안내박스) 안내박스.style.display = 'none';
+    document.getElementById('검색_공정').value = '';
+  }
+
+  폼초기화();
+  공정필터목록갱신();
+  공정별재고요약();
+}
+
+function 공정필터목록갱신() {
+  var 전체 = 데이터불러오기();
+  var 결과;
+
+  if (!현재작업공정) {
+    결과 = 전체;
+  } else if (현재작업공정 === '수입검사') {
+    결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 !== false; });
+  } else {
+    결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
+  }
+
+  목록테이블그리기(결과);
+
+  var 안내 = document.getElementById('검색결과안내');
+  if (현재작업공정) {
+    var 미처리 = 결과.filter(function(h) { return h.완료여부 === false; }).length;
+    var 완료 = 결과.length - 미처리;
+    안내.innerHTML =
+      '<b>' + 현재작업공정 + '</b> — ' +
+      '완료: <span class="결과강조">' + 완료 + '건</span>' +
+      (미처리 > 0
+        ? ' / <span style="color:#e67e22; font-weight:bold;">미처리: ' + 미처리 + '건</span>'
+        : '');
+  } else {
+    안내.innerHTML = '';
+  }
+}
+
+/* ══════════════════════════════════════════
+   품명 자동완성
+══════════════════════════════════════════ */
+function 품명입력시() {
+  선택된품목 = null;
+  document.getElementById('품명품번표시').textContent = '';
+  var 검색어 = document.getElementById('품명').value.trim();
+  var 드롭다운 = document.getElementById('품명드롭다운');
+  if (!검색어) { 드롭다운닫기(); return; }
+
+  var 결과 = 품목검색(검색어);
+  드롭다운.innerHTML = '';
+  if (결과.length === 0) {
+    var li = document.createElement('li');
+    li.className = '자동완성_없음';
+    li.textContent = '일치하는 품목이 없습니다.';
+    드롭다운.appendChild(li);
+  } else {
+    결과.forEach(function(품목) {
+      var li = document.createElement('li');
+      li.className = '자동완성_항목';
+      li.innerHTML = '<span class="자동완성_품명">' + 품목.품명 + '</span>' +
+                     '<span class="자동완성_품번">[' + 품목.품번 + ']</span>';
+      li.addEventListener('mousedown', function(e) { e.preventDefault(); 품목선택(품목); });
+      드롭다운.appendChild(li);
+    });
+  }
+  드롭다운.style.display = 'block';
+}
+
+function 품목선택(품목) {
+  선택된품목 = 품목;
+  document.getElementById('품명').value = 품목.품명;
+  document.getElementById('품명품번표시').textContent = '품번: ' + 품목.품번;
+  드롭다운닫기();
+}
+
+function 드롭다운닫기() {
+  var d = document.getElementById('품명드롭다운');
+  if (d) d.style.display = 'none';
+}
+
+/* ── 담당자 선택 ── */
+function 담당자선택(항목) {
+  선택된담당자 = 항목;
+  document.getElementById('담당자입력').value = 항목.직급 + ' ' + 항목.이름;
+  document.getElementById('담당자코드표시').textContent = '코드: ' + 항목.코드;
+}
+
+/* ══════════════════════════════════════════
+   저장 / 수정 / 삭제
+══════════════════════════════════════════ */
+function 저장하기() {
+  var 품명값  = document.getElementById('품명').value.trim();
+  var 입고값  = document.getElementById('입고수량').value.trim();
+  var 출고값  = document.getElementById('출고수량').value.trim();
+  var 불량값  = document.getElementById('불량수량').value.trim();
+  var 일자값  = document.getElementById('출고일자').value;
+  var lot값   = document.getElementById('lot번호').value.trim();
+  var 출발값  = document.getElementById('출발공정').value;
+  var 도착값  = document.getElementById('도착공정').value;
+
+  if (!품명값) { 알림표시('품명을 입력해주세요.', '오류'); return; }
+  if (!선택된품목) {
+    var 찾은 = 품목유효성확인(품명값);
+    if (찾은) 선택된품목 = 찾은;
+    else { 오류팝업표시(품명값); return; }
+  }
+  if (!입고값)  { 알림표시('입고수량을 입력해주세요.', '오류'); return; }
+  if (!출발값)  { 알림표시('출발 공정(어디서)을 선택해주세요.', '오류'); return; }
+  if (!일자값)  { 알림표시('일자를 선택해주세요.', '오류'); return; }
+  if (!선택된담당자) { 알림표시('담당자를 선택해주세요. (🔍 버튼 클릭)', '오류'); return; }
+
+  var 입고 = Number(입고값) || 0;
+  var 출고 = Number(출고값) || 0;
+  var 불량 = Number(불량값) || 0;
+  var 기록공정 = 현재작업공정 || 출발값;
+
+  var 새항목 = {
+    품명:       선택된품목.품명,
+    품번:       선택된품목.품번,
+    공정:       기록공정,
+    출발공정:   출발값,
+    입고수량:   입고,
+    도착공정:   도착값,
+    출고수량:   출고,
+    불량수량:   불량,
+    잔량:       입고 - 출고 - 불량,
+    출고일자:   일자값,
+    lot번호:    lot값,
+    담당자:     선택된담당자.직급 + ' ' + 선택된담당자.이름,
+    담당자코드: 선택된담당자.코드,
+    완료여부:   true
+  };
+
+  if (수정중인id !== null) {
+    var 이전기록 = 데이터하나가져오기(수정중인id);
+    var 이전미완료 = 이전기록 && 이전기록.완료여부 === false;
+    데이터수정(수정중인id, 새항목);
+
+    // 미완료→완료 전환 시 다음 공정 자동 생성
+    if (이전미완료 && 도착값 && 공정순서.includes(도착값)) {
+      다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
+      알림표시('등록 완료! ' + 도착값 + '에 자동으로 전달되었습니다.', '성공');
+    } else {
+      알림표시('수정되었습니다.', '성공');
+    }
+
+    수정중인id = null;
+    document.getElementById('저장버튼').textContent = '저장';
+    document.getElementById('저장버튼').className = '버튼 초록';
+    폼카드제거수정강조();
+  } else {
+    데이터저장(새항목);
+    // 도착공정이 내부 공정이면 다음 공정에 미처리 기록 자동 생성
+    if (도착값 && 공정순서.includes(도착값)) {
+      다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
+      알림표시(기록공정 + ' 저장 완료 → ' + 도착값 + '에 자동 전달', '성공');
+    } else {
+      알림표시(기록공정 + ' 기록이 저장되었습니다.', '성공');
+    }
+  }
+
+  폼초기화();
+  공정필터목록갱신();
+  공정별재고요약();
+}
+
+/* 다음 공정에 미처리(완료여부=false) 기록 자동 생성 */
+function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자) {
+  var 자동 = {
+    품명:       품목.품명,
+    품번:       품목.품번,
+    공정:       도착공정,
+    출발공정:   원출발공정,
+    입고수량:   출고수량,
+    도착공정:   '',
+    출고수량:   0,
+    불량수량:   0,
+    잔량:       출고수량,
+    출고일자:   일자,
+    lot번호:    lot,
+    담당자:     '',
+    담당자코드: '',
+    완료여부:   false
+  };
+  데이터저장(자동);
+}
+
+function 오류팝업표시(잘못값) {
+  var msg = '❌ 품명 오류\n\n"' + 잘못값 + '" 은(는) 등록된 품명이 아닙니다.\n\n▶ 올바른 품명:\n';
+  품목목록.forEach(function(p) { msg += '  • ' + p.품명 + '  [' + p.품번 + ']\n'; });
+  alert(msg);
+}
+
+function 수정하기(id) {
+  var 항목 = 데이터하나가져오기(id);
+  if (!항목) return;
+
+  document.getElementById('품명').value = 항목.품명;
+  document.getElementById('품명품번표시').textContent = 항목.품번 ? '품번: ' + 항목.품번 : '';
+  선택된품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; }) || null;
+
+  var 미완료 = 항목.완료여부 === false;
+  var 공정처리모드 = 미완료 && 현재작업공정 && 현재작업공정 !== '수입검사';
+
+  document.getElementById('입고수량').value = 항목.입고수량 || 0;
+  document.getElementById('출고수량').value = 공정처리모드 ? '' : (항목.출고수량 || 0);
+  document.getElementById('불량수량').value = 공정처리모드 ? '' : (항목.불량수량 || 0);
+  document.getElementById('출고일자').value = 항목.출고일자 || '';
+  document.getElementById('lot번호').value  = 항목.lot번호  || '';
+  document.getElementById('출발공정').value = 공정처리모드 ? 현재작업공정 : (항목.출발공정 || '');
+  document.getElementById('출발공정').disabled = 공정처리모드;
+  document.getElementById('도착공정').value = 항목.도착공정 || '';
+
+  선택된담당자 = 담당자목록.find(function(d) {
+    return (d.직급 + ' ' + d.이름) === 항목.담당자;
+  }) || null;
+  document.getElementById('담당자입력').value = 항목.담당자 || '';
+  document.getElementById('담당자코드표시').textContent = 선택된담당자 ? '코드: ' + 선택된담당자.코드 : '';
+
+  잔량미리보기();
+  수정중인id = id;
+  document.getElementById('저장버튼').textContent = 미완료 ? '등록 완료' : '변경 저장';
+  document.getElementById('저장버튼').className = '버튼 파랑';
+  document.getElementById('폼카드').classList.add('수정모드중');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (공정처리모드) {
+    알림표시(현재작업공정 + ' 처리: 도착 공정·출고수량을 입력 후 [등록 완료]를 눌러주세요.', '성공');
+  } else if (미완료) {
+    알림표시(항목.출발공정 + '에서 넘어온 기록입니다. 도착공정·출고수량·불량수량을 입력 후 [등록 완료]를 눌러주세요.', '성공');
+  } else {
+    알림표시('수정할 내용 변경 후 [변경 저장]을 눌러주세요.', '성공');
+  }
+}
+
+function 삭제하기(id) {
+  if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+  데이터삭제(id);
+  알림표시('삭제되었습니다.', '성공');
+  공정필터목록갱신();
+  공정별재고요약();
+}
+
+function 폼초기화() {
+  선택된품목   = null;
+  선택된담당자 = null;
+  document.getElementById('품명').value               = '';
+  document.getElementById('품명품번표시').textContent  = '';
+  document.getElementById('입고수량').value            = '';
+  document.getElementById('출고수량').value            = '';
+  document.getElementById('불량수량').value            = '';
+  document.getElementById('출고일자').value            = '';
+  document.getElementById('lot번호').value             = '';
+  document.getElementById('출발공정').value            = 현재작업공정 || '';
+  document.getElementById('출발공정').disabled          = false;
+  document.getElementById('도착공정').value            = '';
+  document.getElementById('담당자입력').value          = '';
+  document.getElementById('담당자코드표시').textContent = '';
+  document.getElementById('잔량표시').textContent      = '-';
+  document.getElementById('잔량표시').style.color      = '#888';
+  document.getElementById('잔량표시').style.fontWeight = 'normal';
+  드롭다운닫기();
+  오늘날짜세팅();
+  수정중인id = null;
+  document.getElementById('저장버튼').textContent = '저장';
+  document.getElementById('저장버튼').className   = '버튼 초록';
+  폼카드제거수정강조();
+}
+
+function 폼카드제거수정강조() {
+  document.getElementById('폼카드').classList.remove('수정모드중');
+}
+
+/* ══════════════════════════════════════════
+   목록 테이블 그리기
+══════════════════════════════════════════ */
+function 목록새로고침() {
+  공정필터목록갱신();
+}
+
+function 목록테이블그리기(목록) {
+  var 바디 = document.getElementById('목록테이블바디');
+  바디.innerHTML = '';
+
+  if (목록.length === 0) {
+    바디.innerHTML = '<tr><td colspan="13" class="빈목록안내">' +
+      (현재작업공정 ? 현재작업공정 + ' 관련 데이터가 없습니다.' : '데이터가 없습니다.') +
+      '</td></tr>';
+    return;
+  }
+
+  목록.slice().reverse().forEach(function(항목) {
+    var 미완료 = 항목.완료여부 === false;
+    var 입고 = Number(항목.입고수량) || 0;
+    var 출고 = Number(항목.출고수량) || 0;
+    var 불량 = Number(항목.불량수량) || 0;
+    var 잔 = 입고 - 출고 - 불량;
+
+    var 행 = document.createElement('tr');
+    행.style.cssText = 미완료 ? 'background:#fff8e1;' : '';
+
+    var 도착셀 = 미완료
+      ? '<span style="background:#f39c12; color:white; font-size:10px; padding:2px 6px; border-radius:3px;">미처리</span>'
+      : (항목.도착공정 || '');
+
+    var 출고셀 = 미완료 ? '<span style="color:#bbb;">-</span>' : 출고;
+    var 불량셀 = 미완료 ? '<span style="color:#bbb;">-</span>' : '<span style="color:#e67e22;">' + 불량 + '</span>';
+    var 잔셀   = 미완료 ? '<span style="color:#bbb;">-</span>' :
+                          '<span style="' + (잔 < 0 ? 'color:#e74c3c; font-weight:bold;' : '') + '">' + 잔 + '</span>';
+
+    var 조치버튼 = 미완료
+      ? '<button class="버튼 파랑 소형" onclick="수정하기(' + 항목.id + ')">처리</button> ' +
+        '<button class="버튼 빨강 소형" onclick="삭제하기(' + 항목.id + ')">삭제</button>'
+      : '<button class="버튼 회색 소형" onclick="수정하기(' + 항목.id + ')">수정</button> ' +
+        '<button class="버튼 빨강 소형" onclick="삭제하기(' + 항목.id + ')">삭제</button>';
+
+    행.innerHTML =
+      '<td style="text-align:left;">' + (항목.품명     || '') + '</td>' +
+      '<td>' + (항목.품번     || '') + '</td>' +
+      '<td style="font-size:11px; color:#666;">' + (항목.출고번호 || '') + '</td>' +
+      '<td style="color:#2a6496; font-weight:bold;">' + (항목.출발공정 || '') + '</td>' +
+      '<td style="color:#2a6496;">' + 입고 + '</td>' +
+      '<td style="color:#27ae60;">' + 출고셀 + '</td>' +
+      '<td>' + 불량셀 + '</td>' +
+      '<td>' + 잔셀   + '</td>' +
+      '<td style="color:#27ae60; font-weight:bold;">' + 도착셀 + '</td>' +
+      '<td>' + (항목.담당자   || '') + '</td>' +
+      '<td>' + (항목.출고일자 || '') + '</td>' +
+      '<td>' + (항목.lot번호  || '') + '</td>' +
+      '<td>' + 조치버튼 + '</td>';
+    바디.appendChild(행);
+  });
+}
+
+/* ══════════════════════════════════════════
+   공정별 재고 현황
+   각 공정의 records: sum(입고) - sum(출고) - sum(불량)
+══════════════════════════════════════════ */
+function 공정별재고요약() {
+  var 전체 = 데이터불러오기();
+  var 품명필터 = document.getElementById('재고현황_품명필터').value;
+  var 대상 = 품명필터
+    ? 전체.filter(function(h) { return h.품명 === 품명필터; })
+    : 전체;
+
+  var 집계 = {};
+  공정순서.forEach(function(p) { 집계[p] = { 입고: 0, 출고: 0, 불량: 0 }; });
+
+  대상.forEach(function(h) {
+    var p = h.공정;
+    if (!p || !집계[p]) return;
+    집계[p].입고 += Number(h.입고수량) || 0;
+    if (h.완료여부 !== false) {
+      집계[p].출고 += Number(h.출고수량) || 0;
+      집계[p].불량 += Number(h.불량수량) || 0;
+    }
+  });
+
+  var 바디 = document.getElementById('재고현황테이블바디');
+  바디.innerHTML = '';
+  var 있음 = false;
+
+  공정순서.forEach(function(p) {
+    var d = 집계[p];
+    if (!d || (d.입고 === 0 && d.출고 === 0 && d.불량 === 0)) return;
+    있음 = true;
+    var 재고 = d.입고 - d.출고 - d.불량;
+    var 강조 = 현재작업공정 === p ? 'background:#e8f4fb;' : '';
+    var 행 = document.createElement('tr');
+    행.style.cssText = 강조;
+    행.innerHTML =
+      '<td style="font-weight:bold; color:#1a3a5c;">' + p + '</td>' +
+      '<td style="color:#2a6496;">' + d.입고 + '</td>' +
+      '<td style="color:#e74c3c;">' + d.출고 + '</td>' +
+      '<td style="color:#e67e22;">' + d.불량 + '</td>' +
+      '<td style="' + (재고 <= 0 ? 'color:#e74c3c;' : 'color:#2a6496;') + ' font-weight:bold;">' + 재고 + '</td>';
+    바디.appendChild(행);
+  });
+
+  if (!있음) {
+    바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">데이터를 등록하면 재고 현황이 표시됩니다.</td></tr>';
+  }
+}
+
+function 재고현황품명옵션채우기() {
+  var sel = document.getElementById('재고현황_품명필터');
+  품목목록.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.품명; opt.textContent = p.품명;
+    sel.appendChild(opt);
+  });
+}
+
+/* ══════════════════════════════════════════
+   검색 조회
+══════════════════════════════════════════ */
+function 검색기간기본값세팅() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var day = String(d.getDate()).padStart(2,'0');
+  document.getElementById('검색_시작일').value = y + '-' + m + '-01';
+  document.getElementById('검색_종료일').value = y + '-' + m + '-' + day;
+}
+
+function 담당자검색옵션채우기() {
+  var sel = document.getElementById('검색_담당자');
+  담당자목록.forEach(function(d) {
+    var opt = document.createElement('option');
+    opt.value = d.직급 + ' ' + d.이름;
+    opt.textContent = d.직급 + ' ' + d.이름;
+    sel.appendChild(opt);
+  });
+}
+
+function 엔터검색(e) { if (e.key === 'Enter') 검색조회(); }
+
+function 검색조회() {
+  var 결과 = 데이터불러오기();
+  var 시작 = document.getElementById('검색_시작일').value;
+  var 종료 = document.getElementById('검색_종료일').value;
+  var 품명 = document.getElementById('검색_품명').value.trim().toLowerCase();
+  var 공정 = document.getElementById('검색_공정').value;
+  var 담당 = document.getElementById('검색_담당자').value;
+
+  if (시작) 결과 = 결과.filter(function(h) { return (h.출고일자||'') >= 시작; });
+  if (종료) 결과 = 결과.filter(function(h) { return (h.출고일자||'') <= 종료; });
+  if (품명) 결과 = 결과.filter(function(h) {
+    return (h.품명||'').toLowerCase().includes(품명) || (h.품번||'').toLowerCase().includes(품명);
+  });
+  if (공정) 결과 = 결과.filter(function(h) {
+    return h.공정 === 공정 || h.출발공정 === 공정 || h.도착공정 === 공정;
+  });
+  if (담당) 결과 = 결과.filter(function(h) { return (h.담당자||'') === 담당; });
+
+  if (현재작업공정 === '수입검사') {
+    결과 = 결과.filter(function(h) { return h.완료여부 !== false; });
+  } else if (현재작업공정) {
+    결과 = 결과.filter(function(h) { return h.완료여부 === false; });
+  }
+
+  목록테이블그리기(결과);
+  var 안내 = document.getElementById('검색결과안내');
+  안내.innerHTML = '검색 결과: <span class="결과강조">' + 결과.length + '건</span>' +
+    (결과.length === 0 ? ' — 조건에 맞는 데이터가 없습니다.' : '');
+}
+
+function 전체보기() {
+  검색기간기본값세팅();
+  document.getElementById('검색_품명').value   = '';
+  document.getElementById('검색_담당자').value = '';
+  if (!현재작업공정) document.getElementById('검색_공정').value = '';
+  공정필터목록갱신();
+}
+
+function 검색_품목팝업열기() {
+  조회팝업열기({
+    제목: '품목 조회',
+    검색힌트: '품명 또는 품번 검색...',
+    데이터: 품목목록,
+    열목록: [{ 제목: '품번', 필드: '품번' }, { 제목: '품명', 필드: '품명' }, { 제목: '규격', 필드: '규격' }],
+    선택시: function(항목) { document.getElementById('검색_품명').value = 항목.품명; }
+  });
+}
+
+/* ══════════════════════════════════════════
+   LOT 번호 팝업 (더블클릭)
+══════════════════════════════════════════ */
+function lot팝업열기() {
+  var 전체 = 데이터불러오기();
+
+  // 현재 공정 선택됨: 미처리 기록 (완료여부=false) 우선 표시
+  if (현재작업공정) {
+    var 미처리 = 전체.filter(function(h) {
+      return h.공정 === 현재작업공정 && h.완료여부 === false;
+    });
+
+    if (미처리.length > 0) {
+      var 미처리목록 = 미처리.map(function(h) {
+        return {
+          lot번호:  h.lot번호 || '-',
+          품명:     h.품명,
+          품번:     h.품번,
+          출발공정: h.출발공정,
+          입고수량: h.입고수량,
+          기록id:   h.id
+        };
+      });
+      조회팝업열기({
+        제목: 현재작업공정 + ' — 미처리 항목 (처리할 것 선택)',
+        검색힌트: 'LOT 또는 품명 검색...',
+        데이터: 미처리목록,
+        열목록: [
+          { 제목: 'LOT 번호',  필드: 'lot번호'  },
+          { 제목: '품명',      필드: '품명'     },
+          { 제목: '출발 공정', 필드: '출발공정' },
+          { 제목: '입고수량',  필드: '입고수량' }
+        ],
+        선택시: function(항목) { 수정하기(항목.기록id); }
+      });
+      return;
+    }
+  }
+
+  // 전체 LOT 집계 (범용)
+  if (전체.length === 0) { 알림표시('등록된 LOT 번호가 없습니다.', '오류'); return; }
+  var lot맵 = {};
+  전체.forEach(function(h) {
+    var lot = (h.lot번호||'').trim();
+    if (!lot) return;
+    if (!lot맵[lot]) {
+      lot맵[lot] = { lot번호: lot, 품명: h.품명, 품번: h.품번,
+                     현재위치: h.공정, 마지막id: h.id, 입고합: 0, 출고합: 0, 불량합: 0 };
+    }
+    if (h.id > lot맵[lot].마지막id) {
+      lot맵[lot].마지막id = h.id;
+      lot맵[lot].현재위치 = h.공정;
+      lot맵[lot].품명 = h.품명;
+    }
+    lot맵[lot].입고합 += Number(h.입고수량) || 0;
+    if (h.완료여부 !== false) {
+      lot맵[lot].출고합 += Number(h.출고수량) || 0;
+      lot맵[lot].불량합 += Number(h.불량수량) || 0;
+    }
+  });
+
+  var lot목록 = Object.values(lot맵).map(function(d) {
+    return {
+      lot번호:  d.lot번호,
+      품명:     d.품명,
+      현재위치: d.현재위치 || '-',
+      재고수량: d.입고합 - d.출고합 - d.불량합
+    };
+  });
+
+  조회팝업열기({
+    제목: 'LOT 번호 조회',
+    검색힌트: 'LOT 또는 품명 검색...',
+    데이터: lot목록,
+    열목록: [
+      { 제목: 'LOT 번호',  필드: 'lot번호'  },
+      { 제목: '품명',      필드: '품명'     },
+      { 제목: '현재 위치', 필드: '현재위치' },
+      { 제목: '재고수량',  필드: '재고수량' }
+    ],
+    선택시: function(항목) { lot선택시(항목); }
+  });
+}
+
+function lot선택시(lot데이터) {
+  document.getElementById('lot번호').value = lot데이터.lot번호;
+  var 품목 = 품목목록.find(function(p) { return p.품명 === lot데이터.품명; });
+  if (품목) 품목선택(품목);
+  var 위치 = lot데이터.현재위치;
+  if (위치 && 위치 !== '-' && 위치 !== '외부(출하)') {
+    document.getElementById('출발공정').value = 위치;
+  }
+  var 재고 = lot데이터.재고수량;
+  if (재고 > 0) {
+    document.getElementById('입고수량').value = 재고;
+    document.getElementById('출고수량').value = 재고;
+  }
+  잔량미리보기();
+
+  var 관련 = 데이터불러오기().filter(function(h) {
+    return (h.lot번호||'').trim() === lot데이터.lot번호;
+  });
+  목록테이블그리기(관련);
+  var 안내 = document.getElementById('검색결과안내');
+  안내.innerHTML = 'LOT <b>' + lot데이터.lot번호 + '</b> 이력: <span class="결과강조">' + 관련.length + '건</span>' +
+    ' &nbsp;<button class="버튼 회색" style="font-size:11px; height:22px; padding:0 8px;" onclick="목록새로고침()">전체 목록</button>';
+}
+
+/* ══════════════════════════════════════════
+   공용 조회 팝업
+══════════════════════════════════════════ */
+var 현재팝업설정  = null;
+var 원본팝업데이터 = [];
+
+function 조회팝업열기(설정) {
+  현재팝업설정   = 설정;
+  원본팝업데이터 = 설정.데이터;
+  document.getElementById('조회팝업_제목').textContent = 설정.제목;
+  document.getElementById('조회팝업_검색').value = '';
+  document.getElementById('조회팝업_검색').placeholder = 설정.검색힌트 || '검색...';
+  var 헤더 = document.getElementById('조회팝업_헤더행');
+  헤더.innerHTML = '<th style="width:36px;"></th>';
+  설정.열목록.forEach(function(열) {
+    var th = document.createElement('th'); th.textContent = 열.제목; 헤더.appendChild(th);
+  });
+  조회팝업테이블채우기(원본팝업데이터);
+  document.getElementById('조회팝업_오버레이').style.display = 'flex';
+  setTimeout(function() { document.getElementById('조회팝업_검색').focus(); }, 50);
+}
+
+function 조회팝업닫기() { document.getElementById('조회팝업_오버레이').style.display = 'none'; }
+
+function 팝업배경클릭(e) {
+  if (e.target === document.getElementById('조회팝업_오버레이')) 조회팝업닫기();
+}
+
+function 조회팝업검색필터() {
+  var 검색어 = document.getElementById('조회팝업_검색').value.trim().toLowerCase();
+  if (!검색어) { 조회팝업테이블채우기(원본팝업데이터); return; }
+  var 결과 = 원본팝업데이터.filter(function(항목) {
+    return 현재팝업설정.열목록.some(function(열) {
+      return String(항목[열.필드]||'').toLowerCase().includes(검색어);
+    });
+  });
+  조회팝업테이블채우기(결과);
+}
+
+function 조회팝업테이블채우기(목록) {
+  var 바디 = document.getElementById('조회팝업_테이블바디');
+  바디.innerHTML = '';
+  if (목록.length === 0) {
+    var 열수 = (현재팝업설정 ? 현재팝업설정.열목록.length : 3) + 1;
+    바디.innerHTML = '<tr><td colspan="' + 열수 + '" class="빈목록안내">검색 결과가 없습니다.</td></tr>';
+    return;
+  }
+  목록.forEach(function(항목) {
+    var 행 = document.createElement('tr');
+    var 체크td = document.createElement('td');
+    var 체크 = document.createElement('input'); 체크.type = 'checkbox';
+    체크td.appendChild(체크); 행.appendChild(체크td);
+    현재팝업설정.열목록.forEach(function(열) {
+      var td = document.createElement('td');
+      td.textContent = 항목[열.필드] !== undefined ? 항목[열.필드] : '';
+      행.appendChild(td);
+    });
+    행.addEventListener('click', function() {
+      document.querySelectorAll('#조회팝업_테이블바디 input[type=checkbox]').forEach(function(c) { c.checked = false; });
+      document.querySelectorAll('#조회팝업_테이블바디 tr').forEach(function(r) { r.classList.remove('팝업선택행'); });
+      체크.checked = true; 행.classList.add('팝업선택행');
+      현재팝업설정.선택시(항목);
+      조회팝업닫기();
+    });
+    바디.appendChild(행);
+  });
+}
+
+function 품목조회팝업열기() {
+  조회팝업열기({
+    제목: '품목 조회', 검색힌트: '품명 또는 품번 검색...',
+    데이터: 품목목록,
+    열목록: [{ 제목: '품번', 필드: '품번' }, { 제목: '품명', 필드: '품명' }, { 제목: '규격', 필드: '규격' }],
+    선택시: function(항목) { 품목선택(항목); }
+  });
+}
+
+function 담당자조회팝업열기() {
+  조회팝업열기({
+    제목: '담당자 조회', 검색힌트: '이름·직급·코드 검색...',
+    데이터: 담당자목록,
+    열목록: [{ 제목: '코드', 필드: '코드' }, { 제목: '직급', 필드: '직급' }, { 제목: '이름', 필드: '이름' }],
+    선택시: function(항목) { 담당자선택(항목); }
+  });
+}
+
+/* ── 알림 ── */
+function 알림표시(메시지, 종류) {
+  var el = document.getElementById('알림박스');
+  el.textContent = 메시지;
+  el.className = '알림 ' + 종류;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 3500);
+}
