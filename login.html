@@ -54,26 +54,23 @@
 
     /* 왼쪽 브랜드 영역 */
     .brand-area {
-      padding: 50px 40px;
+      padding: 44px 40px;
       color: white;
       flex: 1;
       min-width: 240px;
-    }
-
-    .brand-logo {
-      font-size: 13px;
-      letter-spacing: 2px;
-      opacity: 0.85;
-      margin-bottom: 10px;
-      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
     }
 
     .brand-main {
-      font-size: 38px;
+      font-size: 32px;
       font-weight: 900;
       line-height: 1.15;
       text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      letter-spacing: -1px;
+      letter-spacing: 1px;
+      text-align: center;
     }
 
     .brand-main span {
@@ -82,10 +79,11 @@
     }
 
     .brand-sub {
-      font-size: 15px;
-      margin-top: 10px;
-      opacity: 0.85;
-      letter-spacing: 1px;
+      font-size: 14px;
+      opacity: 0.8;
+      letter-spacing: 3px;
+      text-align: center;
+      margin-top: -8px;
     }
 
     /* 구분선 */
@@ -305,8 +303,23 @@
 
     <!-- 왼쪽: 브랜드 -->
     <div class="brand-area">
-      <div class="brand-logo">Smart ERP System</div>
-      <div class="brand-main">삼양<span>ERP</span></div>
+      <!-- 삼양이엔지 로고 SVG -->
+      <svg viewBox="0 0 200 185" width="110" height="102" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 8px rgba(0,0,0,0.35));">
+        <!-- 왼쪽 노랑 삼각형 -->
+        <polygon points="100,8 8,176 100,176" fill="#F5A820"/>
+        <!-- 오른쪽 주황-빨강 삼각형 -->
+        <polygon points="100,8 192,176 100,176" fill="#D44B1A"/>
+        <!-- 흰색 쉐브론 (위로 향하는 V) -->
+        <polygon points="24,152 100,108 176,152 176,168 100,124 24,168" fill="white"/>
+        <!-- S -->
+        <text x="52" y="100" fill="white" font-size="30" font-weight="900" font-family="Arial Black, Arial, sans-serif">S</text>
+        <!-- Y -->
+        <text x="112" y="100" fill="white" font-size="30" font-weight="900" font-family="Arial Black, Arial, sans-serif">Y</text>
+        <!-- ENG -->
+        <text x="100" y="169" fill="white" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif" text-anchor="middle">ENG</text>
+      </svg>
+
+      <div class="brand-main">삼양 <span>ERP</span></div>
       <div class="brand-sub">Challenge</div>
     </div>
 
