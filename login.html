@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 로그인</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #1a4a7a 0%, #2980b9 35%, #5dade2 65%, #85c1e9 85%, #a8d8ea 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: '맑은 고딕', 'Malgun Gothic', Arial, sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 배경 풍경 느낌 */
+    body::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 38%;
+      background: linear-gradient(to top, #3d6b2a 0%, #5a8f3c 40%, transparent 100%);
+      opacity: 0.55;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      bottom: 34%; left: 0; right: 0;
+      height: 6%;
+      background: linear-gradient(to right, #4a7a30 0%, #6aaa40 30%, #5a8f3c 60%, #4a7a30 100%);
+      opacity: 0.4;
+      border-radius: 50% 60% 0 0;
+    }
+
+    .login-wrap {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+      overflow: hidden;
+      min-width: 620px;
+    }
+
+    /* 왼쪽 브랜드 영역 */
+    .brand-area {
+      padding: 50px 40px;
+      color: white;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .brand-logo {
+      font-size: 13px;
+      letter-spacing: 2px;
+      opacity: 0.85;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .brand-main {
+      font-size: 38px;
+      font-weight: 900;
+      line-height: 1.15;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      letter-spacing: -1px;
+    }
+
+    .brand-main span {
+      color: #ffe066;
+      font-style: italic;
+    }
+
+    .brand-sub {
+      font-size: 15px;
+      margin-top: 10px;
+      opacity: 0.85;
+      letter-spacing: 1px;
+    }
+
+    /* 구분선 */
+    .divider {
+      width: 1px;
+      height: 220px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* 오른쪽 폼 영역 */
+    .form-area {
+      padding: 40px 36px;
+      min-width: 280px;
+      background: rgba(255,255,255,0.92);
+    }
+
+    .form-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #1a4a7a;
+      margin-bottom: 22px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .field-row label {
+      width: 68px;
+      font-size: 13px;
+      color: #444;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .field-row input {
+      flex: 1;
+      height: 32px;
+      border: 1px solid #b0c4d8;
+      border-radius: 3px;
+      padding: 0 10px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #f5faff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field-row input:focus {
+      border-color: #2980b9;
+      background: #fff;
+    }
+
+    .company-name {
+      flex: 1;
+      font-size: 13px;
+      color: #333;
+      padding: 0 4px;
+    }
+
+    /* 버튼 그룹 */
+    .btn-main-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-left: 10px;
+    }
+
+    .btn-login {
+      width: 80px;
+      height: 46px;
+      background: linear-gradient(180deg, #4a9fd4 0%, #1a6aad 100%);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      font-family: inherit;
+      letter-spacing: 1px;
+    }
+
+    .btn-login:hover { background: linear-gradient(180deg, #5ab0e4 0%, #2a7abe 100%); }
+    .btn-login:active { transform: translateY(1px); }
+
+    .btn-cancel {
+      width: 80px;
+      height: 38px;
+      background: linear-gradient(180deg, #e8e8e8 0%, #c8c8c8 100%);
+      color: #444;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-cancel:hover { background: linear-gradient(180deg, #f0f0f0 0%, #d8d8d8 100%); }
+
+    /* 하단 버튼 */
+    .btn-bottom-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 12px;
+      border: 1px solid #b0c4d8;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #f5faff 0%, #e0eef8 100%);
+      color: #1a4a7a;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+    }
+
+    .btn-sm:hover { background: linear-gradient(180deg, #e0eef8 0%, #c5ddf0 100%); }
+
+    .form-and-btn {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .fields {
+      flex: 1;
+    }
+
+    /* 에러 메시지 */
+    .error-msg {
+      font-size: 12px;
+      color: #e74c3c;
+      text-align: center;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+
+    /* 모달 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 8px;
+      padding: 30px 28px;
+      width: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .modal h3 {
+      font-size: 15px;
+      color: #1a4a7a;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .modal .field-row { margin-bottom: 10px; }
+
+    .modal-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    .modal-btns button {
+      padding: 7px 22px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-confirm { background: #2980b9; color: white; }
+    .btn-confirm:hover { background: #1a6aad; }
+    .btn-close-modal { background: #e0e0e0; color: #444; }
+    .btn-close-modal:hover { background: #d0d0d0; }
+
+    .modal .error-msg { margin-top: 8px; }
+
+    /* 하단 카피라이트 */
+    .copyright {
+      position: absolute;
+      bottom: 14px;
+      width: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrap">
+
+    <!-- 왼쪽: 브랜드 -->
+    <div class="brand-area">
+      <div class="brand-logo">Smart ERP System</div>
+      <div class="brand-main">삼양<span>ERP</span></div>
+      <div class="brand-sub">Challenge</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 오른쪽: 로그인 폼 -->
+    <div class="form-area">
+      <div class="form-title">로 그 인</div>
+
+      <div class="form-and-btn">
+        <div class="fields">
+          <div class="field-row">
+            <label>회 사 명</label>
+            <span class="company-name">(주)삼양이엔지</span>
+          </div>
+          <div class="field-row">
+            <label>사 원 명</label>
+            <input type="text" id="inp-name" placeholder="사원명 입력" autocomplete="off">
+          </div>
+          <div class="field-row">
+            <label>사원암호</label>
+            <input type="password" id="inp-pw" placeholder="암호 입력" onkeydown="엔터로그인(event)">
+          </div>
+        </div>
+
+        <div class="btn-main-group">
+          <button class="btn-login" onclick="로그인()">로그인</button>
+          <button class="btn-cancel" onclick="초기화()">취 소</button>
+        </div>
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="btn-bottom-group">
+        <button class="btn-sm" onclick="암호생성모달열기()">암호생성 ›</button>
+        <button class="btn-sm" onclick="암호변경모달열기()">암호변경 ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 암호생성 모달 -->
+  <div class="modal-overlay" id="modal-create">
+    <div class="modal">
+      <h3>암호 생성</h3>
+      <div class="field-row">
+        <label>사원명</label>
+        <input type="text" id="create-name" placeholder="사원명 입력">
+      </div>
+      <div class="field-row">
+        <label>새 암호</label>
+        <input type="password" id="create-pw1" placeholder="암호 입력">
+      </div>
+      <div class="field-row">
+        <label>암호확인</label>
+        <input type="password" id="create-pw2" placeholder="암호 재입력" onkeydown="엔터암호생성(event)">
+      </div>
+      <div class="error-msg" id="create-error"></div>
+      <div class="modal-btns">
+        <button class="btn-confirm" onclick="암호생성()">생성</button>
+        <button class="btn-close-modal" onclick="모달닫기('modal-create')">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 암호변경 모달 -->
+  <div class="modal-overlay" id="modal-change">
+    <div class="modal">
+      <h3>암호 변경</h3>
+      <div class="field-row">
+        <label>사원명</label>
+        <input type="text" id="change-name" placeholder="사원명 입력">
+      </div>
+      <div class="field-row">
+        <label>현재 암호</label>
+        <input type="password" id="change-old" placeholder="현재 암호">
+      </div>
+      <div class="field-row">
+        <label>새 암호</label>
+        <input type="password" id="change-new1" placeholder="새 암호">
+      </div>
+      <div class="field-row">
+        <label>암호확인</label>
+        <input type="password" id="change-new2" placeholder="새 암호 재입력" onkeydown="엔터암호변경(event)">
+      </div>
+      <div class="error-msg" id="change-error"></div>
+      <div class="modal-btns">
+        <button class="btn-confirm" onclick="암호변경()">변경</button>
+        <button class="btn-close-modal" onclick="모달닫기('modal-change')">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="copyright">Copyright (C) 삼양이엔지. All Rights Reserved.</div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // 이미 로그인된 경우 바로 이동
+    if (현재세션()) location.href = '입출고등록_테스트.html';
+
+    function 에러표시(메시지) {
+      document.getElementById('error-msg').textContent = 메시지;
+    }
+
+    function 엔터로그인(e) { if (e.key === 'Enter') 로그인(); }
+
+    function 로그인() {
+      var 이름 = document.getElementById('inp-name').value.trim();
+      var 암호 = document.getElementById('inp-pw').value;
+
+      if (!이름) { 에러표시('사원명을 입력해주세요.'); return; }
+      if (!암호) { 에러표시('사원암호를 입력해주세요.'); return; }
+
+      // 담당자 목록에서 확인
+      var 직원 = 담당자목록.find(function(d) { return d.이름 === 이름; });
+      if (!직원) { 에러표시('등록되지 않은 사원명입니다.'); return; }
+
+      if (!암호등록여부(이름)) {
+        에러표시('암호가 설정되지 않았습니다. [암호생성]을 먼저 해주세요.');
+        return;
+      }
+
+      if (!암호확인(이름, 암호)) { 에러표시('암호가 일치하지 않습니다.'); return; }
+
+      로그인처리(이름, 직원.직급);
+      location.href = '입출고등록_테스트.html';
+    }
+
+    function 초기화() {
+      document.getElementById('inp-name').value = '';
+      document.getElementById('inp-pw').value = '';
+      에러표시('');
+      document.getElementById('inp-name').focus();
+    }
+
+    /* 모달 */
+    function 암호생성모달열기() {
+      document.getElementById('create-name').value = '';
+      document.getElementById('create-pw1').value  = '';
+      document.getElementById('create-pw2').value  = '';
+      document.getElementById('create-error').textContent = '';
+      document.getElementById('modal-create').classList.add('active');
+      document.getElementById('create-name').focus();
+    }
+
+    function 암호변경모달열기() {
+      document.getElementById('change-name').value  = '';
+      document.getElementById('change-old').value   = '';
+      document.getElementById('change-new1').value  = '';
+      document.getElementById('change-new2').value  = '';
+      document.getElementById('change-error').textContent = '';
+      document.getElementById('modal-change').classList.add('active');
+      document.getElementById('change-name').focus();
+    }
+
+    function 모달닫기(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function 엔터암호생성(e) { if (e.key === 'Enter') 암호생성(); }
+    function 엔터암호변경(e) { if (e.key === 'Enter') 암호변경(); }
+
+    function 암호생성() {
+      var 이름  = document.getElementById('create-name').value.trim();
+      var pw1   = document.getElementById('create-pw1').value;
+      var pw2   = document.getElementById('create-pw2').value;
+      var 에러  = document.getElementById('create-error');
+
+      if (!이름) { 에러.textContent = '사원명을 입력해주세요.'; return; }
+
+      var 직원 = 담당자목록.find(function(d) { return d.이름 === 이름; });
+      if (!직원) { 에러.textContent = '등록되지 않은 사원명입니다.'; return; }
+
+      if (암호등록여부(이름)) { 에러.textContent = '이미 암호가 설정된 사원입니다. 암호변경을 이용해주세요.'; return; }
+      if (!pw1) { 에러.textContent = '새 암호를 입력해주세요.'; return; }
+      if (pw1.length < 4) { 에러.textContent = '암호는 4자 이상이어야 합니다.'; return; }
+      if (pw1 !== pw2) { 에러.textContent = '암호가 일치하지 않습니다.'; return; }
+
+      암호저장(이름, pw1);
+      모달닫기('modal-create');
+      에러표시('✅ 암호가 생성되었습니다. 로그인해주세요.');
+      document.getElementById('inp-name').value = 이름;
+      document.getElementById('inp-pw').focus();
+    }
+
+    function 암호변경() {
+      var 이름  = document.getElementById('change-name').value.trim();
+      var 구암호 = document.getElementById('change-old').value;
+      var pw1   = document.getElementById('change-new1').value;
+      var pw2   = document.getElementById('change-new2').value;
+      var 에러  = document.getElementById('change-error');
+
+      if (!이름) { 에러.textContent = '사원명을 입력해주세요.'; return; }
+
+      var 직원 = 담당자목록.find(function(d) { return d.이름 === 이름; });
+      if (!직원) { 에러.textContent = '등록되지 않은 사원명입니다.'; return; }
+
+      if (!암호등록여부(이름)) { 에러.textContent = '암호가 설정되지 않은 사원입니다. 암호생성을 이용해주세요.'; return; }
+      if (!암호확인(이름, 구암호)) { 에러.textContent = '현재 암호가 일치하지 않습니다.'; return; }
+      if (!pw1) { 에러.textContent = '새 암호를 입력해주세요.'; return; }
+      if (pw1.length < 4) { 에러.textContent = '암호는 4자 이상이어야 합니다.'; return; }
+      if (pw1 !== pw2) { 에러.textContent = '새 암호가 일치하지 않습니다.'; return; }
+
+      암호저장(이름, pw1);
+      모달닫기('modal-change');
+      에러표시('✅ 암호가 변경되었습니다.');
+    }
+  </script>
+</body>
+</html>
