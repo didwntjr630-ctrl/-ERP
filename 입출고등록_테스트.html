@@ -262,6 +262,23 @@
 
   </div>
 
+  <!-- 알림 모달 -->
+  <div id="알림모달_오버레이" class="팝업오버레이" style="display:none;">
+    <div class="팝업창" style="max-width:360px;">
+      <div class="팝업헤더" style="background:linear-gradient(180deg,#c0392b,#962d22);">
+        <span id="알림모달_제목">입력 확인</span>
+        <button class="팝업닫기버튼" onclick="알림모달닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:20px 24px 8px;">
+        <p style="font-size:13px; color:#555; margin-bottom:14px;">다음 항목을 입력해주세요.</p>
+        <ul id="알림모달_목록" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px;"></ul>
+      </div>
+      <div class="팝업하단">
+        <button class="버튼 파랑" onclick="알림모달닫기()" style="min-width:80px;">확인</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 공용 조회 팝업 -->
   <div id="조회팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="팝업배경클릭(event)">
     <div class="팝업창">

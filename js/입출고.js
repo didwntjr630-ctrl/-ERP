@@ -261,7 +261,7 @@ async function 저장하기() {
   if (!선택된담당자)  미입력.push('담당자');
 
   if (미입력.length > 0) {
-    alert('다음 항목이 입력되지 않았습니다:\n\n' + 미입력.map(function(f) { return '  • ' + f; }).join('\n'));
+    알림모달표시(미입력);
     return;
   }
 
@@ -889,6 +889,23 @@ function 폼엔터핸들러(event, 현재id) {
   if (다음id === '출발공정') 공정팝업열기('출발');
   else if (다음id === '도착공정') 공정팝업열기('도착');
   else if (다음id === '담당자입력') 담당자조회팝업열기();
+}
+
+/* ── 알림 모달 ── */
+function 알림모달표시(항목목록) {
+  var ul = document.getElementById('알림모달_목록');
+  ul.innerHTML = '';
+  항목목록.forEach(function(항목) {
+    var li = document.createElement('li');
+    li.style.cssText = 'display:flex; align-items:center; gap:10px; background:#fff5f5; border:1px solid #f5c6cb; border-radius:6px; padding:8px 12px; font-size:13px; color:#c0392b; font-weight:bold;';
+    li.innerHTML = '<span style="font-size:15px;">⚠</span>' + 항목;
+    ul.appendChild(li);
+  });
+  document.getElementById('알림모달_오버레이').style.display = 'flex';
+}
+
+function 알림모달닫기() {
+  document.getElementById('알림모달_오버레이').style.display = 'none';
 }
 
 /* ── 알림 ── */
