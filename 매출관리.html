@@ -151,7 +151,7 @@
               <th>품명</th>
               <th>완료공정</th>
               <th>규격</th>
-              <th>LOT No.</th>
+              <th>단가</th>
               <th>수량</th>
               <th>공급가액</th>
               <th>VAT포함 금액</th>
@@ -371,37 +371,35 @@
       }
 
       바디.innerHTML = '';
+      var 총공급가액 = 0, 총VAT포함 = 0;
       목록.forEach(function(항목) {
         var 수량 = Number(항목.출고수량) || 0;
         총수량 += 수량;
+        var 품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; });
+        var 단가 = 품목 ? (품목.단가 || 0) : 0;
+        var 공급가액 = 단가 * 수량;
+        var vat포함 = Math.round(공급가액 * 1.1);
+        총공급가액 += 공급가액;
+        총VAT포함  += vat포함;
         var 행 = document.createElement('tr');
         행.innerHTML =
           '<td>' + (항목.출고일자 || '') + '</td>' +
           '<td style="text-align:left;">' + (항목.품명 || '') + '</td>' +
           '<td style="color:#27ae60; font-weight:bold;">' + APP_CONFIG.매출고정값.완료공정 + '</td>' +
           '<td style="color:#666;">' + 규격결정(항목.품명) + '</td>' +
-          '<td>' + (항목['lot번호'] || '') + '</td>' +
+          '<td style="text-align:right;">' + 단가.toLocaleString() + ' 원</td>' +
           '<td style="font-weight:bold;">' + 수량.toLocaleString() + ' EA</td>' +
-          '<td style="padding:4px 6px;"><input type="number" class="공급가액입력" value="0" min="0" ' +
-            'style="width:110px; text-align:right; border:1px solid #c0cfe0; border-radius:3px; padding:3px 6px; font-size:12px; font-family:inherit;" ' +
-            'oninput="VAT자동계산(this)"> 원</td>' +
-          '<td class="vat포함셀" style="font-weight:bold; color:#2a6496; text-align:right;">0 원</td>' +
+          '<td style="text-align:right;">' + 공급가액.toLocaleString() + ' 원</td>' +
+          '<td style="font-weight:bold; color:#2a6496; text-align:right;">' + vat포함.toLocaleString() + ' 원</td>' +
           '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="매출삭제(' + 항목.id + ')">삭제</button></td>';
         바디.appendChild(행);
       });
 
       document.getElementById('합계건수').textContent = 목록.length + ' 건';
       document.getElementById('합계수량').textContent = 총수량.toLocaleString() + ' EA';
+      document.getElementById('합계공급가액').textContent = 총공급가액.toLocaleString() + ' 원';
+      document.getElementById('합계VAT포함').textContent = 총VAT포함.toLocaleString() + ' 원';
       document.getElementById('검색결과안내').innerHTML = '검색 결과: <span class="결과강조">' + 목록.length + '건</span>';
-      합계갱신();
-    }
-
-    function VAT자동계산(input) {
-      var 행 = input.closest('tr');
-      var 공급가액 = Number(input.value) || 0;
-      var vat포함 = Math.round(공급가액 * 1.1);
-      행.querySelector('.vat포함셀').textContent = vat포함.toLocaleString() + ' 원';
-      합계갱신();
     }
 
     function 합계갱신() {
