@@ -268,6 +268,14 @@
       });
     }
 
+    function 규격결정(품명) {
+      var 규칙 = APP_CONFIG.매출고정값.규격규칙;
+      for (var i = 0; i < 규칙.length; i++) {
+        if ((품명 || '').toUpperCase().includes(규칙[i].품명포함)) return 규칙[i].규격;
+      }
+      return APP_CONFIG.매출고정값.규격기본;
+    }
+
     function 납품처팝업열기() {
       조회팝업열기({
         제목: '납품처 조회',
@@ -362,7 +370,7 @@
           '<td>' + (항목.출고일자 || '') + '</td>' +
           '<td style="text-align:left;">' + (항목.품명 || '') + '</td>' +
           '<td style="color:#27ae60; font-weight:bold;">' + APP_CONFIG.매출고정값.완료공정 + '</td>' +
-          '<td style="color:#666;">' + APP_CONFIG.매출고정값.규격 + '</td>' +
+          '<td style="color:#666;">' + 규격결정(항목.품명) + '</td>' +
           '<td>' + (항목['lot번호'] || '') + '</td>' +
           '<td style="font-weight:bold;">' + 수량.toLocaleString() + ' EA</td>' +
           '<td style="padding:4px 6px;"><input type="number" class="공급가액입력" value="0" min="0" ' +
