@@ -400,7 +400,7 @@
     </div>
   </div>
 
-  <div class="copyright">Copyright (C) 삼양이엔지. All Rights Reserved.</div>
+  <div class="copyright" id="copyright"></div>
 
   <script src="js/config.js"></script>
   <script src="js/data.js"></script>
@@ -412,6 +412,7 @@
     document.getElementById('brand-sub').textContent = APP_CONFIG.부제;
     document.getElementById('company-name').textContent = APP_CONFIG.회사명;
     document.getElementById('admin-info').textContent = '서버관리자 : ' + APP_CONFIG.관리자;
+    document.getElementById('copyright').textContent = 'Copyright (C) ' + APP_CONFIG.회사명 + '. All Rights Reserved.';
     document.title = APP_CONFIG.시스템명 + ' - 로그인';
 
     // 이미 로그인된 경우 바로 이동

@@ -9,9 +9,9 @@
 
   <!-- 상단 메뉴바 -->
   <div class="메뉴바">
-    <a href="../index.html" class="회사명">
-      <span class="회사명_메인">삼양ERP</span>
-      <span class="회사명_부제">Challenge</span>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
     </a>
     <nav>
       <a href="입출고등록_테스트.html" class="활성">입출고 등록</a>
@@ -91,89 +91,95 @@
 
       <!-- 1행: 품명 / 일자 -->
       <div class="폼행">
-        <div class="입력그룹" style="flex:3; min-width:220px;">
-          <label for="품명">품명 <span style="color:#888; font-weight:normal;">(품명 또는 품번으로 검색)</span></label>
+        <div class="입력그룹" style="flex:1.5; min-width:160px;">
+          <label for="품명">품명 <span style="color:#888; font-weight:normal;">(품명 또는 품번)</span></label>
           <div class="자동완성감싸기" id="품명감싸기">
             <div class="품명입력행">
-              <input type="text" id="품명" placeholder="예) 기아 45mm 또는 013" oninput="품명입력시()" autocomplete="off">
+              <input type="text" id="품명" placeholder="품명 또는 품번" oninput="품명입력시()" autocomplete="off"
+                     onkeydown="폼엔터핸들러(event,'품명')">
               <button class="돋보기버튼" onclick="품목조회팝업열기()" title="품목 목록 조회">🔍</button>
             </div>
             <ul id="품명드롭다운" class="자동완성목록" style="display:none;"></ul>
           </div>
           <div class="품번표시" id="품명품번표시"></div>
         </div>
-        <div class="입력그룹">
+        <div class="입력그룹" style="flex:0 0 130px;">
           <label for="출고일자">일자</label>
-          <input type="date" id="출고일자">
+          <input type="date" id="출고일자" onkeydown="폼엔터핸들러(event,'출고일자')">
         </div>
         <div class="입력그룹 lot노">
           <label for="lot번호">LOT No. <span style="color:#888; font-weight:normal;">(더블클릭 검색)</span></label>
-          <input type="text" id="lot번호" placeholder="더블클릭 또는 직접 입력" ondblclick="lot팝업열기()">
+          <input type="text" id="lot번호" placeholder="더블클릭 또는 직접 입력" ondblclick="lot팝업열기()"
+                 onkeydown="폼엔터핸들러(event,'lot번호')">
         </div>
       </div>
 
       <!-- 2행: 출발공정 + 입고수량 → 도착공정 + 출고수량 + 불량수량 -->
       <div class="폼행 공정흐름행">
         <div class="입력그룹">
-          <label for="출발공정">출발 공정 <span style="color:#888; font-weight:normal;">(어디서)</span></label>
-          <select id="출발공정" onchange="잔량미리보기()">
-            <option value="">선택</option>
-            <option value="외부(납품)">외부 (납품)</option>
-            <option value="수입검사">수입검사</option>
-            <option value="헤어라인">헤어라인</option>
-            <option value="아노다이징">아노다이징</option>
-            <option value="공정검사">공정검사</option>
-            <option value="출하검사">출하검사</option>
-          </select>
+          <label for="출발공정">출발 공정 <span style="color:#888; font-weight:normal;">(더블클릭 선택)</span></label>
+          <input type="text" id="출발공정" readonly placeholder="더블클릭하여 선택"
+                 ondblclick="공정팝업열기('출발')" style="cursor:pointer; background:#f9fbff;"
+                 onkeydown="폼엔터핸들러(event,'출발공정')">
         </div>
 
         <div class="입력그룹">
-          <label for="입고수량">입고수량 <span style="color:#2a6496; font-weight:normal;">(받은 개수)</span></label>
-          <input type="number" id="입고수량" placeholder="0" min="0" oninput="잔량미리보기()">
+          <label for="입고수량">입고수량</label>
+          <div class="수량행">
+            <input type="number" id="입고수량" placeholder="0" min="0" oninput="잔량미리보기()"
+                   onkeydown="폼엔터핸들러(event,'입고수량')">
+            <span class="단위">EA</span>
+          </div>
         </div>
 
         <div class="공정화살표">→</div>
 
         <div class="입력그룹">
-          <label for="도착공정">도착 공정 <span style="color:#888; font-weight:normal;">(어디로)</span></label>
-          <select id="도착공정" onchange="잔량미리보기()">
-            <option value="">선택 (생략 가능)</option>
-            <option value="수입검사">수입검사</option>
-            <option value="헤어라인">헤어라인</option>
-            <option value="아노다이징">아노다이징</option>
-            <option value="공정검사">공정검사</option>
-            <option value="출하검사">출하검사</option>
-            <option value="외부(출하)">외부 (출하)</option>
-          </select>
+          <label for="도착공정">도착 공정 <span style="color:#888; font-weight:normal;">(더블클릭 선택)</span></label>
+          <input type="text" id="도착공정" readonly placeholder="더블클릭하여 선택"
+                 ondblclick="공정팝업열기('도착')" style="cursor:pointer; background:#f9fbff;"
+                 onkeydown="폼엔터핸들러(event,'도착공정')">
         </div>
 
         <div class="입력그룹">
-          <label for="출고수량">출고수량 <span style="color:#27ae60; font-weight:normal;">(보낸 개수)</span></label>
-          <input type="number" id="출고수량" placeholder="0" min="0" oninput="잔량미리보기()">
+          <label for="출고수량">출고수량</label>
+          <div class="수량행">
+            <input type="number" id="출고수량" placeholder="0" min="0" oninput="잔량미리보기()"
+                   onkeydown="폼엔터핸들러(event,'출고수량')">
+            <span class="단위">EA</span>
+          </div>
         </div>
 
-        <div class="입력그룹">
+        <div class="입력그룹" id="불량수량그룹" style="flex:0 0 130px;">
           <label for="불량수량">불량수량</label>
-          <input type="number" id="불량수량" placeholder="0" min="0" oninput="잔량미리보기()">
+          <div class="수량행">
+            <input type="number" id="불량수량" placeholder="0" min="0" oninput="잔량미리보기()"
+                   onkeydown="폼엔터핸들러(event,'불량수량')">
+            <span class="단위">EA</span>
+          </div>
         </div>
 
-        <div class="입력그룹" style="flex:0; min-width:110px;">
+        <div class="입력그룹" id="잔량그룹" style="flex:0 0 180px; margin-left:8px;">
           <label style="color:#888;">잔량</label>
-          <div id="잔량표시" class="순이동량">-</div>
+          <div class="수량행">
+            <div id="잔량표시" class="순이동량">-</div>
+            <span class="단위">EA</span>
+          </div>
         </div>
       </div>
 
       <!-- 3행: 담당자 / 저장 -->
       <div class="폼행" style="align-items:flex-end; margin-top:4px;">
-        <div class="입력그룹">
+        <div class="입력그룹" style="flex:0 0 180px;">
           <label>담당자</label>
           <div class="품명입력행">
-            <input type="text" id="담당자입력" placeholder="클릭하여 선택" readonly onclick="담당자조회팝업열기()" style="cursor:pointer;">
+            <input type="text" id="담당자입력" placeholder="클릭하여 선택" readonly onclick="담당자조회팝업열기()" style="cursor:pointer;"
+                   onkeydown="폼엔터핸들러(event,'담당자입력')">
             <button class="돋보기버튼" onclick="담당자조회팝업열기()" title="담당자 조회">🔍</button>
           </div>
           <div class="품번표시" id="담당자코드표시"></div>
         </div>
-        <div style="display:flex; gap:8px; padding-bottom:1px;">
+        <div style="display:flex; gap:8px; padding-bottom:1px; margin-left:auto;">
           <button id="저장버튼" class="버튼 초록" onclick="저장하기()">저장</button>
           <button class="버튼 회색" onclick="폼초기화()">초기화</button>
         </div>
@@ -188,11 +194,15 @@
         <div id="공정뷰안내" style="display:none; font-size:12px; color:#666; background:#f0f6fb; border:1px solid #c5d8ed; border-radius:4px; padding:4px 10px;">
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
+        <div id="확정버튼영역" style="display:none; margin-left:auto;">
+          <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold;">확 정</button>
+        </div>
       </div>
       <div class="테이블감싸기">
         <table>
           <thead>
             <tr>
+              <th style="width:36px; text-align:center;"><input type="checkbox" id="전체선택체크" onclick="전체선택토글()" title="전체 선택"></th>
               <th>품명</th>
               <th>품번</th>
               <th>등록번호</th>
@@ -280,6 +290,11 @@
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/입출고.js"></script>
-  <script>세션체크();</script>
+  <script>
+    세션체크();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+    document.title = APP_CONFIG.시스템명 + ' - 입출고 등록';
+  </script>
 </body>
 </html>

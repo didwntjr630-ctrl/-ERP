@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 매출관리</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .필터행 {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .필터행 label { font-size: 12px; color: #2a6496; font-weight: bold; }
+    .필터행 input, .필터행 select {
+      border: 1px solid #c0cfe0;
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-size: 13px;
+      font-family: inherit;
+      height: 30px;
+    }
+    .매출합계 {
+      display: flex;
+      gap: 20px;
+      background: #eaf3fb;
+      border: 1px solid #b8d4ea;
+      border-radius: 6px;
+      padding: 10px 20px;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+    .합계항목 { display: flex; flex-direction: column; gap: 2px; }
+    .합계항목 .합계라벨 { font-size: 11px; color: #666; }
+    .합계항목 .합계값 { font-size: 18px; font-weight: bold; color: #1a4a7a; }
+    .메뉴바 .우측정보 {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #cce0f5;
+    }
+    .메뉴바 .우측정보 .사용자명 { opacity: 0.85; }
+    .메뉴바 .우측정보 button {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .메뉴바 .우측정보 button:hover { background: rgba(255,255,255,0.22); }
+  </style>
+</head>
+<body>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a href="입출고등록_테스트.html">입출고 등록</a>
+      <a class="활성">매출 관리</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+    <div id="알림박스" class="알림"></div>
+
+    <!-- 검색 카드 -->
+    <div class="카드 검색카드">
+      <div class="검색카드제목">매출 조회</div>
+      <div class="검색행">
+
+        <div class="검색항목 검색항목_기간">
+          <label>조회 기간</label>
+          <div class="기간입력행">
+            <input type="date" id="검색_시작일">
+            <span class="기간구분">~</span>
+            <input type="date" id="검색_종료일">
+          </div>
+        </div>
+
+        <div class="검색항목" style="flex:1;">
+          <label>품명 / 품번</label>
+          <div class="검색입력행">
+            <input type="text" id="검색_품명" placeholder="품명 또는 품번" onkeydown="if(event.key==='Enter') 검색조회()">
+            <button class="돋보기버튼 검색용" onclick="검색_품목팝업열기()" title="품목 조회">🔍</button>
+          </div>
+        </div>
+
+        <div class="검색항목" style="flex:0 0 180px;">
+          <label>납품처</label>
+          <div class="검색입력행">
+            <input type="text" id="검색_납품처" placeholder="전체" onkeydown="if(event.key==='Enter') 검색조회()">
+            <button class="돋보기버튼 검색용" onclick="납품처팝업열기()" title="납품처 조회">🔍</button>
+          </div>
+        </div>
+
+        <div class="검색항목" style="flex:0; align-self:flex-end;">
+          <div style="display:flex; gap:8px;">
+            <button class="버튼 파랑" onclick="검색조회()">조회</button>
+            <button class="버튼 회색" onclick="전체초기화()">전체보기</button>
+          </div>
+        </div>
+
+      </div>
+      <div id="검색결과안내" class="검색결과안내"></div>
+    </div>
+
+    <!-- 매출 목록 카드 -->
+    <div class="카드">
+      <div class="페이지제목" style="font-size:15px;">매출 목록</div>
+
+      <!-- 합계 -->
+      <div class="매출합계">
+        <div class="합계항목">
+          <span class="합계라벨">총 건수</span>
+          <span class="합계값" id="합계건수">0</span>
+        </div>
+        <div class="합계항목">
+          <span class="합계라벨">총 수량</span>
+          <span class="합계값" id="합계수량">0 EA</span>
+        </div>
+        <div class="합계항목">
+          <span class="합계라벨">총 공급가액</span>
+          <span class="합계값" id="합계공급가액" style="font-size:15px;">0 원</span>
+        </div>
+        <div class="합계항목">
+          <span class="합계라벨">VAT포함 합계</span>
+          <span class="합계값" id="합계VAT포함" style="font-size:15px; color:#e74c3c;">0 원</span>
+        </div>
+      </div>
+
+      <!-- 목록 테이블 -->
+      <div class="테이블감싸기">
+        <table>
+          <thead>
+            <tr>
+              <th>출고일자</th>
+              <th>품명</th>
+              <th>완료공정</th>
+              <th>규격</th>
+              <th>LOT No.</th>
+              <th>수량</th>
+              <th>공급가액</th>
+              <th>VAT포함 금액</th>
+            </tr>
+          </thead>
+          <tbody id="매출테이블바디">
+            <tr><td colspan="8" class="빈목록안내">데이터를 불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공용 조회 팝업 -->
+  <div id="조회팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="팝업배경클릭(event)">
+    <div class="팝업창">
+      <div class="팝업헤더">
+        <span id="조회팝업_제목">조회</span>
+        <button class="팝업닫기버튼" onclick="조회팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용">
+        <input type="text" id="조회팝업_검색" class="팝업검색입력" placeholder="검색..." oninput="조회팝업검색필터()">
+        <div class="팝업테이블감싸기">
+          <table>
+            <thead><tr id="조회팝업_헤더행"></tr></thead>
+            <tbody id="조회팝업_테이블바디"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="팝업하단">
+        <button class="버튼 회색" onclick="조회팝업닫기()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    세션체크();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+    document.title = APP_CONFIG.시스템명 + ' - 매출관리';
+    var 세션 = 현재세션();
+    if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+
+    var 전체데이터 = [];
+
+    /* ── 공용 조회 팝업 ── */
+    var 현재팝업설정  = null;
+    var 원본팝업데이터 = [];
+
+    function 조회팝업열기(설정) {
+      현재팝업설정   = 설정;
+      원본팝업데이터 = 설정.데이터;
+      document.getElementById('조회팝업_제목').textContent = 설정.제목;
+      document.getElementById('조회팝업_검색').value = '';
+      document.getElementById('조회팝업_검색').placeholder = 설정.검색힌트 || '검색...';
+      var 헤더 = document.getElementById('조회팝업_헤더행');
+      헤더.innerHTML = '<th style="width:36px;"></th>';
+      설정.열목록.forEach(function(열) {
+        var th = document.createElement('th'); th.textContent = 열.제목; 헤더.appendChild(th);
+      });
+      조회팝업테이블채우기(원본팝업데이터);
+      document.getElementById('조회팝업_오버레이').style.display = 'flex';
+      setTimeout(function() { document.getElementById('조회팝업_검색').focus(); }, 50);
+    }
+
+    function 조회팝업닫기() { document.getElementById('조회팝업_오버레이').style.display = 'none'; }
+
+    function 팝업배경클릭(e) {
+      if (e.target === document.getElementById('조회팝업_오버레이')) 조회팝업닫기();
+    }
+
+    function 조회팝업검색필터() {
+      var 검색어 = document.getElementById('조회팝업_검색').value.trim().toLowerCase();
+      if (!검색어) { 조회팝업테이블채우기(원본팝업데이터); return; }
+      var 결과 = 원본팝업데이터.filter(function(항목) {
+        return 현재팝업설정.열목록.some(function(열) {
+          return String(항목[열.필드]||'').toLowerCase().includes(검색어);
+        });
+      });
+      조회팝업테이블채우기(결과);
+    }
+
+    function 조회팝업테이블채우기(목록) {
+      var 바디 = document.getElementById('조회팝업_테이블바디');
+      바디.innerHTML = '';
+      if (목록.length === 0) {
+        var 열수 = (현재팝업설정 ? 현재팝업설정.열목록.length : 3) + 1;
+        바디.innerHTML = '<tr><td colspan="' + 열수 + '" class="빈목록안내">검색 결과가 없습니다.</td></tr>';
+        return;
+      }
+      목록.forEach(function(항목) {
+        var 행 = document.createElement('tr');
+        var 체크td = document.createElement('td');
+        var 체크 = document.createElement('input'); 체크.type = 'checkbox';
+        체크td.appendChild(체크); 행.appendChild(체크td);
+        현재팝업설정.열목록.forEach(function(열) {
+          var td = document.createElement('td');
+          td.textContent = 항목[열.필드] !== undefined ? 항목[열.필드] : '';
+          행.appendChild(td);
+        });
+        행.addEventListener('click', function() {
+          document.querySelectorAll('#조회팝업_테이블바디 input[type=checkbox]').forEach(function(c) { c.checked = false; });
+          document.querySelectorAll('#조회팝업_테이블바디 tr').forEach(function(r) { r.classList.remove('팝업선택행'); });
+          체크.checked = true; 행.classList.add('팝업선택행');
+          현재팝업설정.선택시(항목);
+          조회팝업닫기();
+        });
+        바디.appendChild(행);
+      });
+    }
+
+    function 납품처팝업열기() {
+      조회팝업열기({
+        제목: '납품처 조회',
+        검색힌트: '업체명 또는 코드 검색...',
+        데이터: APP_CONFIG.납품처목록,
+        열목록: [{ 제목: '코드', 필드: '코드' }, { 제목: '업체명', 필드: '업체명' }],
+        선택시: function(항목) {
+          document.getElementById('검색_납품처').value = 항목.업체명;
+          필터적용();
+        }
+      });
+    }
+
+    function 검색_품목팝업열기() {
+      조회팝업열기({
+        제목: '품목 조회',
+        검색힌트: '품명 또는 품번 검색...',
+        데이터: 품목목록,
+        열목록: [{ 제목: '품번', 필드: '품번' }, { 제목: '품명', 필드: '품명' }, { 제목: '규격', 필드: '규격' }],
+        선택시: function(항목) {
+          document.getElementById('검색_품명').value = 항목.품명;
+          필터적용();
+        }
+      });
+    }
+
+    function 날짜기본값() {
+      var d = new Date();
+      var y = d.getFullYear();
+      var m = String(d.getMonth()+1).padStart(2,'0');
+      var day = String(d.getDate()).padStart(2,'0');
+      document.getElementById('검색_시작일').value = y + '-' + m + '-01';
+      document.getElementById('검색_종료일').value = y + '-' + m + '-' + day;
+    }
+
+    function 필터적용() {
+      var 시작 = document.getElementById('검색_시작일').value;
+      var 종료 = document.getElementById('검색_종료일').value;
+      var 품명 = document.getElementById('검색_품명').value.trim().toLowerCase();
+
+      var 납품처 = document.getElementById('검색_납품처').value;
+
+      var 결과 = 전체데이터.slice();
+      if (시작) 결과 = 결과.filter(function(h) { return (h.출고일자||'') >= 시작; });
+      if (종료) 결과 = 결과.filter(function(h) { return (h.출고일자||'') <= 종료; });
+      if (품명) 결과 = 결과.filter(function(h) { return (h.품명||'').toLowerCase().includes(품명) || (h.품번||'').toLowerCase().includes(품명); });
+      if (납품처) 결과 = 결과.filter(function(h) { return (h.도착공정||'').includes(납품처); });
+
+      테이블그리기(결과);
+    }
+
+    function 검색조회() {
+      필터적용();
+    }
+
+    function 전체초기화() {
+      날짜기본값();
+      document.getElementById('검색_품명').value = '';
+      document.getElementById('검색_납품처').value = '';
+      테이블그리기(전체데이터);
+    }
+
+    async function 데이터로드() {
+      var { data, error } = await 수파베이스
+        .from('매출기록')
+        .select('*')
+        .order('확정일시', { ascending: false });
+      전체데이터 = error ? [] : (data || []);
+      필터적용();
+    }
+
+    function 테이블그리기(목록) {
+      var 바디 = document.getElementById('매출테이블바디');
+      var 총수량 = 0;
+
+      if (목록.length === 0) {
+        바디.innerHTML = '<tr><td colspan="8" class="빈목록안내">데이터가 없습니다.</td></tr>';
+        document.getElementById('합계건수').textContent = '0';
+        document.getElementById('합계수량').textContent = '0 EA';
+        document.getElementById('합계공급가액').textContent = '0 원';
+        document.getElementById('합계VAT포함').textContent = '0 원';
+        document.getElementById('검색결과안내').innerHTML = '검색 결과: <span class="결과강조">0건</span>';
+        return;
+      }
+
+      바디.innerHTML = '';
+      목록.forEach(function(항목) {
+        var 수량 = Number(항목.출고수량) || 0;
+        총수량 += 수량;
+        var 행 = document.createElement('tr');
+        행.innerHTML =
+          '<td>' + (항목.출고일자 || '') + '</td>' +
+          '<td style="text-align:left;">' + (항목.품명 || '') + '</td>' +
+          '<td style="color:#27ae60; font-weight:bold;">' + APP_CONFIG.매출고정값.완료공정 + '</td>' +
+          '<td style="color:#666;">' + APP_CONFIG.매출고정값.규격 + '</td>' +
+          '<td>' + (항목['lot번호'] || '') + '</td>' +
+          '<td style="font-weight:bold;">' + 수량.toLocaleString() + ' EA</td>' +
+          '<td style="padding:4px 6px;"><input type="number" class="공급가액입력" value="0" min="0" ' +
+            'style="width:110px; text-align:right; border:1px solid #c0cfe0; border-radius:3px; padding:3px 6px; font-size:12px; font-family:inherit;" ' +
+            'oninput="VAT자동계산(this)"> 원</td>' +
+          '<td class="vat포함셀" style="font-weight:bold; color:#2a6496; text-align:right;">0 원</td>';
+        바디.appendChild(행);
+      });
+
+      document.getElementById('합계건수').textContent = 목록.length + ' 건';
+      document.getElementById('합계수량').textContent = 총수량.toLocaleString() + ' EA';
+      document.getElementById('검색결과안내').innerHTML = '검색 결과: <span class="결과강조">' + 목록.length + '건</span>';
+      합계갱신();
+    }
+
+    function VAT자동계산(input) {
+      var 행 = input.closest('tr');
+      var 공급가액 = Number(input.value) || 0;
+      var vat포함 = Math.round(공급가액 * 1.1);
+      행.querySelector('.vat포함셀').textContent = vat포함.toLocaleString() + ' 원';
+      합계갱신();
+    }
+
+    function 합계갱신() {
+      var 총공급 = 0, 총VAT = 0;
+      document.querySelectorAll('.공급가액입력').forEach(function(input) {
+        var 공급 = Number(input.value) || 0;
+        총공급 += 공급;
+        총VAT  += Math.round(공급 * 1.1);
+      });
+      document.getElementById('합계공급가액').textContent = 총공급.toLocaleString() + ' 원';
+      document.getElementById('합계VAT포함').textContent  = 총VAT.toLocaleString() + ' 원';
+    }
+
+    날짜기본값();
+    데이터로드();
+  </script>
+</body>
+</html>
