@@ -155,6 +155,7 @@
               <th>수량</th>
               <th>공급가액</th>
               <th>VAT포함 금액</th>
+              <th>조치</th>
             </tr>
           </thead>
           <tbody id="매출테이블바디">
@@ -268,6 +269,14 @@
       });
     }
 
+    async function 매출삭제(id) {
+      if (!confirm('이 매출 기록을 삭제하시겠습니까?')) return;
+      var { error } = await 수파베이스.from('매출기록').delete().eq('id', id);
+      if (error) { alert('삭제 실패: ' + error.message); return; }
+      전체데이터 = 전체데이터.filter(function(h) { return h.id !== id; });
+      필터적용();
+    }
+
     function 규격결정(품명) {
       var 규칙 = APP_CONFIG.매출고정값.규격규칙;
       for (var i = 0; i < 규칙.length; i++) {
@@ -352,7 +361,7 @@
       var 총수량 = 0;
 
       if (목록.length === 0) {
-        바디.innerHTML = '<tr><td colspan="8" class="빈목록안내">데이터가 없습니다.</td></tr>';
+        바디.innerHTML = '<tr><td colspan="9" class="빈목록안내">데이터가 없습니다.</td></tr>';
         document.getElementById('합계건수').textContent = '0';
         document.getElementById('합계수량').textContent = '0 EA';
         document.getElementById('합계공급가액').textContent = '0 원';
@@ -376,7 +385,8 @@
           '<td style="padding:4px 6px;"><input type="number" class="공급가액입력" value="0" min="0" ' +
             'style="width:110px; text-align:right; border:1px solid #c0cfe0; border-radius:3px; padding:3px 6px; font-size:12px; font-family:inherit;" ' +
             'oninput="VAT자동계산(this)"> 원</td>' +
-          '<td class="vat포함셀" style="font-weight:bold; color:#2a6496; text-align:right;">0 원</td>';
+          '<td class="vat포함셀" style="font-weight:bold; color:#2a6496; text-align:right;">0 원</td>' +
+          '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="매출삭제(' + 항목.id + ')">삭제</button></td>';
         바디.appendChild(행);
       });
 
