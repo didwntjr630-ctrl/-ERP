@@ -120,7 +120,12 @@
 
     <!-- 매출 목록 카드 -->
     <div class="카드">
-      <div class="페이지제목" style="font-size:15px;">매출 목록</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div class="페이지제목" style="font-size:15px; margin-bottom:0;">매출 목록</div>
+        <button class="버튼 회색" onclick="단가수정팝업열기()" style="font-size:12px; padding:5px 14px; display:flex; align-items:center; gap:5px;">
+          <span style="font-size:14px;">✏️</span> 단가 수정
+        </button>
+      </div>
 
       <!-- 합계 -->
       <div class="매출합계">
@@ -162,6 +167,34 @@
             <tr><td colspan="8" class="빈목록안내">데이터를 불러오는 중...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 단가 수정 팝업 -->
+  <div id="단가수정_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this) 단가수정팝업닫기()">
+    <div class="팝업창" style="max-width:480px;">
+      <div class="팝업헤더">
+        <span>단가 수정</span>
+        <button class="팝업닫기버튼" onclick="단가수정팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:16px;">
+        <div class="팝업테이블감싸기">
+          <table>
+            <thead>
+              <tr>
+                <th>품번</th>
+                <th>품명</th>
+                <th>단가 (원)</th>
+              </tr>
+            </thead>
+            <tbody id="단가수정_테이블바디"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="팝업하단">
+        <button class="버튼 초록" onclick="단가저장()">저장</button>
+        <button class="버튼 회색" onclick="단가수정팝업닫기()">취소</button>
       </div>
     </div>
   </div>
@@ -274,6 +307,51 @@
       var { error } = await 수파베이스.from('매출기록').delete().eq('id', id);
       if (error) { alert('삭제 실패: ' + error.message); return; }
       전체데이터 = 전체데이터.filter(function(h) { return h.id !== id; });
+      필터적용();
+    }
+
+    /* ── 단가 관리 ── */
+    var 단가저장소키 = 'erp_단가';
+
+    function 저장된단가적용() {
+      var 저장 = localStorage.getItem(단가저장소키);
+      if (!저장) return;
+      var 맵 = JSON.parse(저장);
+      품목목록.forEach(function(p) {
+        if (맵[p.품번] !== undefined) p.단가 = 맵[p.품번];
+      });
+    }
+
+    function 단가수정팝업열기() {
+      var 바디 = document.getElementById('단가수정_테이블바디');
+      바디.innerHTML = '';
+      품목목록.forEach(function(p) {
+        var 행 = document.createElement('tr');
+        행.innerHTML =
+          '<td style="color:#666;">' + p.품번 + '</td>' +
+          '<td style="text-align:left;">' + p.품명 + '</td>' +
+          '<td><input type="number" data-품번="' + p.품번 + '" value="' + (p.단가 || 0) + '" min="0" ' +
+            'style="width:100px; text-align:right; border:1px solid #c0cfe0; border-radius:3px; padding:4px 8px; font-size:13px; font-family:inherit;"></td>';
+        바디.appendChild(행);
+      });
+      document.getElementById('단가수정_오버레이').style.display = 'flex';
+    }
+
+    function 단가수정팝업닫기() {
+      document.getElementById('단가수정_오버레이').style.display = 'none';
+    }
+
+    function 단가저장() {
+      var 맵 = {};
+      document.querySelectorAll('#단가수정_테이블바디 input').forEach(function(input) {
+        var 품번 = input.dataset.품번;
+        var 단가 = Number(input.value) || 0;
+        맵[품번] = 단가;
+        var 품목 = 품목목록.find(function(p) { return p.품번 === 품번; });
+        if (품목) 품목.단가 = 단가;
+      });
+      localStorage.setItem(단가저장소키, JSON.stringify(맵));
+      단가수정팝업닫기();
       필터적용();
     }
 
@@ -414,6 +492,7 @@
     }
 
     날짜기본값();
+    저장된단가적용();
     데이터로드();
   </script>
 </body>
