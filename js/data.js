@@ -12,7 +12,6 @@ var 품목목록 = [
   { 품명: 'H-EMBLEM SILVER(CN7 PE)', 품번: '008', 규격: '' },
   { 품명: 'H-EMBLEM BLACK(CN7 PE)',  품번: '011', 규격: '' },
   { 품명: 'BEZEL(GN7)',              품번: '007', 규격: '' },
-  { 품명: '두산 BEZEL',              품번: '012', 규격: '' },
   { 품명: 'MX5 BEZEL SILVER',        품번: '016', 규격: '' },
   { 품명: 'MX5 BEZEL BLACK',         품번: '017', 규격: '' },
   { 품명: 'GENESIS EMBLEM',          품번: '018', 규격: '' },
