@@ -304,6 +304,17 @@
         </div>
       </div>
 
+      <!-- 관리자 (관리자 계정만 표시) -->
+      <div class="category-card" id="admin-card" style="display:none;">
+        <div class="category-header">관 리 자</div>
+        <div class="category-body">
+          <a class="menu-btn" href="admin.html">
+            계정 승인 관리
+            <span class="icon badge-new">관리자</span>
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -321,14 +332,7 @@
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
       if (세션.관리자) {
-        var adminCard = document.createElement('div');
-        adminCard.className = 'category-card';
-        adminCard.innerHTML =
-          '<div class="category-header">관 리 자</div>'
-          + '<div class="category-body">'
-          + '<a class="menu-btn" href="admin.html">계정 승인 관리 <span class="icon badge-new">관리자</span></a>'
-          + '</div>';
-        document.querySelector('.category-grid').appendChild(adminCard);
+        document.getElementById('admin-card').style.display = '';
       }
     }
   </script>
