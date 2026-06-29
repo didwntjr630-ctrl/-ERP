@@ -222,36 +222,41 @@
       </div>
     </div>
 
-    <!-- ④ 공정별 재고 현황 -->
+    <!-- ④ 출하 현황 -->
     <div class="카드">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-        <div class="페이지제목" style="font-size:15px; margin-bottom:0;">공정별 재고 현황</div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <label style="font-size:12px; color:#2a6496; font-weight:bold;">품명 필터</label>
-          <select id="재고현황_품명필터" onchange="공정별재고요약()" style="font-size:13px; padding:4px 8px; border:1px solid #c0cfe0; border-radius:3px; height:30px;">
-            <option value="">전체 품목</option>
-          </select>
-          <button class="버튼 파랑" style="height:30px; padding:0 12px; font-size:13px;" onclick="공정별재고요약()">새로고침</button>
+        <div class="페이지제목" style="font-size:15px; margin-bottom:0;">출하 현황</div>
+        <button class="버튼 파랑" style="height:30px; padding:0 12px; font-size:13px;" onclick="출하현황요약()">새로고침</button>
+      </div>
+      <!-- 요약 카드 -->
+      <div style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:120px; background:linear-gradient(135deg,#1a3a5c,#2a6496); border-radius:8px; padding:14px 18px; color:white; text-align:center;">
+          <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">출하 품목 수</div>
+          <div id="출하요약_품목수" style="font-size:24px; font-weight:bold;">-</div>
+        </div>
+        <div style="flex:1; min-width:120px; background:linear-gradient(135deg,#1a6644,#27ae60); border-radius:8px; padding:14px 18px; color:white; text-align:center;">
+          <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">총 출하 수량</div>
+          <div id="출하요약_총수량" style="font-size:24px; font-weight:bold;">-</div>
+        </div>
+        <div style="flex:1; min-width:120px; background:linear-gradient(135deg,#7b3f00,#e67e22); border-radius:8px; padding:14px 18px; color:white; text-align:center;">
+          <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">총 불량 수량</div>
+          <div id="출하요약_총불량" style="font-size:24px; font-weight:bold;">-</div>
         </div>
       </div>
-      <div class="재고현황설명">
-        💡 <b>출발공정</b>에서 이동수량은 <span style="color:#e74c3c;">출고</span>로 계산되고,
-        <b>도착공정</b>에 이동수량은 <span style="color:#2a6496;">입고</span>로 자동 반영됩니다.
-        불량은 출발공정의 재고에서 차감됩니다.
-      </div>
-      <div class="테이블감싸기" style="margin-top:12px;">
-        <table id="재고현황테이블">
+      <!-- 품목별 테이블 -->
+      <div class="테이블감싸기 스크롤">
+        <table id="출하현황테이블">
           <thead>
             <tr>
-              <th>공정</th>
-              <th style="color:#2a6496;">총 입고</th>
-              <th style="color:#e74c3c;">총 출고</th>
-              <th style="color:#e67e22;">총 불량</th>
-              <th style="background:#1a3a5c; color:white;">현재 재고</th>
+              <th>품명</th>
+              <th>품번</th>
+              <th style="color:#2a6496;">출하 건수</th>
+              <th style="color:#27ae60; font-weight:bold;">총 출하수량</th>
+              <th style="color:#e67e22;">총 불량수량</th>
             </tr>
           </thead>
-          <tbody id="재고현황테이블바디">
-            <tr><td colspan="5" class="빈목록안내">데이터를 등록하면 재고 현황이 표시됩니다.</td></tr>
+          <tbody id="출하현황테이블바디">
+            <tr><td colspan="5" class="빈목록안내">데이터를 등록하면 출하 현황이 표시됩니다.</td></tr>
           </tbody>
         </table>
       </div>

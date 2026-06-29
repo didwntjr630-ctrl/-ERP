@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
-  재고현황품명옵션채우기();
   await 공정뷰선택('출하검사');  // 출하검사 기본 선택
   폼임시저장복원();               // 이탈 전 작성 내용 복원
 
@@ -577,60 +576,59 @@ function 목록테이블그리기(목록) {
 /* ══════════════════════════════════════════
    공정별 재고 현황
 ══════════════════════════════════════════ */
-async function 공정별재고요약() {
+async function 출하현황요약() {
   var 전체 = await 데이터불러오기();
-  var 품명필터 = document.getElementById('재고현황_품명필터').value;
-  var 대상 = 품명필터
-    ? 전체.filter(function(h) { return h.품명 === 품명필터; })
-    : 전체;
+  var 출하데이터 = 전체.filter(function(h) { return h.공정 === '출하검사'; });
 
-  var 집계 = {};
-  공정순서.forEach(function(p) { 집계[p] = { 입고: 0, 출고: 0, 불량: 0 }; });
-
-  대상.forEach(function(h) {
-    var p = h.공정;
-    if (!p || !집계[p]) return;
-    집계[p].입고 += Number(h.입고수량) || 0;
-    if (h.완료여부 !== false) {
-      집계[p].출고 += Number(h.출고수량) || 0;
-      집계[p].불량 += Number(h.불량수량) || 0;
+  var 품목집계 = {};
+  출하데이터.forEach(function(h) {
+    var 키 = h.품명 || '';
+    if (!품목집계[키]) {
+      품목집계[키] = { 품번: h.품번 || '', 건수: 0, 출하: 0, 불량: 0 };
     }
+    품목집계[키].건수 += 1;
+    품목집계[키].출하 += Number(h.출고수량) || 0;
+    품목집계[키].불량 += Number(h.불량수량) || 0;
   });
 
-  var 바디 = document.getElementById('재고현황테이블바디');
-  바디.innerHTML = '';
-  var 있음 = false;
+  var 품목목록키 = Object.keys(품목집계).filter(function(k) { return k; });
+  var 총출하 = 품목목록키.reduce(function(s, k) { return s + 품목집계[k].출하; }, 0);
+  var 총불량 = 품목목록키.reduce(function(s, k) { return s + 품목집계[k].불량; }, 0);
 
-  공정순서.forEach(function(p) {
-    var d = 집계[p];
-    if (!d || (d.입고 === 0 && d.출고 === 0 && d.불량 === 0)) return;
-    있음 = true;
-    var 재고 = d.입고 - d.출고 - d.불량;
-    var 강조 = 현재작업공정 === p ? 'background:#e8f4fb;' : '';
+  document.getElementById('출하요약_품목수').textContent = 품목목록키.length;
+  document.getElementById('출하요약_총수량').textContent = 총출하.toLocaleString();
+  document.getElementById('출하요약_총불량').textContent = 총불량.toLocaleString();
+
+  var 바디 = document.getElementById('출하현황테이블바디');
+  바디.innerHTML = '';
+  if (품목목록키.length === 0) {
+    바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">데이터를 등록하면 출하 현황이 표시됩니다.</td></tr>';
+    return;
+  }
+
+  품목목록키.sort().forEach(function(키) {
+    var d = 품목집계[키];
     var 행 = document.createElement('tr');
-    행.style.cssText = 강조;
     행.innerHTML =
-      '<td style="font-weight:bold; color:#1a3a5c;">' + p + '</td>' +
-      '<td style="color:#2a6496;">' + d.입고 + '</td>' +
-      '<td style="color:#e74c3c;">' + d.출고 + '</td>' +
-      '<td style="color:#e67e22;">' + d.불량 + '</td>' +
-      '<td style="' + (재고 <= 0 ? 'color:#e74c3c;' : 'color:#2a6496;') + ' font-weight:bold;">' + 재고 + '</td>';
+      '<td style="font-weight:bold; color:#1a3a5c;">' + 키 + '</td>' +
+      '<td style="color:#555;">' + d.품번 + '</td>' +
+      '<td style="color:#2a6496; text-align:center;">' + d.건수 + '</td>' +
+      '<td style="color:#27ae60; font-weight:bold; text-align:right;">' + d.출하.toLocaleString() + '</td>' +
+      '<td style="color:#e67e22; text-align:right;">' + d.불량.toLocaleString() + '</td>';
     바디.appendChild(행);
   });
 
-  if (!있음) {
-    바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">데이터를 등록하면 재고 현황이 표시됩니다.</td></tr>';
-  }
+  var 합계행 = document.createElement('tr');
+  합계행.style.cssText = 'background:#f0f7ff; font-weight:bold; border-top:2px solid #b8d0e8;';
+  합계행.innerHTML =
+    '<td colspan="2" style="color:#1a3a5c;">합계</td>' +
+    '<td style="color:#2a6496; text-align:center;">' + 출하데이터.length + '</td>' +
+    '<td style="color:#27ae60; text-align:right;">' + 총출하.toLocaleString() + '</td>' +
+    '<td style="color:#e67e22; text-align:right;">' + 총불량.toLocaleString() + '</td>';
+  바디.appendChild(합계행);
 }
 
-function 재고현황품명옵션채우기() {
-  var sel = document.getElementById('재고현황_품명필터');
-  품목목록.forEach(function(p) {
-    var opt = document.createElement('option');
-    opt.value = p.품명; opt.textContent = p.품명;
-    sel.appendChild(opt);
-  });
-}
+async function 공정별재고요약() { await 출하현황요약(); }
 
 /* ══════════════════════════════════════════
    검색 조회
