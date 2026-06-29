@@ -346,8 +346,18 @@
       var 목록 = 전체데이터;
       if (!목록 || 목록.length === 0) { alert('발송할 매출 데이터가 없습니다.'); return; }
 
+      var 품목집계 = {};
+      목록.forEach(function(h) {
+        var 품목 = 품목목록.find(function(p) { return p.품명 === h.품명; });
+        var 단가 = 품목 ? (품목.단가 || 0) : 0;
+        var 수량 = Number(h.출고수량) || 0;
+        if (!품목집계[h.품명]) 품목집계[h.품명] = { 수량: 0, 공급: 0, 단가: 단가 };
+        품목집계[h.품명].수량 += 수량;
+        품목집계[h.품명].공급 += 단가 * 수량;
+      });
+
       var 총수량 = 목록.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
-      var 총공급 = 목록.reduce(function(s, h) { return s + (Number(h.출고수량) || 0) * (Number(h.단가) || 0); }, 0);
+      var 총공급 = Object.values(품목집계).reduce(function(s, d) { return s + d.공급; }, 0);
       var 총vat  = Math.round(총공급 * 1.1);
 
       var 제목 = '[' + APP_CONFIG.회사명 + '] 매출 현황 (' + new Date().toLocaleDateString('ko-KR') + ')';
@@ -359,13 +369,14 @@
       본문 += '총 공급가액: ' + 총공급.toLocaleString() + ' 원\n';
       본문 += 'VAT포함 합계: ' + 총vat.toLocaleString() + ' 원\n';
       본문 += '========================================\n\n';
-      본문 += '[ 상세 내역 ]\n';
-      목록.forEach(function(h, i) {
-        var 공급 = (Number(h.출고수량) || 0) * (Number(h.단가) || 0);
-        본문 += (i + 1) + '. ' + (h.출고일자 || '') + ' | ' + (h.품명 || '') +
-                ' | 수량: ' + (h.출고수량 || 0) + ' EA' +
-                ' | 단가: ' + (h.단가 || 0).toLocaleString() + '원' +
-                ' | 공급가: ' + 공급.toLocaleString() + '원\n';
+      본문 += '[ 품목별 내역 ]\n';
+      var 순번 = 1;
+      Object.keys(품목집계).sort().forEach(function(품명) {
+        var d = 품목집계[품명];
+        본문 += 순번++ + '. ' + 품명 +
+                ' | 단가: ' + d.단가.toLocaleString() + '원' +
+                ' | 총 수량: ' + d.수량.toLocaleString() + ' EA' +
+                ' | 총 공급가: ' + d.공급.toLocaleString() + '원\n';
       });
 
       var 버튼 = document.querySelector('button[onclick="매출메일발송()"]');
