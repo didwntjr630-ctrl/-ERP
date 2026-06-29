@@ -58,6 +58,26 @@ function 거래내역서출력() {
     });
   });
 
+  // 수기 항목 (운송료·클레임 등)
+  var 수기목록 = [];
+  try { 수기목록 = JSON.parse(localStorage.getItem('erp_수기항목')) || []; } catch(e) {}
+  var 수기합계 = 0;
+  수기목록.forEach(function(항목) {
+    var 금액 = Number(항목.금액) || 0;
+    수기합계 += 금액;
+    var 색 = 금액 < 0 ? 'color:#e74c3c;' : '';
+    행HTML +=
+      '<tr>' +
+      '<td style="text-align:center;">' + (번호++) + '</td>' +
+      '<td style="text-align:center;">' + (항목.월||'') + '</td>' +
+      '<td>' + (항목.내용||'') + '</td>' +
+      '<td></td><td></td><td></td><td></td>' +
+      '<td style="text-align:right;' + 색 + '">' + (금액 < 0 ? '-' : '') + '₩ ' + Math.abs(금액).toLocaleString() + '</td>' +
+      '<td>' + (항목.비고||'') + '</td>' +
+      '</tr>';
+  });
+  총공급가 += 수기합계;
+
   var 부가세 = Math.round(총공급가 * 0.1);
   var 총합계 = 총공급가 + 부가세;
   var c = APP_CONFIG;
