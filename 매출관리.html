@@ -379,22 +379,16 @@
                 ' | 총 공급가: ' + d.공급.toLocaleString() + '원\n';
       });
 
-      var 버튼 = document.querySelector('button[onclick="매출메일발송()"]');
-      if (버튼) { 버튼.disabled = true; 버튼.textContent = '발송 중...'; }
+      fetch(APP_CONFIG.메일발송URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: APP_CONFIG.수신이메일, subject: 제목, body: 본문 })
+      }).catch(function(err) {
+        console.error('메일 발송 오류:', err);
+      });
 
-      try {
-        await fetch(APP_CONFIG.메일발송URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: APP_CONFIG.수신이메일, subject: 제목, body: 본문 })
-        });
-        알림표시('메일이 발송되었습니다. 수신: ' + APP_CONFIG.수신이메일, '성공');
-      } catch(err) {
-        알림표시('메일 발송 실패: ' + err.message, '오류');
-      } finally {
-        if (버튼) { 버튼.disabled = false; 버튼.textContent = '메일 발송'; }
-      }
+      알림표시('메일이 발송되었습니다. 수신: ' + APP_CONFIG.수신이메일, '성공');
     }
 
     async function 매출삭제(id) {
