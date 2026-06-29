@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>입출고 등록 - 삼양ERP</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -341,5 +343,6 @@
     var _세션 = 현재세션();
     if (_세션) 작업잠금초기화(_세션.직급 + ' ' + _세션.사원명);
   </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

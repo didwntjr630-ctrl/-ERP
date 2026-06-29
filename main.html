@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>삼양ERP - 메인</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -342,5 +344,6 @@
       }
     }
   </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>삼양ERP - 매출관리</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .필터행 {
@@ -697,5 +699,6 @@
       if (document.getElementById('단가수정_오버레이').style.display !== 'none') { 단가수정팝업닫기(); return; }
     });
   </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>
