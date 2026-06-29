@@ -304,13 +304,13 @@
         </div>
       </div>
 
-      <!-- 관리자 (관리자 계정만 표시) -->
-      <div class="category-card" id="admin-card" style="display:none;">
+      <!-- 관리자 -->
+      <div class="category-card">
         <div class="category-header">관 리 자</div>
         <div class="category-body">
-          <a class="menu-btn" href="admin.html">
+          <a class="menu-btn disabled" id="admin-menu-btn">
             계정 승인 관리
-            <span class="icon badge-new">관리자</span>
+            <span class="badge-soon">준비중</span>
           </a>
         </div>
       </div>
@@ -332,7 +332,10 @@
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
       if (세션.관리자) {
-        document.getElementById('admin-card').style.display = '';
+        var btn = document.getElementById('admin-menu-btn');
+        btn.className = 'menu-btn';
+        btn.href = 'admin.html';
+        btn.innerHTML = '계정 승인 관리 <span class="icon badge-new">관리자</span>';
       }
     }
   </script>
