@@ -26,7 +26,7 @@ async function 로그인시도(사원명, 암호) {
 }
 
 /* 계정 신청 (사원명 중복 불가) */
-async function 계정신청(사원명, 직급, 암호) {
+async function 계정신청(사원명, 암호) {
   var { data: 기존, error: 조회오류 } = await 수파베이스
     .from('사용자계정')
     .select('id, 상태')
@@ -41,9 +41,9 @@ async function 계정신청(사원명, 직급, 암호) {
 
   var { error } = await 수파베이스
     .from('사용자계정')
-    .insert({ '사원명': 사원명, '직급': 직급, '암호해시': _암호해시(암호), '상태': 'pending' });
+    .insert({ '사원명': 사원명, '암호해시': _암호해시(암호), '상태': 'pending' });
 
-  return error ? { 성공: false, 메시지: '신청 실패: ' + error.message } : { 성공: true };
+  return error ? { 성공: false, 메시지: '생성 실패: ' + error.message } : { 성공: true };
 }
 
 /* 암호 변경 */

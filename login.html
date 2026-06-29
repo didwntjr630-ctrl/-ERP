@@ -359,7 +359,7 @@
       <div class="error-msg" id="error-msg"></div>
 
       <div class="btn-bottom-group">
-        <button class="btn-sm" onclick="계정신청모달열기()">계정신청 ›</button>
+        <button class="btn-sm" onclick="계정신청모달열기()">암호생성 ›</button>
         <button class="btn-sm" onclick="암호변경모달열기()">암호변경 ›</button>
       </div>
       <div style="text-align:right; margin-top:8px; font-size:11px; color:#999;" id="admin-info"></div>
@@ -369,22 +369,11 @@
   <!-- 계정신청 모달 -->
   <div class="modal-overlay" id="modal-create">
     <div class="modal">
-      <h3>계정 신청</h3>
+      <h3>암호 생성</h3>
       <p class="modal-desc">관리자 승인 후 로그인이 가능합니다.</p>
       <div class="field-row">
         <label>사원명</label>
         <input type="text" id="create-name" placeholder="실명 입력" autocomplete="off">
-      </div>
-      <div class="field-row">
-        <label>직급</label>
-        <select id="create-rank">
-          <option value="">직급 선택</option>
-          <option value="사원">사원</option>
-          <option value="대리">대리</option>
-          <option value="과장">과장</option>
-          <option value="차장">차장</option>
-          <option value="부장">부장</option>
-        </select>
       </div>
       <div class="field-row">
         <label>암호</label>
@@ -399,11 +388,11 @@
       <!-- 신청 완료 안내 -->
       <div class="pending-box" id="pending-box">
         <div class="pending-icon">⏳</div>
-        <p>계정 신청이 완료되었습니다.<br>관리자 승인 후 로그인해주세요.</p>
+        <p>암호 생성이 완료되었습니다.<br>관리자 승인 후 로그인해주세요.</p>
       </div>
 
       <div class="modal-btns" id="create-btns">
-        <button class="btn-confirm" id="btn-create-submit" onclick="계정신청제출()">신청</button>
+        <button class="btn-confirm" id="btn-create-submit" onclick="계정신청제출()">생성</button>
         <button class="btn-close-modal" onclick="모달닫기('modal-create')">취소</button>
       </div>
     </div>
@@ -495,7 +484,6 @@
     /* 모달 */
     function 계정신청모달열기() {
       document.getElementById('create-name').value = '';
-      document.getElementById('create-rank').value = '';
       document.getElementById('create-pw1').value  = '';
       document.getElementById('create-pw2').value  = '';
       document.getElementById('create-error').textContent = '';
@@ -524,24 +512,22 @@
 
     async function 계정신청제출() {
       var 이름  = document.getElementById('create-name').value.trim();
-      var 직급  = document.getElementById('create-rank').value;
       var pw1   = document.getElementById('create-pw1').value;
       var pw2   = document.getElementById('create-pw2').value;
       var 에러  = document.getElementById('create-error');
 
       if (!이름) { 에러.textContent = '사원명을 입력해주세요.'; return; }
-      if (!직급) { 에러.textContent = '직급을 선택해주세요.'; return; }
       if (!pw1 || pw1.length < 4) { 에러.textContent = '암호는 4자 이상 입력해주세요.'; return; }
       if (pw1 !== pw2) { 에러.textContent = '암호가 일치하지 않습니다.'; return; }
 
       var btn = document.getElementById('btn-create-submit');
       btn.disabled = true;
-      btn.textContent = '신청중';
+      btn.textContent = '생성중';
       에러.textContent = '';
 
-      var 결과 = await 계정신청(이름, 직급, pw1);
+      var 결과 = await 계정신청(이름, pw1);
       btn.disabled = false;
-      btn.textContent = '신청';
+      btn.textContent = '생성';
 
       if (!결과.성공) { 에러.textContent = 결과.메시지; return; }
 
