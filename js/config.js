@@ -47,6 +47,10 @@ var APP_CONFIG = {
   ],
 
   수신이메일: 'didwntjr630@naver.com',
+  수신처목록: [
+    { 이름: '테스트',       이메일: 'didwntjr630@naver.com' },
+    { 이름: '(주)삼양이엔지', 이메일: 'syeng1@syeng1.kr'       }
+  ],
   메일발송URL: 'https://script.google.com/macros/s/AKfycbwbqqjznaihbxrK8m_Dd__ZfqcydygN50fOKNP-WcfPLuQ6bZ0Go-9rCnDj0SX_S0fcIg/exec',
 
   매출고정값: {

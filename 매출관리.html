@@ -166,8 +166,9 @@
           </tbody>
         </table>
       </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px;">
         <button class="버튼 초록" style="padding:0 18px; height:34px; font-size:13px;" onclick="거래내역서출력()">엑셀 출력</button>
+        <select id="메일수신처선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
         <button class="버튼 파랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="매출메일발송()">메일 발송</button>
       </div>
     </div>
@@ -403,16 +404,19 @@
         본문 += '\n';
       });
 
+      var 선택이메일 = document.getElementById('메일수신처선택').value;
+      var 선택이름 = document.getElementById('메일수신처선택').options[document.getElementById('메일수신처선택').selectedIndex].text;
+
       fetch(APP_CONFIG.메일발송URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: APP_CONFIG.수신이메일, subject: 제목, body: 본문 })
+        body: JSON.stringify({ to: 선택이메일, subject: 제목, body: 본문 })
       }).catch(function(err) {
         console.error('메일 발송 오류:', err);
       });
 
-      알림표시('메일이 발송되었습니다. 수신: ' + APP_CONFIG.수신이메일, '성공');
+      알림표시('메일 발송 완료 → ' + 선택이름 + ' (' + 선택이메일 + ')', '성공');
     }
 
     async function 매출삭제(id) {
@@ -671,8 +675,19 @@
       setTimeout(function() { el.style.display = 'none'; }, 3500);
     }
 
+    function 수신처옵션채우기() {
+      var sel = document.getElementById('메일수신처선택');
+      APP_CONFIG.수신처목록.forEach(function(항목) {
+        var opt = document.createElement('option');
+        opt.value = 항목.이메일;
+        opt.textContent = 항목.이름;
+        sel.appendChild(opt);
+      });
+    }
+
     날짜기본값();
     저장된단가적용();
+    수신처옵션채우기();
     수기항목로드();
     데이터로드();
 
