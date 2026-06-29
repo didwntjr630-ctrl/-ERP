@@ -17,7 +17,6 @@
       overflow: hidden;
     }
 
-    /* 배경 풍경 느낌 */
     body::before {
       content: '';
       position: absolute;
@@ -52,7 +51,6 @@
       min-width: 620px;
     }
 
-    /* 왼쪽 브랜드 영역 */
     .brand-area {
       padding: 50px 40px;
       color: white;
@@ -76,10 +74,7 @@
       letter-spacing: -1px;
     }
 
-    .brand-main span {
-      color: #ffe066;
-      font-style: italic;
-    }
+    .brand-main span { color: #ffe066; font-style: italic; }
 
     .brand-sub {
       font-size: 15px;
@@ -88,14 +83,12 @@
       letter-spacing: 1px;
     }
 
-    /* 구분선 */
     .divider {
       width: 1px;
       height: 220px;
       background: rgba(255,255,255,0.3);
     }
 
-    /* 오른쪽 폼 영역 */
     .form-area {
       padding: 40px 36px;
       min-width: 280px;
@@ -126,7 +119,7 @@
       flex-shrink: 0;
     }
 
-    .field-row input {
+    .field-row input, .field-row select {
       flex: 1;
       height: 32px;
       border: 1px solid #b0c4d8;
@@ -139,7 +132,7 @@
       transition: border-color 0.2s;
     }
 
-    .field-row input:focus {
+    .field-row input:focus, .field-row select:focus {
       border-color: #2980b9;
       background: #fff;
     }
@@ -151,7 +144,6 @@
       padding: 0 4px;
     }
 
-    /* 버튼 그룹 */
     .btn-main-group {
       display: flex;
       flex-direction: column;
@@ -176,6 +168,7 @@
 
     .btn-login:hover { background: linear-gradient(180deg, #5ab0e4 0%, #2a7abe 100%); }
     .btn-login:active { transform: translateY(1px); }
+    .btn-login:disabled { opacity: 0.6; cursor: default; }
 
     .btn-cancel {
       width: 80px;
@@ -192,7 +185,6 @@
 
     .btn-cancel:hover { background: linear-gradient(180deg, #f0f0f0 0%, #d8d8d8 100%); }
 
-    /* 하단 버튼 */
     .btn-bottom-group {
       display: flex;
       gap: 6px;
@@ -220,14 +212,19 @@
       gap: 0;
     }
 
-    .fields {
-      flex: 1;
-    }
+    .fields { flex: 1; }
 
-    /* 에러 메시지 */
     .error-msg {
       font-size: 12px;
       color: #e74c3c;
+      text-align: center;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+
+    .success-msg {
+      font-size: 12px;
+      color: #27ae60;
       text-align: center;
       margin-top: 6px;
       min-height: 18px;
@@ -250,15 +247,22 @@
       background: white;
       border-radius: 8px;
       padding: 30px 28px;
-      width: 320px;
+      width: 340px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
 
     .modal h3 {
       font-size: 15px;
       color: #1a4a7a;
-      margin-bottom: 20px;
+      margin-bottom: 6px;
       text-align: center;
+    }
+
+    .modal .modal-desc {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      margin-bottom: 18px;
     }
 
     .modal .field-row { margin-bottom: 10px; }
@@ -282,12 +286,26 @@
 
     .btn-confirm { background: #2980b9; color: white; }
     .btn-confirm:hover { background: #1a6aad; }
+    .btn-confirm:disabled { opacity: 0.6; cursor: default; }
     .btn-close-modal { background: #e0e0e0; color: #444; }
     .btn-close-modal:hover { background: #d0d0d0; }
 
     .modal .error-msg { margin-top: 8px; }
 
-    /* 하단 카피라이트 */
+    /* 승인 대기 안내 박스 */
+    .pending-box {
+      display: none;
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      border-radius: 6px;
+      padding: 16px 18px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .pending-box .pending-icon { font-size: 28px; margin-bottom: 6px; }
+    .pending-box p { font-size: 13px; color: #2e7d32; line-height: 1.6; }
+
     .copyright {
       position: absolute;
       bottom: 14px;
@@ -333,7 +351,7 @@
         </div>
 
         <div class="btn-main-group">
-          <button class="btn-login" onclick="로그인()">로그인</button>
+          <button class="btn-login" id="btn-login" onclick="로그인()">로그인</button>
           <button class="btn-cancel" onclick="초기화()">취 소</button>
         </div>
       </div>
@@ -341,32 +359,51 @@
       <div class="error-msg" id="error-msg"></div>
 
       <div class="btn-bottom-group">
-        <button class="btn-sm" onclick="암호생성모달열기()">암호생성 ›</button>
+        <button class="btn-sm" onclick="계정신청모달열기()">계정신청 ›</button>
         <button class="btn-sm" onclick="암호변경모달열기()">암호변경 ›</button>
       </div>
       <div style="text-align:right; margin-top:8px; font-size:11px; color:#999;" id="admin-info"></div>
     </div>
   </div>
 
-  <!-- 암호생성 모달 -->
+  <!-- 계정신청 모달 -->
   <div class="modal-overlay" id="modal-create">
     <div class="modal">
-      <h3>암호 생성</h3>
+      <h3>계정 신청</h3>
+      <p class="modal-desc">관리자 승인 후 로그인이 가능합니다.</p>
       <div class="field-row">
         <label>사원명</label>
-        <input type="text" id="create-name" placeholder="사원명 입력">
+        <input type="text" id="create-name" placeholder="실명 입력" autocomplete="off">
       </div>
       <div class="field-row">
-        <label>새 암호</label>
-        <input type="password" id="create-pw1" placeholder="암호 입력">
+        <label>직급</label>
+        <select id="create-rank">
+          <option value="">직급 선택</option>
+          <option value="사원">사원</option>
+          <option value="대리">대리</option>
+          <option value="과장">과장</option>
+          <option value="차장">차장</option>
+          <option value="부장">부장</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <label>암호</label>
+        <input type="password" id="create-pw1" placeholder="4자 이상">
       </div>
       <div class="field-row">
         <label>암호확인</label>
-        <input type="password" id="create-pw2" placeholder="암호 재입력" onkeydown="엔터암호생성(event)">
+        <input type="password" id="create-pw2" placeholder="암호 재입력" onkeydown="엔터계정신청(event)">
       </div>
       <div class="error-msg" id="create-error"></div>
-      <div class="modal-btns">
-        <button class="btn-confirm" onclick="암호생성()">생성</button>
+
+      <!-- 신청 완료 안내 -->
+      <div class="pending-box" id="pending-box">
+        <div class="pending-icon">⏳</div>
+        <p>계정 신청이 완료되었습니다.<br>관리자 승인 후 로그인해주세요.</p>
+      </div>
+
+      <div class="modal-btns" id="create-btns">
+        <button class="btn-confirm" id="btn-create-submit" onclick="계정신청제출()">신청</button>
         <button class="btn-close-modal" onclick="모달닫기('modal-create')">취소</button>
       </div>
     </div>
@@ -376,6 +413,7 @@
   <div class="modal-overlay" id="modal-change">
     <div class="modal">
       <h3>암호 변경</h3>
+      <p class="modal-desc">현재 암호 확인 후 변경됩니다.</p>
       <div class="field-row">
         <label>사원명</label>
         <input type="text" id="change-name" placeholder="사원명 입력">
@@ -386,7 +424,7 @@
       </div>
       <div class="field-row">
         <label>새 암호</label>
-        <input type="password" id="change-new1" placeholder="새 암호">
+        <input type="password" id="change-new1" placeholder="새 암호 (4자 이상)">
       </div>
       <div class="field-row">
         <label>암호확인</label>
@@ -394,7 +432,7 @@
       </div>
       <div class="error-msg" id="change-error"></div>
       <div class="modal-btns">
-        <button class="btn-confirm" onclick="암호변경()">변경</button>
+        <button class="btn-confirm" id="btn-change-submit" onclick="암호변경()">변경</button>
         <button class="btn-close-modal" onclick="모달닫기('modal-change')">취소</button>
       </div>
     </div>
@@ -402,7 +440,9 @@
 
   <div class="copyright" id="copyright"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script>
@@ -415,7 +455,6 @@
     document.getElementById('copyright').textContent = 'Copyright (C) ' + APP_CONFIG.회사명 + '. All Rights Reserved.';
     document.title = APP_CONFIG.시스템명 + ' - 로그인';
 
-    // 이미 로그인된 경우 바로 이동
     if (현재세션()) location.href = 'main.html';
 
     function 에러표시(메시지) {
@@ -424,26 +463,26 @@
 
     function 엔터로그인(e) { if (e.key === 'Enter') 로그인(); }
 
-    function 로그인() {
+    async function 로그인() {
       var 이름 = document.getElementById('inp-name').value.trim();
       var 암호 = document.getElementById('inp-pw').value;
 
       if (!이름) { 에러표시('사원명을 입력해주세요.'); return; }
       if (!암호) { 에러표시('사원암호를 입력해주세요.'); return; }
 
-      // 담당자 목록에서 확인
-      var 직원 = 담당자목록.find(function(d) { return d.이름 === 이름; });
-      if (!직원) { 에러표시('등록되지 않은 사원명입니다.'); return; }
+      var btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = '확인중';
+      에러표시('');
 
-      if (!암호등록여부(이름)) {
-        에러표시('암호가 설정되지 않았습니다. [암호생성]을 먼저 해주세요.');
-        return;
-      }
+      var 결과 = await 로그인시도(이름, 암호);
+      btn.disabled = false;
+      btn.textContent = '로그인';
 
-      if (!암호확인(이름, 암호)) { 에러표시('암호가 일치하지 않습니다.'); return; }
+      if (!결과.성공) { 에러표시(결과.메시지); return; }
 
-      로그인처리(이름, 직원.직급);
-      location.href = 'main.html';
+      로그인처리(결과.사용자);
+      location.href = 결과.사용자['관리자여부'] ? 'admin.html' : 'main.html';
     }
 
     function 초기화() {
@@ -454,11 +493,14 @@
     }
 
     /* 모달 */
-    function 암호생성모달열기() {
+    function 계정신청모달열기() {
       document.getElementById('create-name').value = '';
+      document.getElementById('create-rank').value = '';
       document.getElementById('create-pw1').value  = '';
       document.getElementById('create-pw2').value  = '';
       document.getElementById('create-error').textContent = '';
+      document.getElementById('pending-box').style.display = 'none';
+      document.getElementById('create-btns').style.display = 'flex';
       document.getElementById('modal-create').classList.add('active');
       document.getElementById('create-name').focus();
     }
@@ -477,51 +519,59 @@
       document.getElementById(id).classList.remove('active');
     }
 
-    function 엔터암호생성(e) { if (e.key === 'Enter') 암호생성(); }
-    function 엔터암호변경(e) { if (e.key === 'Enter') 암호변경(); }
+    function 엔터계정신청(e) { if (e.key === 'Enter') 계정신청제출(); }
+    function 엔터암호변경(e)  { if (e.key === 'Enter') 암호변경(); }
 
-    function 암호생성() {
+    async function 계정신청제출() {
       var 이름  = document.getElementById('create-name').value.trim();
+      var 직급  = document.getElementById('create-rank').value;
       var pw1   = document.getElementById('create-pw1').value;
       var pw2   = document.getElementById('create-pw2').value;
       var 에러  = document.getElementById('create-error');
 
       if (!이름) { 에러.textContent = '사원명을 입력해주세요.'; return; }
-
-      var 직원 = 담당자목록.find(function(d) { return d.이름 === 이름; });
-      if (!직원) { 에러.textContent = '등록되지 않은 사원명입니다.'; return; }
-
-      if (암호등록여부(이름)) { 에러.textContent = '이미 암호가 설정된 사원입니다. 암호변경을 이용해주세요.'; return; }
-      if (!pw1) { 에러.textContent = '새 암호를 입력해주세요.'; return; }
-      if (pw1.length < 4) { 에러.textContent = '암호는 4자 이상이어야 합니다.'; return; }
+      if (!직급) { 에러.textContent = '직급을 선택해주세요.'; return; }
+      if (!pw1 || pw1.length < 4) { 에러.textContent = '암호는 4자 이상 입력해주세요.'; return; }
       if (pw1 !== pw2) { 에러.textContent = '암호가 일치하지 않습니다.'; return; }
 
-      암호저장(이름, pw1);
-      모달닫기('modal-create');
-      에러표시('✅ 암호가 생성되었습니다. 로그인해주세요.');
-      document.getElementById('inp-name').value = 이름;
-      document.getElementById('inp-pw').focus();
+      var btn = document.getElementById('btn-create-submit');
+      btn.disabled = true;
+      btn.textContent = '신청중';
+      에러.textContent = '';
+
+      var 결과 = await 계정신청(이름, 직급, pw1);
+      btn.disabled = false;
+      btn.textContent = '신청';
+
+      if (!결과.성공) { 에러.textContent = 결과.메시지; return; }
+
+      document.getElementById('create-btns').style.display = 'none';
+      document.getElementById('pending-box').style.display = 'block';
     }
 
-    function 암호변경() {
-      var 이름  = document.getElementById('change-name').value.trim();
-      var 구암호 = document.getElementById('change-old').value;
-      var pw1   = document.getElementById('change-new1').value;
-      var pw2   = document.getElementById('change-new2').value;
-      var 에러  = document.getElementById('change-error');
+    async function 암호변경() {
+      var 이름    = document.getElementById('change-name').value.trim();
+      var 현재암호 = document.getElementById('change-old').value;
+      var pw1     = document.getElementById('change-new1').value;
+      var pw2     = document.getElementById('change-new2').value;
+      var 에러    = document.getElementById('change-error');
 
-      if (!이름) { 에러.textContent = '사원명을 입력해주세요.'; return; }
-
-      var 직원 = 담당자목록.find(function(d) { return d.이름 === 이름; });
-      if (!직원) { 에러.textContent = '등록되지 않은 사원명입니다.'; return; }
-
-      if (!암호등록여부(이름)) { 에러.textContent = '암호가 설정되지 않은 사원입니다. 암호생성을 이용해주세요.'; return; }
-      if (!암호확인(이름, 구암호)) { 에러.textContent = '현재 암호가 일치하지 않습니다.'; return; }
-      if (!pw1) { 에러.textContent = '새 암호를 입력해주세요.'; return; }
-      if (pw1.length < 4) { 에러.textContent = '암호는 4자 이상이어야 합니다.'; return; }
+      if (!이름)    { 에러.textContent = '사원명을 입력해주세요.'; return; }
+      if (!현재암호) { 에러.textContent = '현재 암호를 입력해주세요.'; return; }
+      if (!pw1 || pw1.length < 4) { 에러.textContent = '새 암호는 4자 이상이어야 합니다.'; return; }
       if (pw1 !== pw2) { 에러.textContent = '새 암호가 일치하지 않습니다.'; return; }
 
-      암호저장(이름, pw1);
+      var btn = document.getElementById('btn-change-submit');
+      btn.disabled = true;
+      btn.textContent = '변경중';
+      에러.textContent = '';
+
+      var 결과 = await 암호변경처리(이름, 현재암호, pw1);
+      btn.disabled = false;
+      btn.textContent = '변경';
+
+      if (!결과.성공) { 에러.textContent = 결과.메시지; return; }
+
       모달닫기('modal-change');
       에러표시('✅ 암호가 변경되었습니다.');
     }

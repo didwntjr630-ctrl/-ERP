@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 관리자</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-wrap {
+      padding: 24px 32px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #1a4a7a;
+      border-left: 4px solid #2980b9;
+      padding-left: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section-block {
+      margin-bottom: 36px;
+    }
+
+    .account-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: white;
+      border: 1px solid #c5d9e8;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .account-table th {
+      background: linear-gradient(180deg, #d0e8f8 0%, #b8d8f0 100%);
+      color: #1a4a7a;
+      font-weight: bold;
+      padding: 9px 12px;
+      text-align: center;
+      border-bottom: 1px solid #99bfda;
+    }
+
+    .account-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e8f0f8;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .account-table tr:last-child td { border-bottom: none; }
+
+    .account-table tr:hover td { background: #f0f7ff; }
+
+    .badge-pending {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .badge-approved {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #28a745;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .badge-rejected {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #dc3545;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .badge-admin {
+      background: #cce5ff;
+      color: #004085;
+      border: 1px solid #b8daff;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      margin-left: 4px;
+    }
+
+    .btn-approve {
+      padding: 4px 12px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      margin-right: 4px;
+    }
+
+    .btn-approve:hover { background: #219a52; }
+
+    .btn-reject {
+      padding: 4px 12px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-reject:hover { background: #c0392b; }
+
+    .empty-row td {
+      padding: 24px;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .count-badge {
+      display: inline-block;
+      background: #e74c3c;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 1px 7px;
+      border-radius: 10px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .count-badge.zero {
+      background: #ccc;
+      color: #666;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <div class="메뉴바">
+    <div class="메뉴바-좌">
+      <span id="header-title"></span>
+      <span class="메뉴바-부제" id="header-sub"></span>
+    </div>
+    <div class="메뉴바-우">
+      <span id="user-info" style="font-size:13px; opacity:0.9;"></span>
+      <button class="버튼 작게" style="margin-left:12px;" onclick="location.href='main.html'">메인으로</button>
+      <button class="버튼 작게" style="margin-left:6px;" onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="admin-wrap">
+
+    <!-- 승인 대기 -->
+    <div class="section-block">
+      <div class="top-actions">
+        <div class="section-title">
+          승인 대기 계정
+          <span class="count-badge zero" id="pending-count">0</span>
+        </div>
+        <button class="버튼 작게" onclick="목록새로고침()">새로고침</button>
+      </div>
+      <table class="account-table">
+        <thead>
+          <tr>
+            <th>사원명</th>
+            <th>직급</th>
+            <th>신청일시</th>
+            <th>조치</th>
+          </tr>
+        </thead>
+        <tbody id="pending-tbody">
+          <tr class="empty-row"><td colspan="4">승인 대기 중인 계정이 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 전체 계정 목록 -->
+    <div class="section-block">
+      <div class="section-title">전체 계정 목록</div>
+      <table class="account-table">
+        <thead>
+          <tr>
+            <th>사원명</th>
+            <th>직급</th>
+            <th>상태</th>
+            <th>신청일시</th>
+            <th>승인일시</th>
+          </tr>
+        </thead>
+        <tbody id="all-tbody">
+          <tr class="empty-row"><td colspan="5">계정 정보를 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    세션체크();
+    관리자체크();
+
+    document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span style="color:#ffe066; font-style:italic;">ERP</span>');
+    document.getElementById('header-sub').textContent = APP_CONFIG.부제;
+    document.title = APP_CONFIG.시스템명 + ' - 관리자';
+    var 세션 = 현재세션();
+    if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명 + ' [관리자]';
+
+    function _날짜형식(iso) {
+      if (!iso) return '-';
+      var d = new Date(iso);
+      var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+      return (d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+        + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()));
+    }
+
+    function _상태뱃지(상태) {
+      var map = { pending: '대기중', approved: '승인', rejected: '거부' };
+      var cls = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+      return '<span class="' + (cls[상태] || '') + '">' + (map[상태] || 상태) + '</span>';
+    }
+
+    async function 목록새로고침() {
+      var 목록 = await 전체계정목록();
+
+      var 대기목록 = 목록.filter(function(a) { return a['상태'] === 'pending'; });
+      var cnt = document.getElementById('pending-count');
+      cnt.textContent = 대기목록.length;
+      cnt.className = 'count-badge' + (대기목록.length > 0 ? '' : ' zero');
+
+      /* 승인 대기 테이블 */
+      var pBody = document.getElementById('pending-tbody');
+      if (대기목록.length === 0) {
+        pBody.innerHTML = '<tr class="empty-row"><td colspan="4">승인 대기 중인 계정이 없습니다.</td></tr>';
+      } else {
+        pBody.innerHTML = 대기목록.map(function(a) {
+          return '<tr>'
+            + '<td style="font-weight:bold;">' + a['사원명'] + '</td>'
+            + '<td>' + a['직급'] + '</td>'
+            + '<td>' + _날짜형식(a['created_at']) + '</td>'
+            + '<td>'
+            +   '<button class="btn-approve" onclick="승인처리(' + a.id + ')">승인</button>'
+            +   '<button class="btn-reject"  onclick="거부처리(' + a.id + ')">거부</button>'
+            + '</td>'
+            + '</tr>';
+        }).join('');
+      }
+
+      /* 전체 계정 테이블 */
+      var aBody = document.getElementById('all-tbody');
+      if (목록.length === 0) {
+        aBody.innerHTML = '<tr class="empty-row"><td colspan="5">등록된 계정이 없습니다.</td></tr>';
+      } else {
+        aBody.innerHTML = 목록.map(function(a) {
+          var 이름셀 = a['사원명'] + (a['관리자여부'] ? '<span class="badge-admin">관리자</span>' : '');
+          return '<tr>'
+            + '<td style="font-weight:bold;">' + 이름셀 + '</td>'
+            + '<td>' + a['직급'] + '</td>'
+            + '<td>' + _상태뱃지(a['상태']) + '</td>'
+            + '<td>' + _날짜형식(a['created_at']) + '</td>'
+            + '<td>' + _날짜형식(a['승인일시']) + '</td>'
+            + '</tr>';
+        }).join('');
+      }
+    }
+
+    async function 승인처리(id) {
+      var 결과 = await 계정승인(id);
+      if (!결과.성공) { alert('승인 실패: ' + 결과.메시지); return; }
+      목록새로고침();
+    }
+
+    async function 거부처리(id) {
+      if (!confirm('이 계정을 거부하시겠습니까?')) return;
+      var 결과 = await 계정거부(id);
+      if (!결과.성공) { alert('거부 실패: ' + 결과.메시지); return; }
+      목록새로고침();
+    }
+
+    // 초기 로드
+    목록새로고침();
+  </script>
+</body>
+</html>

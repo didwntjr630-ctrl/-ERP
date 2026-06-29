@@ -296,7 +296,9 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
   <script>
@@ -307,6 +309,16 @@
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+      if (세션.관리자) {
+        var adminCard = document.createElement('div');
+        adminCard.className = 'category-card';
+        adminCard.innerHTML =
+          '<div class="category-header">관 리 자</div>'
+          + '<div class="category-body">'
+          + '<a class="menu-btn" href="admin.html">계정 승인 관리 <span class="icon badge-new">관리자</span></a>'
+          + '</div>';
+        document.querySelector('.category-grid').appendChild(adminCard);
+      }
     }
   </script>
 </body>
