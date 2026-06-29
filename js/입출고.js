@@ -43,6 +43,15 @@ function 오늘날짜세팅() {
   if (el) el.value = v;
 }
 
+/* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
+function 입고수량변경() {
+  if (현재작업공정 === '출하검사') {
+    var v = document.getElementById('입고수량').value;
+    document.getElementById('출고수량').value = v;
+  }
+  잔량미리보기();
+}
+
 /* ── 잔량 미리보기 (입고 - 출고 - 불량) ── */
 function 잔량미리보기() {
   var 입고 = Number(document.getElementById('입고수량').value) || 0;
