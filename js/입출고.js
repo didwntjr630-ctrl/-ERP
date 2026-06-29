@@ -475,7 +475,7 @@ function 목록테이블그리기(목록) {
     else if (미완료) 행.style.cssText = 'background:#fff8e1;';
 
     var 체크박스셀 = 이미확정
-      ? '<td style="text-align:center; color:#27ae60; font-size:16px; font-weight:bold;">✓</td>'
+      ? '<td style="text-align:center;"><span style="background:#27ae60; color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:3px; white-space:nowrap;">확인</span></td>'
       : '<td style="text-align:center;"><input type="checkbox" class="행선택체크" value="' + 항목.id + '"></td>';
 
     행.innerHTML =
