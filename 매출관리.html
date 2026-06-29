@@ -237,13 +237,45 @@
     /* ── 공용 조회 팝업 ── */
     var 현재팝업설정  = null;
     var 원본팝업데이터 = [];
+    var 현재팝업필터데이터 = [];
+    var 현재선택행인덱스 = -1;
+
+    function 조회팝업키보드핸들러(e) {
+      var 행목록 = document.querySelectorAll('#조회팝업_테이블바디 tr');
+      if (!행목록.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        현재선택행인덱스 = Math.min(현재선택행인덱스 + 1, 행목록.length - 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        현재선택행인덱스 = Math.max(현재선택행인덱스 - 1, 0);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (현재선택행인덱스 >= 0 && 현재선택행인덱스 < 현재팝업필터데이터.length) {
+          var 항목 = 현재팝업필터데이터[현재선택행인덱스];
+          현재팝업설정.선택시(항목);
+          조회팝업닫기();
+        }
+        return;
+      } else { return; }
+      행목록.forEach(function(행, i) {
+        행.classList.toggle('팝업행키보드선택', i === 현재선택행인덱스);
+      });
+      if (행목록[현재선택행인덱스]) {
+        행목록[현재선택행인덱스].scrollIntoView({ block: 'nearest' });
+      }
+    }
 
     function 조회팝업열기(설정) {
       현재팝업설정   = 설정;
       원본팝업데이터 = 설정.데이터;
+      현재선택행인덱스 = -1;
       document.getElementById('조회팝업_제목').textContent = 설정.제목;
-      document.getElementById('조회팝업_검색').value = '';
-      document.getElementById('조회팝업_검색').placeholder = 설정.검색힌트 || '검색...';
+      var 검색입력 = document.getElementById('조회팝업_검색');
+      검색입력.value = '';
+      검색입력.placeholder = 설정.검색힌트 || '검색...';
+      검색입력.removeEventListener('keydown', 조회팝업키보드핸들러);
+      검색입력.addEventListener('keydown', 조회팝업키보드핸들러);
       var 헤더 = document.getElementById('조회팝업_헤더행');
       헤더.innerHTML = '<th style="width:36px;"></th>';
       설정.열목록.forEach(function(열) {
@@ -251,7 +283,7 @@
       });
       조회팝업테이블채우기(원본팝업데이터);
       document.getElementById('조회팝업_오버레이').style.display = 'flex';
-      setTimeout(function() { document.getElementById('조회팝업_검색').focus(); }, 50);
+      setTimeout(function() { 검색입력.focus(); }, 50);
     }
 
     function 조회팝업닫기() { document.getElementById('조회팝업_오버레이').style.display = 'none'; }
@@ -272,6 +304,8 @@
     }
 
     function 조회팝업테이블채우기(목록) {
+      현재팝업필터데이터 = 목록;
+      현재선택행인덱스 = -1;
       var 바디 = document.getElementById('조회팝업_테이블바디');
       바디.innerHTML = '';
       if (목록.length === 0) {

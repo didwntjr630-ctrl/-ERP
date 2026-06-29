@@ -673,6 +673,12 @@ table tbody td {
   background-color: #cfe2f3 !important;
 }
 
+.팝업행키보드선택 {
+  background-color: #a8d0f0 !important;
+  outline: 2px solid #4a90d9;
+  outline-offset: -2px;
+}
+
 .팝업하단 {
   padding: 10px 16px 14px;
   display: flex;
