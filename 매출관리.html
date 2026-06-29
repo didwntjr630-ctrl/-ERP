@@ -166,6 +166,10 @@
           </tbody>
         </table>
       </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button class="버튼" style="background:#b0b0b0; color:#fff; cursor:not-allowed; opacity:0.6; padding:0 18px; height:34px; border:none; border-radius:4px; font-size:13px;" disabled>엑셀 출력</button>
+        <button class="버튼 파랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="매출메일발송()">메일 발송</button>
+      </div>
     </div>
   </div>
 
@@ -332,6 +336,38 @@
         });
         바디.appendChild(행);
       });
+    }
+
+    function 매출메일발송() {
+      var 목록 = 전체데이터;
+      if (!목록 || 목록.length === 0) { alert('발송할 매출 데이터가 없습니다.'); return; }
+
+      var 총수량 = 목록.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
+      var 총공급 = 목록.reduce(function(s, h) { return s + (Number(h.출고수량) || 0) * (Number(h.단가) || 0); }, 0);
+      var 총vat  = Math.round(총공급 * 1.1);
+
+      var 제목 = '[' + APP_CONFIG.회사명 + '] 매출 현황 (' + new Date().toLocaleDateString('ko-KR') + ')';
+
+      var 본문 = APP_CONFIG.회사명 + ' 매출 현황\n';
+      본문 += '========================================\n';
+      본문 += '총 건수: ' + 목록.length + '건\n';
+      본문 += '총 수량: ' + 총수량.toLocaleString() + ' EA\n';
+      본문 += '총 공급가액: ' + 총공급.toLocaleString() + ' 원\n';
+      본문 += 'VAT포함 합계: ' + 총vat.toLocaleString() + ' 원\n';
+      본문 += '========================================\n\n';
+      본문 += '[ 상세 내역 ]\n';
+      목록.forEach(function(h, i) {
+        var 공급 = (Number(h.출고수량) || 0) * (Number(h.단가) || 0);
+        본문 += (i + 1) + '. ' + (h.출고일자 || '') + ' | ' + (h.품명 || '') +
+                ' | 수량: ' + (h.출고수량 || 0) + ' EA' +
+                ' | 단가: ' + (h.단가 || 0).toLocaleString() + '원' +
+                ' | 공급가: ' + 공급.toLocaleString() + '원\n';
+      });
+
+      var url = 'mailto:' + APP_CONFIG.수신이메일 +
+                '?subject=' + encodeURIComponent(제목) +
+                '&body=' + encodeURIComponent(본문);
+      window.location.href = url;
     }
 
     async function 매출삭제(id) {
