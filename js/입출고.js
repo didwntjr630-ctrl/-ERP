@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return;
+    if (document.getElementById('확인모달_오버레이').style.display !== 'none') { 확인모달닫기(); return; }
     if (document.getElementById('알림모달_오버레이').style.display !== 'none') { 알림모달닫기(); return; }
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
   });
@@ -943,42 +944,42 @@ function 전체선택토글() {
   });
 }
 
-async function 확정처리() {
+function 확정처리() {
   var 선택ids = Array.from(document.querySelectorAll('.행선택체크:checked'))
                      .map(function(c) { return Number(c.value); });
   if (선택ids.length === 0) {
-    alert('확정할 항목을 선택해주세요.');
+    알림표시('확정할 항목을 선택해주세요.', '오류');
     return;
   }
-  if (!confirm(선택ids.length + '건을 매출확정 하시겠습니까?')) return;
+  확인모달표시(선택ids.length + '건을 매출확정 하시겠습니까?', async function() {
+    var 전체 = await 데이터불러오기();
+    var 선택항목 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
 
-  var 전체 = await 데이터불러오기();
-  var 선택항목 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
+    var 매출행들 = 선택항목.map(function(h) {
+      return {
+        '입출고id':  h.id,
+        '품명':      h.품명,
+        '품번':      h.품번,
+        '출발공정':  h.출발공정,
+        '도착공정':  h.도착공정,
+        '출고수량':  h.출고수량,
+        '출고일자':  h.출고일자,
+        'lot번호':   h['lot번호'],
+        '담당자':    h.담당자,
+        '확정일시':  new Date().toISOString()
+      };
+    });
 
-  var 매출행들 = 선택항목.map(function(h) {
-    return {
-      '입출고id':  h.id,
-      '품명':      h.품명,
-      '품번':      h.품번,
-      '출발공정':  h.출발공정,
-      '도착공정':  h.도착공정,
-      '출고수량':  h.출고수량,
-      '출고일자':  h.출고일자,
-      'lot번호':   h['lot번호'],
-      '담당자':    h.담당자,
-      '확정일시':  new Date().toISOString()
-    };
+    var result = await 수파베이스.from('매출기록').insert(매출행들);
+    if (result.error) {
+      알림표시('매출 저장 실패: ' + result.error.message, '오류');
+      return;
+    }
+
+    document.getElementById('전체선택체크').checked = false;
+    알림표시(선택ids.length + '건이 매출확정 되었습니다. 매출관리 메뉴에서 확인하세요.', '성공');
+    await 공정필터목록갱신();
   });
-
-  var result = await 수파베이스.from('매출기록').insert(매출행들);
-  if (result.error) {
-    alert('매출 저장 실패: ' + result.error.message);
-    return;
-  }
-
-  document.getElementById('전체선택체크').checked = false;
-  알림표시(선택ids.length + '건이 매출확정 되었습니다. 매출관리 메뉴에서 확인하세요.', '성공');
-  await 공정필터목록갱신();
 }
 
 /* ══════════════════════════════════════════
@@ -1005,6 +1006,17 @@ function 폼엔터핸들러(event, 현재id) {
 }
 
 /* ── 알림 모달 ── */
+function 확인모달표시(메시지, 콜백) {
+  document.getElementById('확인모달_메시지').textContent = 메시지;
+  var 버튼 = document.getElementById('확인모달_확인버튼');
+  버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+  document.getElementById('확인모달_오버레이').style.display = 'flex';
+}
+
+function 확인모달닫기() {
+  document.getElementById('확인모달_오버레이').style.display = 'none';
+}
+
 function 알림모달표시(항목목록) {
   var ul = document.getElementById('알림모달_목록');
   ul.innerHTML = '';
