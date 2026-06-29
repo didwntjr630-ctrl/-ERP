@@ -42,7 +42,7 @@ var APP_CONFIG = {
   ],
 
   수신이메일: 'didwntjr630@naver.com',
-  메일발송URL: '',
+  메일발송URL: 'https://script.google.com/macros/s/AKfycbwbqqjznaihbxrK8m_Dd__ZfqcydygN50fOKNP-WcfPLuQ6bZ0Go-9rCnDj0SX_S0fcIg/exec',
 
   매출고정값: {
     완료공정: 'C/T',
