@@ -20,6 +20,8 @@
     </nav>
   </div>
 
+  <div id="작업잠금_배너" style="display:none;"></div>
+
   <div class="내용영역">
 
     <div id="알림박스" class="알림"></div>
@@ -329,12 +331,15 @@
   <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/작업잠금.js"></script>
   <script src="js/입출고.js"></script>
   <script>
     세션체크();
     document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
     document.getElementById('부제').textContent = APP_CONFIG.부제;
     document.title = APP_CONFIG.시스템명 + ' - 입출고 등록';
+    var _세션 = 현재세션();
+    if (_세션) 작업잠금초기화(_세션.직급 + ' ' + _세션.사원명);
   </script>
 </body>
 </html>

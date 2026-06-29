@@ -286,6 +286,7 @@ function 품목선택(품목) {
   document.getElementById('품명품번표시').textContent = '품번: ' + 품목.품번;
   드롭다운닫기();
   폼임시저장();
+  작업시작알림();
 }
 
 function 드롭다운닫기() {
@@ -457,6 +458,7 @@ async function 수정하기(id) {
   } else {
     알림표시('수정할 내용 변경 후 [변경 저장]을 눌러주세요.', '성공');
   }
+  작업시작알림();
 }
 
 async function 삭제하기(id) {
@@ -495,6 +497,7 @@ function 폼초기화(일자유지) {
   document.getElementById('저장버튼').textContent = '저장';
   document.getElementById('저장버튼').className   = '버튼 초록';
   폼카드제거수정강조();
+  작업종료알림();
 }
 
 function 폼카드제거수정강조() {

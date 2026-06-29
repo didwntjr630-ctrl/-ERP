@@ -793,3 +793,26 @@ table tbody td {
   color: #555;
   line-height: 1.6;
 }
+
+/* ===== 작업잠금 배너 ===== */
+#작업잠금_배너 {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  background: #c0392b;
+  color: white;
+  text-align: center;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+}
+
+#폼카드.작업잠금중 {
+  pointer-events: none;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
