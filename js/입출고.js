@@ -207,7 +207,10 @@ function 공정팝업열기(구분) {
       if (구분 === '출발') {
         setTimeout(function() { document.getElementById('입고수량').focus(); }, 50);
       }
-    }
+    },
+    빈엔터시: 구분 === '출발' ? function() {
+      setTimeout(function() { document.getElementById('입고수량').focus(); }, 50);
+    } : null
   });
 }
 
@@ -830,6 +833,9 @@ function 조회팝업키보드핸들러(e) {
       var 항목 = 현재팝업필터데이터[현재선택행인덱스];
       현재팝업설정.선택시(항목);
       조회팝업닫기();
+    } else if (현재팝업설정 && 현재팝업설정.빈엔터시) {
+      조회팝업닫기();
+      현재팝업설정.빈엔터시();
     }
     return;
   } else { return; }
