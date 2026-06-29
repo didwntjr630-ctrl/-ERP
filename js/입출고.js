@@ -20,13 +20,11 @@ var 확정된id목록 = new Set();
 
 /* ── 페이지 로드 ── */
 document.addEventListener('DOMContentLoaded', async function() {
-  공정별출발도착옵션갱신(null);
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
   재고현황품명옵션채우기();
-  await 공정필터목록갱신();
-  await 공정별재고요약();
+  await 공정뷰선택('출하검사');  // 출하검사 기본 선택
 
   document.addEventListener('click', function(e) {
     if (!document.getElementById('품명감싸기').contains(e.target)) 드롭다운닫기();
