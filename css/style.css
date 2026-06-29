@@ -675,11 +675,12 @@ table tbody td {
   align-items: center;
   gap: 8px;
   background: white;
-  border: 1px solid #dde3ea;
+  border: 1px solid #c5d8ed;
   border-radius: 4px;
   padding: 10px 16px;
   margin-bottom: 14px;
   flex-wrap: wrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 .공정선택바_레이블 {
@@ -713,6 +714,14 @@ table tbody td {
   background: #1a3a5c;
   color: white;
   border-color: #1a3a5c;
+}
+
+.공정선택버튼.비활성 {
+  color: #bbb;
+  border-color: #ddd;
+  background: #f8f8f8;
+  cursor: default;
+  pointer-events: none;
 }
 
 .공정선택버튼.전체버튼 {
