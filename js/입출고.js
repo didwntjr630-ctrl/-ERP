@@ -18,6 +18,54 @@ var 출발공정목록 = [];
 var 도착공정목록 = [];
 var 확정된id목록 = new Set();
 
+/* ── 폼 임시저장 / 복원 (페이지 이탈 후 복귀 대비) ── */
+var 폼임시저장키 = 'erp_폼임시저장';
+
+function 폼임시저장() {
+  if (수정중인id) return; // 수정 모드일 때는 저장 안 함
+  var 데이터 = {
+    품명:     document.getElementById('품명').value,
+    품번:     선택된품목 ? 선택된품목.품번 : '',
+    일자:     document.getElementById('출고일자').value,
+    lot:      document.getElementById('lot번호').value,
+    출발공정: document.getElementById('출발공정').value,
+    도착공정: document.getElementById('도착공정').value,
+    입고수량: document.getElementById('입고수량').value,
+    출고수량: document.getElementById('출고수량').value,
+    담당자명: document.getElementById('담당자입력').value,
+    담당자코드: document.getElementById('담당자코드표시').textContent
+  };
+  sessionStorage.setItem(폼임시저장키, JSON.stringify(데이터));
+}
+
+function 폼임시저장복원() {
+  var raw = sessionStorage.getItem(폼임시저장키);
+  if (!raw) return;
+  var d = JSON.parse(raw);
+  if (!d.품명 && !d.lot && !d.입고수량) return; // 빈 데이터면 복원 안 함
+
+  if (d.품명) {
+    document.getElementById('품명').value = d.품명;
+    선택된품목 = 품목목록.find(function(p) { return p.품명 === d.품명; }) || null;
+    if (선택된품목) document.getElementById('품명품번표시').textContent = '(' + 선택된품목.품번 + ')';
+  }
+  if (d.일자)     document.getElementById('출고일자').value = d.일자;
+  if (d.lot)      document.getElementById('lot번호').value  = d.lot;
+  if (d.출발공정) document.getElementById('출발공정').value = d.출발공정;
+  if (d.도착공정) document.getElementById('도착공정').value = d.도착공정;
+  if (d.입고수량) document.getElementById('입고수량').value = d.입고수량;
+  if (d.출고수량) document.getElementById('출고수량').value = d.출고수량;
+  if (d.담당자명) {
+    document.getElementById('담당자입력').value = d.담당자명;
+    document.getElementById('담당자코드표시').textContent = d.담당자코드;
+    선택된담당자 = 담당자목록.find(function(t) { return t.이름 === d.담당자명; }) || null;
+  }
+}
+
+function 폼임시저장초기화() {
+  sessionStorage.removeItem(폼임시저장키);
+}
+
 /* ── 페이지 로드 ── */
 document.addEventListener('DOMContentLoaded', async function() {
   오늘날짜세팅();
@@ -25,6 +73,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   담당자검색옵션채우기();
   재고현황품명옵션채우기();
   await 공정뷰선택('출하검사');  // 출하검사 기본 선택
+  폼임시저장복원();               // 이탈 전 작성 내용 복원
 
   document.addEventListener('click', function(e) {
     if (!document.getElementById('품명감싸기').contains(e.target)) 드롭다운닫기();
@@ -154,6 +203,7 @@ function 공정팝업열기(구분) {
     선택시: function(항목) {
       document.getElementById(구분 + '공정').value = 항목.공정명;
       잔량미리보기();
+      폼임시저장();
     }
   });
 }
@@ -229,6 +279,7 @@ function 품목선택(품목) {
   document.getElementById('품명').value = 품목.품명;
   document.getElementById('품명품번표시').textContent = '품번: ' + 품목.품번;
   드롭다운닫기();
+  폼임시저장();
 }
 
 function 드롭다운닫기() {
@@ -241,6 +292,7 @@ function 담당자선택(항목) {
   선택된담당자 = 항목;
   document.getElementById('담당자입력').value = 항목.직급 + ' ' + 항목.이름;
   document.getElementById('담당자코드표시').textContent = '코드: ' + 항목.코드;
+  폼임시저장();
 }
 
 /* ══════════════════════════════════════════
@@ -326,6 +378,7 @@ async function 저장하기() {
     }
   }
 
+  폼임시저장초기화();
   폼초기화(true);
   await 공정필터목록갱신();
   await 공정별재고요약();

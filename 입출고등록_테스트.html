@@ -92,7 +92,7 @@
           <label for="품명">품명 <span style="color:#888; font-weight:normal;">(품명 또는 품번)</span></label>
           <div class="자동완성감싸기" id="품명감싸기">
             <div class="품명입력행">
-              <input type="text" id="품명" placeholder="품명 또는 품번" oninput="품명입력시()" autocomplete="off"
+              <input type="text" id="품명" placeholder="품명 또는 품번" oninput="품명입력시(); 폼임시저장()" autocomplete="off"
                      onkeydown="폼엔터핸들러(event,'품명')">
               <button class="돋보기버튼" onclick="품목조회팝업열기()" title="품목 목록 조회">🔍</button>
             </div>
@@ -102,12 +102,12 @@
         </div>
         <div class="입력그룹" style="flex:0 0 130px;">
           <label for="출고일자">일자</label>
-          <input type="date" id="출고일자" onkeydown="폼엔터핸들러(event,'출고일자')">
+          <input type="date" id="출고일자" onchange="폼임시저장()" onkeydown="폼엔터핸들러(event,'출고일자')">
         </div>
         <div class="입력그룹 lot노">
           <label for="lot번호">LOT No. <span style="color:#888; font-weight:normal;">(더블클릭 검색)</span></label>
           <input type="text" id="lot번호" placeholder="더블클릭 또는 직접 입력" ondblclick="lot팝업열기()"
-                 onkeydown="폼엔터핸들러(event,'lot번호')">
+                 oninput="폼임시저장()" onkeydown="폼엔터핸들러(event,'lot번호')">
         </div>
       </div>
 
@@ -123,7 +123,7 @@
         <div class="입력그룹">
           <label for="입고수량">입고수량</label>
           <div class="수량행">
-            <input type="number" id="입고수량" placeholder="0" min="0" oninput="입고수량변경()"
+            <input type="number" id="입고수량" placeholder="0" min="0" oninput="입고수량변경(); 폼임시저장()"
                    onkeydown="폼엔터핸들러(event,'입고수량')">
             <span class="단위">EA</span>
           </div>
@@ -141,7 +141,7 @@
         <div class="입력그룹">
           <label for="출고수량">출고수량</label>
           <div class="수량행">
-            <input type="number" id="출고수량" placeholder="0" min="0" oninput="잔량미리보기()"
+            <input type="number" id="출고수량" placeholder="0" min="0" oninput="잔량미리보기(); 폼임시저장()"
                    onkeydown="폼엔터핸들러(event,'출고수량')">
             <span class="단위">EA</span>
           </div>
@@ -178,7 +178,7 @@
         </div>
         <div style="display:flex; gap:8px; padding-bottom:1px; margin-left:auto;">
           <button id="저장버튼" class="버튼 초록" onclick="저장하기()">저장</button>
-          <button class="버튼 회색" onclick="폼초기화()">초기화</button>
+          <button class="버튼 회색" onclick="폼임시저장초기화(); 폼초기화()">초기화</button>
         </div>
       </div>
 
