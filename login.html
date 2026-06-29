@@ -521,6 +521,13 @@
       document.getElementById(id).classList.remove('active');
     }
 
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      ['modal-create', 'modal-change'].forEach(function(id) {
+        document.getElementById(id).classList.remove('active');
+      });
+    });
+
     function 엔터계정신청(e) { if (e.key === 'Enter') 계정신청제출(); }
     function 엔터암호변경(e)  { if (e.key === 'Enter') 암호변경(); }
 

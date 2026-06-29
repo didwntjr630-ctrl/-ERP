@@ -29,6 +29,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.addEventListener('click', function(e) {
     if (!document.getElementById('품명감싸기').contains(e.target)) 드롭다운닫기();
   });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('알림모달_오버레이').style.display !== 'none') { 알림모달닫기(); return; }
+    if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
+  });
 });
 
 /* ── 날짜 기본값 ── */

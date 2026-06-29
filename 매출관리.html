@@ -492,6 +492,12 @@
     날짜기본값();
     저장된단가적용();
     데이터로드();
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
+      if (document.getElementById('단가수정_오버레이').style.display !== 'none') { 단가수정팝업닫기(); return; }
+    });
   </script>
 </body>
 </html>
