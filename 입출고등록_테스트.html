@@ -226,12 +226,10 @@
     <div class="카드">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <div class="페이지제목" style="font-size:15px; margin-bottom:0;">출하 현황</div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <label style="font-size:12px; color:#2a6496; font-weight:bold;">품명 필터</label>
-          <select id="출하현황_품명필터" onchange="출하현황요약()" style="font-size:13px; padding:4px 8px; border:1px solid #c0cfe0; border-radius:3px; height:30px;">
-            <option value="">전체 품목</option>
-          </select>
-          <button class="버튼 파랑" style="height:30px; padding:0 12px; font-size:13px;" onclick="출하현황요약()">조회</button>
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <input type="text" id="출하현황_품명필터" readonly placeholder="전체 품목" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:160px; background:#fff; cursor:pointer;" onclick="출하현황품목조회팝업열기()">
+          <button class="돋보기버튼" onclick="출하현황품목조회팝업열기()" title="품목 조회">🔍</button>
+          <button class="버튼 회색" style="height:30px; padding:0 10px; font-size:13px;" onclick="출하현황필터초기화()">전체</button>
         </div>
       </div>
       <!-- 요약 카드 -->

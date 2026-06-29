@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
-  출하현황품명옵션채우기();
   await 공정뷰선택('출하검사');  // 출하검사 기본 선택
   폼임시저장복원();               // 이탈 전 작성 내용 복원
 
@@ -634,13 +633,21 @@ async function 출하현황요약() {
 
 async function 공정별재고요약() { await 출하현황요약(); }
 
-function 출하현황품명옵션채우기() {
-  var sel = document.getElementById('출하현황_품명필터');
-  품목목록.forEach(function(p) {
-    var opt = document.createElement('option');
-    opt.value = p.품명; opt.textContent = p.품명;
-    sel.appendChild(opt);
+function 출하현황품목조회팝업열기() {
+  조회팝업열기({
+    제목: '품목 조회', 검색힌트: '품명 또는 품번 검색...',
+    데이터: 품목목록,
+    열목록: [{ 제목: '품번', 필드: '품번' }, { 제목: '품명', 필드: '품명' }, { 제목: '규격', 필드: '규격' }],
+    선택시: function(항목) {
+      document.getElementById('출하현황_품명필터').value = 항목.품명;
+      출하현황요약();
+    }
   });
+}
+
+function 출하현황필터초기화() {
+  document.getElementById('출하현황_품명필터').value = '';
+  출하현황요약();
 }
 
 /* ══════════════════════════════════════════
