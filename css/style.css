@@ -465,6 +465,16 @@ table tbody td {
   background-color: #b02a37;
 }
 
+.버튼.노랑 {
+  background-color: #fff9c4;
+  color: #7a6a00;
+  border: 1px solid #e0c800;
+}
+
+.버튼.노랑:hover {
+  background-color: #fff176;
+}
+
 /* ===== 빈 목록 안내 ===== */
 .빈목록안내 {
   text-align: center;
