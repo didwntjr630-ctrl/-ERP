@@ -204,6 +204,9 @@ function 공정팝업열기(구분) {
       document.getElementById(구분 + '공정').value = 항목.공정명;
       잔량미리보기();
       폼임시저장();
+      if (구분 === '출발') {
+        setTimeout(function() { document.getElementById('입고수량').focus(); }, 50);
+      }
     }
   });
 }
