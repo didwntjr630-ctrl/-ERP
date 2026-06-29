@@ -308,10 +308,10 @@
       <div class="category-card">
         <div class="category-header">관 리 자</div>
         <div class="category-body">
-          <a class="menu-btn disabled" id="admin-menu-btn">
+          <button class="menu-btn" onclick="관리자페이지이동()">
             계정 승인 관리
-            <span class="badge-soon">준비중</span>
-          </a>
+            <span class="icon badge-new">관리자</span>
+          </button>
         </div>
       </div>
 
@@ -331,11 +331,14 @@
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
-      if (세션.관리자) {
-        var btn = document.getElementById('admin-menu-btn');
-        btn.className = 'menu-btn';
-        btn.href = 'admin.html';
-        btn.innerHTML = '계정 승인 관리 <span class="icon badge-new">관리자</span>';
+    }
+
+    function 관리자페이지이동() {
+      var 세션 = 현재세션();
+      if (세션 && 세션.관리자) {
+        location.href = 'admin.html';
+      } else {
+        alert('관리자 계정만 접속 가능합니다.');
       }
     }
   </script>
