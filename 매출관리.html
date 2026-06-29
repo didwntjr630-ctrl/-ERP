@@ -338,7 +338,11 @@
       });
     }
 
-    function 매출메일발송() {
+    async function 매출메일발송() {
+      if (!APP_CONFIG.메일발송URL) {
+        alert('메일발송 URL이 설정되지 않았습니다.\nconfig.js의 메일발송URL을 입력해주세요.');
+        return;
+      }
       var 목록 = 전체데이터;
       if (!목록 || 목록.length === 0) { alert('발송할 매출 데이터가 없습니다.'); return; }
 
@@ -364,10 +368,22 @@
                 ' | 공급가: ' + 공급.toLocaleString() + '원\n';
       });
 
-      var url = 'mailto:' + APP_CONFIG.수신이메일 +
-                '?subject=' + encodeURIComponent(제목) +
-                '&body=' + encodeURIComponent(본문);
-      window.location.href = url;
+      var 버튼 = document.querySelector('button[onclick="매출메일발송()"]');
+      if (버튼) { 버튼.disabled = true; 버튼.textContent = '발송 중...'; }
+
+      try {
+        await fetch(APP_CONFIG.메일발송URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: APP_CONFIG.수신이메일, subject: 제목, body: 본문 })
+        });
+        alert('메일이 발송되었습니다.\n수신: ' + APP_CONFIG.수신이메일);
+      } catch(err) {
+        alert('메일 발송 실패: ' + err.message);
+      } finally {
+        if (버튼) { 버튼.disabled = false; 버튼.textContent = '메일 발송'; }
+      }
     }
 
     async function 매출삭제(id) {

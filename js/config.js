@@ -42,6 +42,7 @@ var APP_CONFIG = {
   ],
 
   수신이메일: 'didwntjr630@naver.com',
+  메일발송URL: '',
 
   매출고정값: {
     완료공정: 'C/T',
