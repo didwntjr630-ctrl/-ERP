@@ -313,7 +313,7 @@ async function 저장하기() {
     }
   }
 
-  폼초기화();
+  폼초기화(true);
   await 공정필터목록갱신();
   await 공정별재고요약();
 }
@@ -395,7 +395,8 @@ async function 삭제하기(id) {
   await 공정별재고요약();
 }
 
-function 폼초기화() {
+function 폼초기화(일자유지) {
+  var 현재일자 = document.getElementById('출고일자').value;
   선택된품목   = null;
   선택된담당자 = null;
   document.getElementById('품명').value               = '';
@@ -403,7 +404,6 @@ function 폼초기화() {
   document.getElementById('입고수량').value            = '';
   document.getElementById('출고수량').value            = '';
   document.getElementById('불량수량').value            = '';
-  document.getElementById('출고일자').value            = '';
   document.getElementById('lot번호').value             = '';
   document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : (현재작업공정 || '');
   document.getElementById('출발공정').disabled          = false;
@@ -414,7 +414,11 @@ function 폼초기화() {
   document.getElementById('잔량표시').style.color      = '#888';
   document.getElementById('잔량표시').style.fontWeight = 'normal';
   드롭다운닫기();
-  오늘날짜세팅();
+  if (일자유지 && 현재일자) {
+    document.getElementById('출고일자').value = 현재일자;
+  } else {
+    오늘날짜세팅();
+  }
   수정중인id = null;
   document.getElementById('저장버튼').textContent = '저장';
   document.getElementById('저장버튼').className   = '버튼 초록';
