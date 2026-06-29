@@ -305,6 +305,16 @@
 
     .pending-box p { font-size: 13px; color: #2e7d32; line-height: 1.6; }
 
+    .version-badge {
+      position: absolute;
+      bottom: 14px;
+      left: 20px;
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      z-index: 5;
+      letter-spacing: 0.5px;
+    }
+
     .copyright {
       position: absolute;
       bottom: 14px;
@@ -428,6 +438,7 @@
     </div>
   </div>
 
+  <div class="version-badge" id="version-badge"></div>
   <div class="copyright" id="copyright"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -443,6 +454,7 @@
     document.getElementById('company-name').textContent = APP_CONFIG.회사명;
     document.getElementById('admin-info').textContent = '서버관리자 : ' + APP_CONFIG.관리자;
     document.getElementById('copyright').textContent = 'Copyright (C) ' + APP_CONFIG.회사명 + '. All Rights Reserved.';
+    document.getElementById('version-badge').textContent = APP_CONFIG.버전;
     document.title = APP_CONFIG.시스템명 + ' - 로그인';
 
     if (현재세션()) location.href = 'main.html';
