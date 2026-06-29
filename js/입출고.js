@@ -622,9 +622,9 @@ async function 출하현황요약() {
   합계행.style.cssText = 'background:#f0f7ff; font-weight:bold; border-top:2px solid #b8d0e8;';
   합계행.innerHTML =
     '<td colspan="2" style="color:#1a3a5c;">합계</td>' +
-    '<td style="color:#111; text-align:center;">' + 출하데이터.length + '</td>' +
-    '<td style="color:#111; text-align:right;">' + 총출하.toLocaleString() + '</td>' +
-    '<td style="color:#111; text-align:right;">' + 총불량.toLocaleString() + '</td>';
+    '<td style="color:#111; text-align:center;">' + 출하데이터.length + '건</td>' +
+    '<td style="color:#111; text-align:right;">' + 총출하.toLocaleString() + ' EA</td>' +
+    '<td style="color:#111; text-align:right;">' + 총불량.toLocaleString() + ' EA</td>';
   바디.appendChild(합계행);
 }
 
