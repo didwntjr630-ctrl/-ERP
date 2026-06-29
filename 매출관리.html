@@ -370,13 +370,13 @@
       본문 += 'VAT포함 합계: ' + 총vat.toLocaleString() + ' 원\n';
       본문 += '========================================\n\n';
       본문 += '[ 품목별 내역 ]\n';
+      본문 += '----------------------------------------\n';
       var 순번 = 1;
       Object.keys(품목집계).sort().forEach(function(품명) {
         var d = 품목집계[품명];
-        본문 += 순번++ + '. ' + 품명 +
-                ' | 단가: ' + d.단가.toLocaleString() + '원' +
-                ' | 총 수량: ' + d.수량.toLocaleString() + ' EA' +
-                ' | 총 공급가: ' + d.공급.toLocaleString() + '원\n';
+        본문 += 순번++ + '. ' + 품명 + '\n';
+        본문 += '   단가: ' + d.단가.toLocaleString() + '원  |  총 수량: ' + d.수량.toLocaleString() + ' EA  |  총 공급가: ' + d.공급.toLocaleString() + '원\n';
+        본문 += '\n';
       });
 
       fetch(APP_CONFIG.메일발송URL, {
