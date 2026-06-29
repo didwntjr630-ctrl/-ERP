@@ -417,6 +417,18 @@ body {
   overflow-x: auto;
 }
 
+.테이블감싸기.스크롤 {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.테이블감싸기.스크롤 thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #d0e8f8 0%, #b8d8f0 100%);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
