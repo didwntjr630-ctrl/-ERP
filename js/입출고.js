@@ -84,6 +84,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (document.getElementById('알림모달_오버레이').style.display !== 'none') { 알림모달닫기(); return; }
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
   });
+
+  // 다른 PC의 변경을 실시간으로 반영 (Supabase Realtime)
+  var _실시간타이머 = null;
+  수파베이스
+    .channel('입출고실시간')
+    .on('postgres_changes', { event: '*', schema: 'public', table: '입출고기록' }, function() {
+      clearTimeout(_실시간타이머);
+      _실시간타이머 = setTimeout(공정필터목록갱신, 400);
+    })
+    .subscribe();
 });
 
 /* ── 날짜 기본값 ── */
@@ -362,7 +372,14 @@ async function 저장하기() {
   if (수정중인id !== null) {
     var 이전기록 = await 데이터하나가져오기(수정중인id);
     var 이전미완료 = 이전기록 && 이전기록.완료여부 === false;
-    await 데이터수정(수정중인id, 새항목);
+    var 수정됨 = await 데이터수정(수정중인id, 새항목);
+    if (!수정됨) {
+      알림표시('수정 실패: 이미 삭제된 항목입니다. 목록을 새로고침합니다.', '오류');
+      폼초기화(false);
+      await 공정필터목록갱신();
+      await 공정별재고요약();
+      return;
+    }
 
     if (이전미완료 && 도착값 && 공정순서.includes(도착값)) {
       await 다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
@@ -419,8 +436,9 @@ function 오류팝업표시(잘못값) {
 }
 
 async function 수정하기(id) {
+  if (잠금_다른사용자작업중) { 알림표시('다른 사용자가 작업 중입니다. 잠시 후 시도해 주세요.', '오류'); return; }
   var 항목 = await 데이터하나가져오기(id);
-  if (!항목) return;
+  if (!항목) { 알림표시('이미 삭제된 항목입니다. 목록을 새로고침합니다.', '오류'); await 공정필터목록갱신(); return; }
 
   document.getElementById('품명').value = 항목.품명;
   document.getElementById('품명품번표시').textContent = 항목.품번 ? '품번: ' + 항목.품번 : '';
@@ -462,9 +480,14 @@ async function 수정하기(id) {
 }
 
 async function 삭제하기(id) {
+  if (잠금_다른사용자작업중) { 알림표시('다른 사용자가 작업 중입니다. 잠시 후 시도해 주세요.', '오류'); return; }
   if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
-  await 데이터삭제(id);
-  알림표시('삭제되었습니다.', '성공');
+  var 삭제됨 = await 데이터삭제(id);
+  if (삭제됨) {
+    알림표시('삭제되었습니다.', '성공');
+  } else {
+    알림표시('삭제 실패: 이미 다른 사용자가 삭제한 항목입니다.', '오류');
+  }
   await 공정필터목록갱신();
   await 공정별재고요약();
 }
@@ -973,8 +996,16 @@ function 확정처리() {
     return;
   }
   확인모달표시(선택ids.length + '건을 매출확정 하시겠습니까?', async function() {
+    // 확정 직전 최신 상태 재조회 — 동시 작업 중복 방지
+    await 확정id목록갱신();
+    var 미확정ids = 선택ids.filter(function(id) { return !확정된id목록.has(id); });
+    if (미확정ids.length === 0) {
+      알림표시('선택한 항목이 이미 모두 매출확정 되었습니다.', '오류');
+      await 공정필터목록갱신();
+      return;
+    }
     var 전체 = await 데이터불러오기();
-    var 선택항목 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
+    var 선택항목 = 전체.filter(function(h) { return 미확정ids.includes(h.id); });
 
     var 매출행들 = 선택항목.map(function(h) {
       return {

@@ -7,6 +7,7 @@ var 잠금채널 = null;
 var 잠금_내키 = '';
 var 잠금_내사용자 = '';
 var 잠금_구독완료 = false;
+var 잠금_다른사용자작업중 = false;
 
 function 작업잠금초기화(사용자명) {
   잠금_내사용자 = 사용자명;
@@ -56,6 +57,7 @@ function 잠금_상태확인() {
 }
 
 function 잠금_UI표시(작업자명) {
+  잠금_다른사용자작업중 = true;
   var 배너 = document.getElementById('작업잠금_배너');
   if (배너) {
     배너.innerHTML =
@@ -68,8 +70,9 @@ function 잠금_UI표시(작업자명) {
 }
 
 function 잠금_UI해제() {
+  잠금_다른사용자작업중 = false;
   var 배너 = document.getElementById('작업잠금_배너');
-  if (배너)배너.style.display = 'none';
+  if (배너) 배너.style.display = 'none';
   var 폼 = document.getElementById('폼카드');
   if (폼) 폼.classList.remove('작업잠금중');
 }

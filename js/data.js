@@ -84,23 +84,26 @@ async function 데이터저장(새항목) {
   return data;
 }
 
-/* 특정 항목 수정 */
+/* 특정 항목 수정 — 실제 수정된 행이 있으면 true, 0건이면 false */
 async function 데이터수정(id, 수정값) {
-  var { error } = await 수파베이스
+  var { data, error } = await 수파베이스
     .from(테이블명)
     .update(수정값)
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
   if (error) { console.error('데이터수정 오류:', error); return false; }
-  return true;
+  return data && data.length > 0;
 }
 
-/* 특정 항목 삭제 */
+/* 특정 항목 삭제 — 실제 삭제된 행이 있으면 true, 0건이면 false */
 async function 데이터삭제(id) {
-  var { error } = await 수파베이스
+  var { data, error } = await 수파베이스
     .from(테이블명)
     .delete()
-    .eq('id', id);
-  if (error) { console.error('데이터삭제 오류:', error); }
+    .eq('id', id)
+    .select('id');
+  if (error) { console.error('데이터삭제 오류:', error); return false; }
+  return data && data.length > 0;
 }
 
 /* 특정 항목 한 개 가져오기 */
