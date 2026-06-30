@@ -97,7 +97,7 @@
           <div class="자동완성감싸기" id="품명감싸기">
             <div class="품명입력행">
               <input type="text" id="품명" placeholder="품명 또는 품번" oninput="품명입력시(); 폼임시저장()" autocomplete="off"
-                     onkeydown="폼엔터핸들러(event,'품명')">
+                     onblur="드롭다운닫기()" onkeydown="폼엔터핸들러(event,'품명')">
               <button class="돋보기버튼" onclick="품목조회팝업열기()" title="품목 목록 조회">🔍</button>
             </div>
             <ul id="품명드롭다운" class="자동완성목록" style="display:none;"></ul>

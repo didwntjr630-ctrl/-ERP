@@ -13,7 +13,8 @@ function 작업잠금초기화(사용자명) {
   잠금_내사용자 = 사용자명;
   잠금_내키 = Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-  잠금채널 = 수파베이스.channel('erp_입출고잠금', {
+  var 채널명 = 'erp_입출고잠금_' + window.location.hostname;
+  잠금채널 = 수파베이스.channel(채널명, {
     config: { presence: { key: 잠금_내키 } }
   });
 
