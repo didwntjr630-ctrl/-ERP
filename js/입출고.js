@@ -10,7 +10,8 @@
      완료여부  - false = 자동생성 미처리, true = 등록 완료
    =================================================== */
 
-var 수정중인id   = null;
+var 수정중인id            = null;
+var 수정중인항목이확정됨  = false;
 var 선택된품목   = null;
 var 선택된담당자 = null;
 var 현재작업공정 = null;
@@ -370,6 +371,7 @@ async function 저장하기() {
   };
 
   if (수정중인id !== null) {
+    var 확정취소대상 = 수정중인항목이확정됨;
     var 이전기록 = await 데이터하나가져오기(수정중인id);
     var 이전미완료 = 이전기록 && 이전기록.완료여부 === false;
     var 수정됨 = await 데이터수정(수정중인id, 새항목);
@@ -381,14 +383,19 @@ async function 저장하기() {
       return;
     }
 
+    if (확정취소대상) {
+      await 매출기록확정취소(수정중인id);
+    }
+
     if (이전미완료 && 도착값 && 공정순서.includes(도착값)) {
       await 다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
-      알림표시('등록 완료! ' + 도착값 + '에 자동으로 전달되었습니다.', '성공');
+      알림표시('등록 완료! ' + 도착값 + '에 자동으로 전달되었습니다.' + (확정취소대상 ? ' (매출확정 취소됨. 재확정 필요)' : ''), '성공');
     } else {
-      알림표시('수정되었습니다.', '성공');
+      알림표시(확정취소대상 ? '수정 완료. 매출확정이 취소되었습니다. 재확정이 필요합니다.' : '수정되었습니다.', '성공');
     }
 
     수정중인id = null;
+    수정중인항목이확정됨 = false;
     document.getElementById('저장버튼').textContent = '저장';
     document.getElementById('저장버튼').className = '버튼 초록';
     폼카드제거수정강조();
@@ -437,8 +444,22 @@ function 오류팝업표시(잘못값) {
 
 async function 수정하기(id) {
   if (잠금_다른사용자작업중) { 알림표시('다른 사용자가 작업 중입니다. 잠시 후 시도해 주세요.', '오류'); return; }
+
+  var 이미확정 = 확정된id목록.has(id);
+  if (이미확정) {
+    확인모달표시('확정된 항목입니다.\n수정 저장 시 매출확정이 취소됩니다.\n계속 진행하시겠습니까?', function() {
+      수정폼채우기(id, true);
+    });
+    return;
+  }
+  수정폼채우기(id, false);
+}
+
+async function 수정폼채우기(id, 확정됨) {
   var 항목 = await 데이터하나가져오기(id);
   if (!항목) { 알림표시('이미 삭제된 항목입니다. 목록을 새로고침합니다.', '오류'); await 공정필터목록갱신(); return; }
+
+  수정중인항목이확정됨 = 확정됨;
 
   document.getElementById('품명').value = 항목.품명;
   document.getElementById('품명품번표시').textContent = 항목.품번 ? '품번: ' + 항목.품번 : '';
@@ -516,7 +537,8 @@ function 폼초기화(일자유지) {
   } else {
     오늘날짜세팅();
   }
-  수정중인id = null;
+  수정중인id           = null;
+  수정중인항목이확정됨 = false;
   document.getElementById('저장버튼').textContent = '저장';
   document.getElementById('저장버튼').className   = '버튼 초록';
   폼카드제거수정강조();
@@ -604,9 +626,12 @@ function 목록테이블그리기(목록) {
 ══════════════════════════════════════════ */
 async function 출하현황요약() {
   var 전체 = await 데이터불러오기();
-  var 품명필터 = document.getElementById('출하현황_품명필터').value;
+  var 품명필터   = document.getElementById('출하현황_품명필터').value;
+  var 납품처필터 = document.getElementById('출하현황_납품처필터').value;
   var 출하데이터 = 전체.filter(function(h) {
-    return h.공정 === '출하검사' && (!품명필터 || h.품명 === 품명필터);
+    return h.공정 === '출하검사'
+      && (!품명필터   || h.품명     === 품명필터)
+      && (!납품처필터 || h.도착공정 === 납품처필터);
   });
 
   var 품목집계 = {};
@@ -671,8 +696,21 @@ function 출하현황품목조회팝업열기() {
   });
 }
 
+function 출하현황납품처조회팝업열기() {
+  조회팝업열기({
+    제목: '납품처 조회', 검색힌트: '납품처명 검색...',
+    데이터: APP_CONFIG.납품처목록,
+    열목록: [{ 제목: '코드', 필드: '코드' }, { 제목: '납품처명', 필드: '업체명' }],
+    선택시: function(항목) {
+      document.getElementById('출하현황_납품처필터').value = 항목.업체명;
+      출하현황요약();
+    }
+  });
+}
+
 function 출하현황필터초기화() {
-  document.getElementById('출하현황_품명필터').value = '';
+  document.getElementById('출하현황_품명필터').value   = '';
+  document.getElementById('출하현황_납품처필터').value = '';
   출하현황요약();
 }
 

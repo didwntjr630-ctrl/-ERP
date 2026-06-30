@@ -106,6 +106,16 @@ async function 데이터삭제(id) {
   return data && data.length > 0;
 }
 
+/* 매출기록에서 해당 입출고id 확정 취소 */
+async function 매출기록확정취소(입출고id) {
+  var { error } = await 수파베이스
+    .from('매출기록')
+    .delete()
+    .eq('입출고id', 입출고id);
+  if (error) { console.error('매출기록확정취소 오류:', error); return false; }
+  return true;
+}
+
 /* 특정 항목 한 개 가져오기 */
 async function 데이터하나가져오기(id) {
   var { data, error } = await 수파베이스
