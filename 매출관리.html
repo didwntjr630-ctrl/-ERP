@@ -181,13 +181,13 @@
 
   <!-- 단가 수정 팝업 -->
   <div id="단가수정_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this) 단가수정팝업닫기()">
-    <div class="팝업창" style="max-width:480px;">
+    <div class="팝업창" style="max-width:480px; max-height:85vh; display:flex; flex-direction:column;">
       <div class="팝업헤더">
         <span>단가 수정</span>
         <button class="팝업닫기버튼" onclick="단가수정팝업닫기()">✕</button>
       </div>
-      <div class="팝업내용" style="padding:16px;">
-        <div class="팝업테이블감싸기">
+      <div class="팝업내용" style="padding:16px; flex:1; overflow-y:auto; min-height:0;">
+        <div class="팝업테이블감싸기" style="max-height:none;">
           <table>
             <thead>
               <tr>
@@ -532,6 +532,7 @@
       if (품명) 결과 = 결과.filter(function(h) { return (h.품명||'').toLowerCase().includes(품명) || (h.품번||'').toLowerCase().includes(품명); });
       if (납품처) 결과 = 결과.filter(function(h) { return (h.도착공정||'').includes(납품처); });
 
+      결과 = 결과.sort(function(a, b) { return b.id - a.id; });
       테이블그리기(결과);
     }
 

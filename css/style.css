@@ -791,10 +791,10 @@ table tbody td {
 
 .팝업테이블감싸기 {
   max-height: 300px;
+  overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid #E5E7EB;
   border-radius: 6px;
-  overflow: hidden;
 }
 
 .팝업테이블감싸기 table {
