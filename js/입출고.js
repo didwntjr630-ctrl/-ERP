@@ -240,6 +240,9 @@ async function 공정필터목록갱신() {
     결과 = 전체;
   } else if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사') {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정; });
+    if (현재작업공정 === '출하검사') {
+      결과 = 결과.slice().sort(function(a, b) { return b.id - a.id; });
+    }
   } else {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
   }
