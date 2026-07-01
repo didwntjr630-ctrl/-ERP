@@ -61,7 +61,7 @@
           <label>품명 / 품번</label>
           <div class="검색입력행">
             <input type="text" id="검색_품명" placeholder="품명 또는 품번" onkeydown="엔터검색(event)">
-            <button class="돋보기버튼 검색용" onclick="검색_품목팝업열기()" title="품목 조회">🔍</button>
+            <button class="돋보기버튼 검색용" onclick="검색_품목팝업열기()" title="품목 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           </div>
         </div>
 
@@ -102,7 +102,7 @@
             <div class="품명입력행">
               <input type="text" id="품명" placeholder="품명 또는 품번" oninput="품명입력시(); 폼임시저장()" autocomplete="off"
                      onblur="드롭다운닫기()" onkeydown="폼엔터핸들러(event,'품명')">
-              <button class="돋보기버튼" onclick="품목조회팝업열기()" title="품목 목록 조회">🔍</button>
+              <button class="돋보기버튼" onclick="품목조회팝업열기()" title="품목 목록 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
             </div>
             <ul id="품명드롭다운" class="자동완성목록" style="display:none;"></ul>
           </div>
@@ -180,7 +180,7 @@
           <div class="품명입력행">
             <input type="text" id="담당자입력" placeholder="클릭하여 선택" readonly onclick="담당자조회팝업열기()" style="cursor:pointer;"
                    onkeydown="폼엔터핸들러(event,'담당자입력')">
-            <button class="돋보기버튼" onclick="담당자조회팝업열기()" title="담당자 조회">🔍</button>
+            <button class="돋보기버튼" onclick="담당자조회팝업열기()" title="담당자 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           </div>
           <div class="품번표시" id="담당자코드표시"></div>
         </div>
@@ -236,9 +236,9 @@
         <div class="페이지제목" style="font-size:15px; margin-bottom:0;">출하 현황</div>
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <input type="text" id="출하현황_품명필터" readonly placeholder="전체 품목" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:150px; background:#fff; cursor:pointer;" onclick="출하현황품목조회팝업열기()">
-          <button class="돋보기버튼" onclick="출하현황품목조회팝업열기()" title="품목 조회">🔍</button>
+          <button class="돋보기버튼" onclick="출하현황품목조회팝업열기()" title="품목 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <input type="text" id="출하현황_납품처필터" readonly placeholder="전체 납품처" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:140px; background:#fff; cursor:pointer;" onclick="출하현황납품처조회팝업열기()">
-          <button class="돋보기버튼" onclick="출하현황납품처조회팝업열기()" title="납품처 조회">🔍</button>
+          <button class="돋보기버튼" onclick="출하현황납품처조회팝업열기()" title="납품처 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button class="버튼 회색" style="height:30px; padding:0 10px; font-size:13px;" onclick="출하현황필터초기화()">전체</button>
         </div>
       </div>
