@@ -20,6 +20,10 @@
       <a class="비활성">재고 현황</a>
       <a class="비활성">LOT 추적</a>
     </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
   </div>
 
   <div id="작업잠금_배너" style="display:none;"></div>
@@ -343,7 +347,10 @@
     document.getElementById('부제').textContent = APP_CONFIG.부제;
     document.title = APP_CONFIG.시스템명 + ' - 입출고 등록';
     var _세션 = 현재세션();
-    if (_세션) 작업잠금초기화(_세션.직급 + ' ' + _세션.사원명);
+    if (_세션) {
+      document.getElementById('user-info').textContent = _세션.직급 + ' ' + _세션.사원명;
+      작업잠금초기화(_세션.직급 + ' ' + _세션.사원명);
+    }
   </script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>

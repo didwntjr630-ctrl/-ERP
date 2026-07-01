@@ -71,6 +71,30 @@ body {
   cursor: default;
 }
 
+.메뉴바 .우측정보 {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #cce0f5;
+}
+
+.메뉴바 .우측정보 .사용자명 { opacity: 0.85; }
+
+.메뉴바 .우측정보 button {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.메뉴바 .우측정보 button:hover { background: rgba(255,255,255,0.22); }
+
 /* ===== 페이지 내용 영역 ===== */
 .내용영역 {
   max-width: 1100px;
