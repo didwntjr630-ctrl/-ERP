@@ -8,18 +8,22 @@
 body {
   font-family: '맑은 고딕', 'Malgun Gothic', sans-serif;
   font-size: 14px;
-  background-color: #f5f6fa;
-  color: #333;
+  background-color: #F9FAFB;
+  color: #111827;
 }
 
 /* ===== 상단 메뉴바 ===== */
 .메뉴바 {
-  background-color: #1a3a5c;
+  background-color: #374151;
   color: white;
-  padding: 0 20px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   height: 56px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+  position: sticky;
+  top: 0;
+  z-index: 500;
 }
 
 .메뉴바 .회사명 {
@@ -33,41 +37,47 @@ body {
 }
 
 .메뉴바 .회사명 .회사명_메인 {
-  font-size: 17px;
-  font-weight: bold;
-  letter-spacing: 1px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .메뉴바 .회사명 .회사명_부제 {
   font-size: 10px;
-  color: #8ab8d8;
+  color: #F97316;
   letter-spacing: 2px;
   font-style: italic;
+  opacity: 0.9;
 }
 
 .메뉴바 nav a {
-  color: #cce0f5;
+  color: #D1D5DB;
   text-decoration: none;
-  padding: 0 16px;
-  height: 50px;
-  line-height: 50px;
+  padding: 0 18px;
+  height: 56px;
+  line-height: 56px;
   display: inline-block;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+  border-bottom: 3px solid transparent;
+  margin-top: 3px;
 }
 
 .메뉴바 nav a:hover {
-  background-color: #2a5080;
+  background-color: rgba(255,255,255,0.07);
   color: white;
 }
 
 .메뉴바 nav a.활성 {
-  background-color: #2a6496;
-  color: white;
-  font-weight: bold;
+  color: #F97316;
+  font-weight: 700;
+  border-bottom: 3px solid #F97316;
+  background: rgba(249,115,22,0.09);
 }
 
 .메뉴바 nav a.비활성 {
-  color: #7a9ab5;
+  color: #6B7280;
   cursor: default;
 }
 
@@ -75,55 +85,109 @@ body {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-size: 13px;
-  color: #cce0f5;
+  color: #D1D5DB;
 }
 
-.메뉴바 .우측정보 .사용자명 { opacity: 0.85; }
+.메뉴바 .우측정보 .사용자명 {
+  opacity: 0.85;
+  font-size: 13px;
+}
 
 .메뉴바 .우측정보 button {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 4px;
+  background: rgba(249,115,22,0.15);
+  border: 1px solid rgba(249,115,22,0.4);
+  color: #FED7AA;
+  padding: 5px 14px;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 12px;
   font-family: inherit;
+  font-weight: 600;
+  transition: background 0.15s;
 }
 
-.메뉴바 .우측정보 button:hover { background: rgba(255,255,255,0.22); }
+.메뉴바 .우측정보 button:hover {
+  background: rgba(249,115,22,0.3);
+}
+
+/* ===== 관리자 페이지 메뉴바 전용 ===== */
+.메뉴바-좌 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.메뉴바-부제 {
+  font-size: 10px;
+  color: #F97316;
+  letter-spacing: 2px;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.메뉴바-우 {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #D1D5DB;
+}
+
+.버튼.작게 {
+  background: rgba(249,115,22,0.15);
+  border: 1px solid rgba(249,115,22,0.4);
+  color: #FED7AA;
+  padding: 5px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  transition: background 0.15s;
+  height: auto;
+}
+
+.버튼.작게:hover {
+  background: rgba(249,115,22,0.3);
+}
 
 /* ===== 페이지 내용 영역 ===== */
 .내용영역 {
-  max-width: 1100px;
+  max-width: 1150px;
   margin: 24px auto;
-  padding: 0 16px;
+  padding: 0 20px;
 }
 
 /* ===== 카드 (흰색 박스) ===== */
 .카드 {
   background: white;
-  border: 1px solid #dde3ea;
-  border-radius: 4px;
-  padding: 20px 24px;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 22px 26px;
   margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
 }
 
 /* ===== 검색 카드 ===== */
 .검색카드 {
-  background: #eef4fb;
-  border: 1px solid #c5d8ed;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-left: 4px solid #F97316;
 }
 
 .검색카드제목 {
-  font-size: 14px;
-  font-weight: bold;
-  color: #1a3a5c;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #c5d8ed;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #F3F4F6;
+  letter-spacing: 0.2px;
 }
 
 .검색행 {
@@ -136,7 +200,7 @@ body {
 .검색항목 {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
   min-width: 130px;
 }
@@ -146,26 +210,30 @@ body {
 }
 
 .검색항목 label {
-  font-size: 12px;
-  color: #2a6496;
-  font-weight: bold;
+  font-size: 11px;
+  color: #6B7280;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .검색항목 input[type="text"],
 .검색항목 select {
-  border: 1px solid #b8cfe0;
-  border-radius: 3px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
   padding: 6px 10px;
   font-size: 13px;
   font-family: inherit;
   background: white;
-  height: 32px;
+  height: 34px;
+  color: #111827;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .검색항목 input[type="text"]:focus,
 .검색항목 select:focus {
   outline: none;
-  border-color: #2a6496;
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
 .기간입력행 {
@@ -175,48 +243,52 @@ body {
 }
 
 .기간입력행 input[type="date"] {
-  border: 1px solid #b8cfe0;
-  border-radius: 3px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
   padding: 5px 8px;
   font-size: 13px;
   font-family: inherit;
   background: white;
-  height: 32px;
-  width: 130px;
+  height: 34px;
+  width: 136px;
+  color: #111827;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .기간입력행 input[type="date"]:focus {
   outline: none;
-  border-color: #2a6496;
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
 .기간구분 {
-  color: #666;
+  color: #9CA3AF;
   font-size: 13px;
   flex-shrink: 0;
 }
 
 .검색결과안내 {
   font-size: 12px;
-  color: #666;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid #d0e2f0;
+  color: #6B7280;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #F3F4F6;
 }
 
 .검색결과안내 .결과강조 {
-  color: #2a6496;
-  font-weight: bold;
+  color: #F97316;
+  font-weight: 700;
 }
 
 /* ===== 페이지 제목 ===== */
 .페이지제목 {
-  font-size: 18px;
-  font-weight: bold;
-  color: #1a3a5c;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #2a6496;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #F97316;
+  letter-spacing: -0.2px;
 }
 
 /* ===== 입력 폼 ===== */
@@ -230,34 +302,36 @@ body {
 .입력그룹 {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
   min-width: 160px;
 }
 
 .입력그룹 label {
-  font-size: 12px;
-  color: #2a6496;
-  font-weight: bold;
+  font-size: 11px;
+  color: #6B7280;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .입력그룹 input,
 .입력그룹 select {
-  border: 1px solid #c0cfe0;
-  border-radius: 3px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
   padding: 6px 10px;
   font-size: 14px;
   font-family: inherit;
-  color: #333;
+  color: #111827;
   background: white;
-  height: 34px;
+  height: 36px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .입력그룹 input:focus,
 .입력그룹 select:focus {
   outline: none;
-  border-color: #2a6496;
-  box-shadow: 0 0 0 2px rgba(42, 100, 150, 0.15);
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
 /* LOT No. 입력칸 */
@@ -272,30 +346,34 @@ body {
   align-items: center;
   gap: 6px;
 }
+
 .수량행 input {
   flex: 1;
 }
+
 .단위 {
   font-size: 12px;
-  color: #666;
+  color: #6B7280;
   white-space: nowrap;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* ===== 출고 정보 박스 ===== */
 .출고정보박스 {
-  background: #f8fafc;
-  border: 1px solid #dde3ea;
-  border-radius: 4px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
   padding: 14px 18px;
   margin-bottom: 14px;
 }
 
 .출고정보박스 .소제목 {
-  font-size: 13px;
-  font-weight: bold;
-  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9CA3AF;
   margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 .출고정보행 {
@@ -308,69 +386,85 @@ body {
 
 .출고정보항목 {
   font-size: 13px;
-  color: #444;
+  color: #374151;
   line-height: 1.9;
 }
 
 .출고정보항목 span {
-  color: #2a6496;
-  font-weight: bold;
+  color: #F97316;
+  font-weight: 700;
 }
 
-/* ===== 컨트롤 입력 행 (창고/공정/담당자/저장버튼) ===== */
+/* ===== 컨트롤 입력 행 ===== */
 .컨트롤행 {
   display: flex;
   gap: 12px;
   align-items: flex-start;
   flex-wrap: wrap;
-  border-top: 1px solid #e8edf2;
-  padding-top: 12px;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 14px;
 }
 
 /* ===== 버튼 ===== */
 .버튼 {
-  padding: 7px 18px;
+  padding: 0 20px;
   border: none;
-  border-radius: 3px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-family: inherit;
   cursor: pointer;
-  font-weight: bold;
-  height: 34px;
+  font-weight: 600;
+  height: 36px;
   white-space: nowrap;
+  transition: all 0.15s;
+  letter-spacing: 0.1px;
 }
 
 .버튼.파랑 {
-  background-color: #2a6496;
+  background: linear-gradient(180deg, #FB923C 0%, #F97316 100%);
   color: white;
+  box-shadow: 0 1px 3px rgba(249,115,22,0.4), 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .버튼.파랑:hover {
-  background-color: #1a4a76;
+  background: linear-gradient(180deg, #F97316 0%, #EA6C0A 100%);
+  box-shadow: 0 4px 10px rgba(249,115,22,0.4);
+  transform: translateY(-1px);
+}
+
+.버튼.파랑:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(249,115,22,0.3);
 }
 
 .버튼.회색 {
-  background-color: #6c757d;
-  color: white;
+  background: white;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .버튼.회색:hover {
-  background-color: #545b62;
+  background: #F9FAFB;
+  border-color: #9CA3AF;
 }
 
 .버튼.초록 {
-  background-color: #28a745;
+  background: linear-gradient(180deg, #34D399 0%, #10B981 100%);
   color: white;
+  box-shadow: 0 1px 3px rgba(16,185,129,0.35);
 }
 
 .버튼.초록:hover {
-  background-color: #1e7e34;
+  background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+  box-shadow: 0 4px 10px rgba(16,185,129,0.4);
+  transform: translateY(-1px);
 }
 
 /* ===== 구분선 ===== */
 .구분선 {
   border: none;
-  border-top: 1px solid #e0e6ed;
+  border-top: 1px solid #F3F4F6;
   margin: 16px 0;
 }
 
@@ -385,14 +479,14 @@ body {
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #2a6496;
+  border: 1px solid #F97316;
   border-top: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 0 0 6px 6px;
   list-style: none;
   margin: 0;
   padding: 0;
   z-index: 100;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   max-height: 220px;
   overflow-y: auto;
 }
@@ -403,54 +497,59 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eef2f6;
+  border-bottom: 1px solid #F3F4F6;
+  transition: background 0.1s;
 }
 
 .자동완성_항목:hover {
-  background-color: #e8f0f8;
+  background-color: #FFF7ED;
 }
 
 .자동완성_품명 {
-  color: #1a3a5c;
-  font-weight: bold;
+  color: #111827;
+  font-weight: 600;
   font-size: 13px;
 }
 
 .자동완성_품번 {
-  color: #888;
+  color: #9CA3AF;
   font-size: 12px;
   margin-left: 8px;
 }
 
 .자동완성_없음 {
   padding: 10px 12px;
-  color: #e74c3c;
+  color: #EF4444;
   font-size: 13px;
 }
 
 .품번표시 {
   font-size: 11px;
-  color: #2a6496;
+  color: #F97316;
   margin-top: 3px;
-  font-weight: bold;
+  font-weight: 600;
   min-height: 14px;
 }
 
 /* ===== 테이블 ===== */
 .테이블감싸기 {
   overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  overflow: hidden;
 }
 
 .테이블감싸기.스크롤 {
   max-height: 360px;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .테이블감싸기.스크롤 thead th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: linear-gradient(180deg, #d0e8f8 0%, #b8d8f0 100%);
+  background: #374151;
 }
 
 table {
@@ -460,102 +559,115 @@ table {
 }
 
 table thead tr {
-  background-color: #e8f0f8;
-  border-bottom: 2px solid #b8cfe0;
+  background: #374151;
+  border-bottom: none;
 }
 
 table thead th {
-  padding: 9px 10px;
+  padding: 11px 10px;
   text-align: center;
-  color: #1a3a5c;
-  font-weight: bold;
+  color: white;
+  font-weight: 600;
   white-space: nowrap;
+  letter-spacing: 0.2px;
+  font-size: 12px;
 }
 
 table tbody tr {
-  border-bottom: 1px solid #e8edf2;
+  border-bottom: 1px solid #F3F4F6;
+  transition: background 0.1s;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #F9FAFB;
 }
 
 table tbody tr:hover {
-  background-color: #f0f6fb;
+  background-color: #FFF7ED !important;
 }
 
 table tbody td {
-  padding: 8px 10px;
+  padding: 9px 10px;
   text-align: center;
-  color: #444;
+  color: #374151;
 }
 
 .버튼.소형 {
-  padding: 3px 10px;
+  padding: 0 10px;
   font-size: 12px;
-  height: 26px;
+  height: 28px;
 }
 
 .버튼.빨강 {
-  background-color: #dc3545;
+  background: linear-gradient(180deg, #F87171 0%, #EF4444 100%);
   color: white;
+  box-shadow: 0 1px 3px rgba(239,68,68,0.35);
 }
 
 .버튼.빨강:hover {
-  background-color: #b02a37;
+  background: linear-gradient(180deg, #EF4444 0%, #DC2626 100%);
+  box-shadow: 0 4px 10px rgba(239,68,68,0.4);
+  transform: translateY(-1px);
 }
 
 .버튼.노랑 {
-  background-color: #fff9c4;
-  color: #7a6a00;
-  border: 1px solid #e0c800;
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FCD34D;
 }
 
 .버튼.노랑:hover {
-  background-color: #fff176;
+  background: #FEF3C7;
+  border-color: #F59E0B;
 }
 
 /* ===== 빈 목록 안내 ===== */
 .빈목록안내 {
   text-align: center;
-  padding: 30px;
-  color: #999;
+  padding: 36px;
+  color: #9CA3AF;
   font-size: 14px;
 }
 
 /* ===== 알림 메시지 ===== */
 .알림 {
-  padding: 10px 16px;
-  border-radius: 4px;
+  padding: 11px 16px;
+  border-radius: 8px;
   margin-bottom: 12px;
   font-size: 13px;
   display: none;
+  font-weight: 500;
 }
 
 .알림.성공 {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background-color: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
 }
 
 .알림.오류 {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
 }
 
 /* ===== 수정 모드 강조 ===== */
 .수정모드중 {
-  background-color: #fff8e1;
-  border: 1px solid #ffc107;
+  background-color: #FFFBEB;
+  border: 1px solid #FCD34D;
+  border-left: 4px solid #F59E0B;
 }
 
 /* ===== 공정별 재고 현황 테이블 강조 ===== */
 #재고현황테이블 thead th:last-child {
-  color: #e74c3c;
+  color: #FCA5A5;
 }
 
 #재고현황테이블 tbody tr:hover {
-  background-color: #f0f6fb;
+  background-color: #FFF7ED !important;
 }
 
-/* ===== 돋보기 버튼 (품명 옆) ===== */
+/* ===== 돋보기 버튼 ===== */
 .품명입력행 {
   display: flex;
   gap: 4px;
@@ -566,32 +678,34 @@ table tbody td {
 }
 
 .돋보기버튼 {
-  background-color: #2a6496;
+  background: linear-gradient(180deg, #FB923C 0%, #F97316 100%);
   color: white;
   border: none;
-  border-radius: 3px;
-  width: 34px;
-  height: 34px;
-  font-size: 15px;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 3px rgba(249,115,22,0.35);
+  transition: all 0.15s;
 }
 
 .돋보기버튼:hover {
-  background-color: #1a4a76;
+  background: linear-gradient(180deg, #F97316 0%, #EA6C0A 100%);
+  box-shadow: 0 4px 10px rgba(249,115,22,0.4);
+  transform: translateY(-1px);
 }
 
-/* 검색 영역용 작은 돋보기 버튼 */
 .돋보기버튼.검색용 {
-  width: 28px;
-  height: 32px;
+  width: 30px;
+  height: 34px;
   font-size: 12px;
 }
 
-/* 검색 영역 입력 + 버튼 행 */
 .검색입력행 {
   display: flex;
   gap: 3px;
@@ -602,21 +716,22 @@ table tbody td {
   min-width: 0;
 }
 
-/* ===== 품목 조회 팝업 ===== */
+/* ===== 조회 팝업 ===== */
 .팝업오버레이 {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(17,24,39,0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(2px);
 }
 
 .팝업창 {
   background: white;
-  border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
   width: 520px;
   max-width: 95vw;
   display: flex;
@@ -625,32 +740,34 @@ table tbody td {
 }
 
 .팝업헤더 {
-  background-color: #1a3a5c;
+  background: #374151;
   color: white;
-  padding: 10px 16px;
+  padding: 13px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-weight: bold;
+  font-weight: 600;
   font-size: 14px;
+  border-bottom: 3px solid #F97316;
 }
 
 .팝업닫기버튼 {
   background: none;
   border: none;
-  color: white;
+  color: #9CA3AF;
   font-size: 18px;
   cursor: pointer;
   line-height: 1;
   padding: 0 4px;
+  transition: color 0.15s;
 }
 
 .팝업닫기버튼:hover {
-  color: #ffcccc;
+  color: white;
 }
 
 .팝업내용 {
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -658,23 +775,26 @@ table tbody td {
 
 .팝업검색입력 {
   width: 100%;
-  border: 1px solid #c0cfe0;
-  border-radius: 3px;
-  padding: 7px 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  padding: 8px 12px;
   font-size: 13px;
   font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .팝업검색입력:focus {
   outline: none;
-  border-color: #2a6496;
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
 .팝업테이블감싸기 {
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #dde3ea;
-  border-radius: 3px;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .팝업테이블감싸기 table {
@@ -687,7 +807,7 @@ table tbody td {
 }
 
 .팝업테이블감싸기 table tbody tr:hover {
-  background-color: #d6e8f5;
+  background-color: #FFF7ED !important;
 }
 
 .팝업테이블감싸기 table thead th:first-child {
@@ -695,21 +815,22 @@ table tbody td {
 }
 
 .팝업선택행 {
-  background-color: #cfe2f3 !important;
+  background-color: #FFF7ED !important;
 }
 
 .팝업행키보드선택 {
-  background-color: #a8d0f0 !important;
-  outline: 2px solid #4a90d9;
+  background-color: #FDBA74 !important;
+  outline: 2px solid #F97316;
   outline-offset: -2px;
 }
 
 .팝업하단 {
-  padding: 10px 16px 14px;
+  padding: 12px 18px 16px;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #F3F4F6;
+  background: #F9FAFB;
 }
 
 /* ===== 공정 선택 바 ===== */
@@ -718,75 +839,82 @@ table tbody td {
   align-items: center;
   gap: 8px;
   background: white;
-  border: 1px solid #c5d8ed;
-  border-radius: 4px;
-  padding: 10px 16px;
-  margin-bottom: 14px;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .공정선택바_레이블 {
-  font-size: 13px;
-  font-weight: bold;
-  color: #1a3a5c;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9CA3AF;
   white-space: nowrap;
   margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .공정선택버튼 {
-  padding: 6px 16px;
-  border: 1px solid #b8cfe0;
+  padding: 6px 18px;
+  border: 1px solid #E5E7EB;
   border-radius: 20px;
-  background: white;
-  color: #2a6496;
+  background: #F9FAFB;
+  color: #374151;
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 500;
   white-space: nowrap;
   transition: all 0.15s;
 }
 
 .공정선택버튼:hover {
-  background: #eef4fb;
-  border-color: #2a6496;
+  background: #FFF7ED;
+  border-color: #F97316;
+  color: #EA6C0A;
 }
 
 .공정선택버튼.활성 {
-  background: #1a3a5c;
+  background: #F97316;
   color: white;
-  border-color: #1a3a5c;
+  border-color: #F97316;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.4);
+  font-weight: 700;
 }
 
 .공정선택버튼.비활성 {
-  color: #bbb;
-  border-color: #ddd;
-  background: #f8f8f8;
+  color: #D1D5DB;
+  border-color: #F3F4F6;
+  background: #F9FAFB;
   cursor: default;
   pointer-events: none;
 }
 
 .공정선택버튼.전체버튼 {
-  color: #666;
-  border-color: #ccc;
+  color: #6B7280;
+  border-color: #D1D5DB;
   margin-left: 4px;
+  background: white;
 }
 
 .공정선택버튼.전체버튼.활성 {
-  background: #6c757d;
+  background: #374151;
   color: white;
-  border-color: #6c757d;
+  border-color: #374151;
+  box-shadow: 0 2px 8px rgba(55,65,81,0.35);
 }
 
-/* ===== 공정 흐름 행 (출발공정 → 도착공정) ===== */
+/* ===== 공정 흐름 행 ===== */
 .공정흐름행 {
   align-items: flex-end;
 }
 
 .공정화살표 {
   font-size: 22px;
-  color: #2a6496;
+  color: #F97316;
   padding-bottom: 7px;
   flex: 0 0 auto;
   font-weight: bold;
@@ -795,27 +923,27 @@ table tbody td {
 
 /* 순 이동량 표시 박스 */
 .순이동량 {
-  height: 34px;
-  line-height: 34px;
+  height: 36px;
+  line-height: 36px;
   padding: 0 12px;
-  background: #f0f6fb;
-  border: 1px solid #c0cfe0;
-  border-radius: 3px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
   font-size: 15px;
-  color: #888;
+  color: #9CA3AF;
   text-align: center;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* ===== 공정별 재고 현황 설명 박스 ===== */
 .재고현황설명 {
-  background: #f0f6fb;
-  border: 1px solid #c5d8ed;
-  border-radius: 4px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-radius: 8px;
   padding: 10px 14px;
   font-size: 12px;
-  color: #555;
-  line-height: 1.6;
+  color: #92400E;
+  line-height: 1.7;
 }
 
 /* ===== 작업잠금 배너 ===== */
@@ -825,14 +953,14 @@ table tbody td {
   left: 0;
   right: 0;
   z-index: 9998;
-  background: #c0392b;
+  background: linear-gradient(90deg, #DC2626 0%, #B91C1C 100%);
   color: white;
   text-align: center;
   padding: 11px 20px;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.3px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
 
 #폼카드.작업잠금중 {

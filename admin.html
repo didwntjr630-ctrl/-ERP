@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>삼양ERP - 관리자</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1a3a5c">
+  <meta name="theme-color" content="#374151">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .admin-wrap {
@@ -225,7 +225,7 @@
     세션체크();
     관리자체크();
 
-    document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span style="color:#ffe066; font-style:italic;">ERP</span>');
+    document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span style="color:#F97316; font-style:italic;">ERP</span>');
     document.getElementById('header-sub').textContent = APP_CONFIG.부제;
     document.title = APP_CONFIG.시스템명 + ' - 관리자';
     var 세션 = 현재세션();
