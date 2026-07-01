@@ -67,7 +67,7 @@ async function 데이터불러오기() {
   var { data, error } = await 수파베이스
     .from(테이블명)
     .select('*')
-    .order('id', { ascending: true });
+    .order('id', { ascending: false });
   if (error) { console.error('데이터불러오기 오류:', error); return []; }
   return data || [];
 }
