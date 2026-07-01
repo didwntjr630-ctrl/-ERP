@@ -373,38 +373,60 @@
       var 목록 = 전체데이터;
       if (!목록 || 목록.length === 0) { alert('발송할 매출 데이터가 없습니다.'); return; }
 
-      var 품목집계 = {};
+      // 납품처별 그룹핑
+      var 업체그룹 = {};
       목록.forEach(function(h) {
-        var 품목 = 품목목록.find(function(p) { return p.품명 === h.품명; });
-        var 단가 = 품목 ? (품목.단가 || 0) : 0;
-        var 수량 = Number(h.출고수량) || 0;
-        if (!품목집계[h.품명]) 품목집계[h.품명] = { 수량: 0, 공급: 0, 단가: 단가 };
-        품목집계[h.품명].수량 += 수량;
-        품목집계[h.품명].공급 += 단가 * 수량;
+        var 업체 = h.도착공정 || '미분류';
+        if (!업체그룹[업체]) 업체그룹[업체] = [];
+        업체그룹[업체].push(h);
       });
+      var 업체목록 = Object.keys(업체그룹).sort();
 
-      var 총수량 = 목록.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
-      var 총공급 = Object.values(품목집계).reduce(function(s, d) { return s + d.공급; }, 0);
-      var 총vat  = Math.round(총공급 * 1.1);
-
+      var 전체수량 = 0, 전체공급 = 0;
       var 제목 = '[' + APP_CONFIG.회사명 + '] 매출 현황 (' + new Date().toLocaleDateString('ko-KR') + ')';
-
       var 본문 = APP_CONFIG.회사명 + ' 매출 현황\n';
-      본문 += '========================================\n';
-      본문 += '총 건수: ' + 목록.length + '건\n';
-      본문 += '총 수량: ' + 총수량.toLocaleString() + ' EA\n';
-      본문 += '총 공급가액: ' + 총공급.toLocaleString() + ' 원\n';
-      본문 += 'VAT포함 합계: ' + 총vat.toLocaleString() + ' 원\n';
       본문 += '========================================\n\n';
-      본문 += '[ 품목별 내역 ]\n';
-      본문 += '----------------------------------------\n';
-      var 순번 = 1;
-      Object.keys(품목집계).sort().forEach(function(품명) {
-        var d = 품목집계[품명];
-        본문 += 순번++ + '. ' + 품명 + '\n';
-        본문 += '   단가: ' + d.단가.toLocaleString() + '원  |  총 수량: ' + d.수량.toLocaleString() + ' EA  |  총 공급가: ' + d.공급.toLocaleString() + '원\n';
+
+      업체목록.forEach(function(업체) {
+        var 업체데이터 = 업체그룹[업체];
+        var 품목집계 = {};
+        업체데이터.forEach(function(h) {
+          var 품목 = 품목목록.find(function(p) { return p.품명 === h.품명; });
+          var 단가 = 품목 ? (품목.단가 || 0) : 0;
+          var 수량 = Number(h.출고수량) || 0;
+          if (!품목집계[h.품명]) 품목집계[h.품명] = { 수량: 0, 공급: 0, 단가: 단가 };
+          품목집계[h.품명].수량 += 수량;
+          품목집계[h.품명].공급 += 단가 * 수량;
+        });
+
+        var 소계수량 = 업체데이터.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
+        var 소계공급 = Object.values(품목집계).reduce(function(s, d) { return s + d.공급; }, 0);
+        var 소계vat  = Math.round(소계공급 * 1.1);
+        전체수량 += 소계수량;
+        전체공급 += 소계공급;
+
+        본문 += '▶ ' + 업체 + '\n';
+        본문 += '  총 건수: ' + 업체데이터.length + '건  |  수량: ' + 소계수량.toLocaleString() + ' EA\n';
+        본문 += '  공급가액: ' + 소계공급.toLocaleString() + '원  |  VAT포함: ' + 소계vat.toLocaleString() + '원\n';
+        본문 += '  ----------------------------------------\n';
+        var 순번 = 1;
+        Object.keys(품목집계).sort().forEach(function(품명) {
+          var d = 품목집계[품명];
+          본문 += '  ' + 순번++ + '. ' + 품명 + '\n';
+          본문 += '     단가: ' + d.단가.toLocaleString() + '원  |  수량: ' + d.수량.toLocaleString() + ' EA  |  공급가: ' + d.공급.toLocaleString() + '원\n';
+        });
         본문 += '\n';
       });
+
+      if (업체목록.length > 1) {
+        var 전체vat = Math.round(전체공급 * 1.1);
+        본문 += '========================================\n';
+        본문 += '[ 전체 합계 ]\n';
+        본문 += '  총 건수: ' + 목록.length + '건  |  총 수량: ' + 전체수량.toLocaleString() + ' EA\n';
+        본문 += '  총 공급가액: ' + 전체공급.toLocaleString() + '원\n';
+        본문 += '  VAT포함 합계: ' + 전체vat.toLocaleString() + '원\n';
+        본문 += '========================================\n';
+      }
 
       var 선택이메일 = document.getElementById('메일수신처선택').value;
       var 선택이름 = document.getElementById('메일수신처선택').options[document.getElementById('메일수신처선택').selectedIndex].text;
