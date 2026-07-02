@@ -80,7 +80,7 @@ async function 데이터저장(새항목) {
     .insert(새항목)
     .select()
     .single();
-  if (error) { console.error('데이터저장 오류:', error); return null; }
+  if (error) { console.error('데이터저장 오류:', error); 알림표시('저장 실패: ' + error.message, '오류'); return null; }
   return data;
 }
 

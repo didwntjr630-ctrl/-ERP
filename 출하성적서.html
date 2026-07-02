@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>삼양ERP - 출하성적서</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#374151">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── 성적서 페이퍼 공통 ── */
+    .페이퍼감싸기 {
+      background: #d1d5db;
+      padding: 20px 20px 40px;
+      display: none;
+    }
+    .페이퍼감싸기.활성 { display: block; }
+
+    .성적서-페이퍼 {
+      width: 760px;
+      margin: 0 auto 18px;
+      background: #fff;
+      padding: 14px 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      font-family: '맑은 고딕', 'Malgun Gothic', Arial, sans-serif;
+      font-size: 11px;
+      color: #000;
+      box-sizing: content-box;
+    }
+
+    /* 서식 테이블 */
+    .서식테이블 { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .서식테이블 td,
+    .서식테이블 th {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      vertical-align: middle;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .서식테이블 .레이블 {
+      background: #e8e8e8;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    /* 서식 내 인풋 */
+    .서식인풋 {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+      font-size: 11px;
+      background: transparent;
+      box-sizing: border-box;
+    }
+    .서식인풋:focus { background: #fffde7; }
+    .측정인풋 {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+      font-size: 10px;
+      background: transparent;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .측정인풋:focus { background: #fffde7; }
+    .서식체크 { margin: 0 1px 0 4px; cursor: pointer; }
+    label { cursor: pointer; }
+
+    /* 성적서 액션 바 (화면 전용) */
+    .성적서액션바 {
+      width: 792px;
+      margin: 0 auto 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ── 인쇄 전용 ── */
+    @media print {
+      .no-print { display: none !important; }
+      body, html { background: white !important; margin: 0 !important; padding: 0 !important; }
+      .페이퍼감싸기 {
+        display: block !important;
+        background: white !important;
+        padding: 0 !important;
+      }
+      .성적서-페이퍼 {
+        width: 100% !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 8mm 10mm !important;
+        page-break-after: always;
+      }
+      .성적서-페이퍼:last-child { page-break-after: avoid; }
+      .서식인풋:focus, .측정인풋:focus { background: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── 메뉴바 ── -->
+  <div class="메뉴바 no-print">
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="비활성" href="입출고등록_테스트.html">입출고 등록 / 조회</a>
+      <a class="활성" href="출하성적서.html">출하성적서</a>
+      <a class="비활성" href="매출관리.html">매출관리</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- ── 화면 UI (조회 + 목록) ── -->
+  <div class="내용영역 no-print">
+    <div id="알림박스" class="알림"></div>
+
+    <!-- 조회 카드 -->
+    <div class="카드 검색카드">
+      <div class="검색카드제목">조 회</div>
+      <div class="검색행">
+        <div class="검색항목 검색항목_기간">
+          <label>조회 기간</label>
+          <div class="기간입력행">
+            <input type="date" id="검색_시작일">
+            <span class="기간구분">~</span>
+            <input type="date" id="검색_종료일">
+          </div>
+        </div>
+        <div class="검색항목">
+          <label>LOT No.</label>
+          <input type="text" id="검색_lot" placeholder="LOT 번호" style="width:160px;">
+        </div>
+        <div class="검색항목" style="justify-content:flex-end; margin-left:auto; gap:6px; display:flex; align-items:flex-end;">
+          <button class="버튼 파랑" onclick="성적서조회()">조 회</button>
+          <button class="버튼 회색" onclick="전체보기()">전체보기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 목록 카드 -->
+    <div class="카드">
+      <div class="카드제목" style="display:flex; align-items:center; gap:10px;">
+        출하성적서 목록
+        <span id="목록건수" style="font-size:12px; font-weight:400; color:#F97316;"></span>
+      </div>
+      <div class="테이블감싸기 스크롤">
+        <table class="기본테이블">
+          <thead>
+            <tr>
+              <th>번호</th>
+              <th>작성일</th>
+              <th>차종</th>
+              <th>품명(품목)</th>
+              <th>LOT No.</th>
+              <th>종합판정</th>
+              <th>담당자</th>
+              <th>조치</th>
+            </tr>
+          </thead>
+          <tbody id="성적서목록바디">
+            <tr><td colspan="8" style="text-align:center; color:#9CA3AF; padding:20px;">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 성적서 페이퍼 영역 ── -->
+  <div class="페이퍼감싸기" id="페이퍼감싸기">
+
+    <!-- 액션 버튼 (화면 전용) -->
+    <div class="성적서액션바 no-print">
+      <button class="버튼 회색" onclick="성적서닫기()">← 목록으로</button>
+      <div style="display:flex; gap:8px;">
+        <button class="버튼 파랑" onclick="성적서저장()">저 장</button>
+        <button class="버튼 초록" onclick="성적서엑셀다운로드()" id="엑셀다운로드버튼">엑셀 다운로드</button>
+        <button class="버튼 회색" onclick="성적서인쇄()">인 쇄</button>
+      </div>
+    </div>
+
+    <!-- ════ PAGE 1 : 검사성적서 ════ -->
+    <div class="성적서-페이퍼" id="성적서본문">
+
+      <!-- 제목 + 작성일 -->
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+        <div style="font-size:13px; font-weight:bold; letter-spacing:3px;">출 하 검 사 성 적 서</div>
+        <div style="font-size:10px; white-space:nowrap;">
+          작성일&nbsp;
+          <input type="date" id="f_작성일" class="서식인풋" style="width:125px; display:inline-block;">
+        </div>
+      </div>
+
+      <!-- 헤더 정보 테이블 -->
+      <table class="서식테이블" style="margin-bottom:-1px;">
+        <colgroup>
+          <col style="width:55px">  <!-- 레이블A -->
+          <col style="width:90px">  <!-- 값A -->
+          <col style="width:55px">  <!-- 레이블B -->
+          <col style="width:125px"> <!-- 값B -->
+          <col style="width:48px">  <!-- 레이블C -->
+          <col style="width:90px">  <!-- 값C -->
+          <col style="width:70px">  <!-- 인장 -->
+          <col style="width:42px">  <!-- 작성 -->
+          <col style="width:42px">  <!-- 검토 -->
+          <col style="width:42px">  <!-- 승인 -->
+          <col style="width:42px">  <!-- 확인 -->
+        </colgroup>
+        <!-- 승인항목 + 종합판정 + 서명 헤더 -->
+        <tr>
+          <td class="레이블">승인항목</td>
+          <td colspan="2" style="white-space:nowrap; font-size:10px;">
+            <label><input type="checkbox" class="서식체크" id="승인_외관">외관</label>
+            <label><input type="checkbox" class="서식체크" id="승인_치수">치수</label>
+            <label><input type="checkbox" class="서식체크" id="승인_재질">재질(MS)</label>
+            <label><input type="checkbox" class="서식체크" id="승인_성능">성능(ES)</label>
+          </td>
+          <td class="레이블">종합판정</td>
+          <td colspan="2" style="white-space:nowrap; font-size:10px;">
+            <label><input type="checkbox" class="서식체크" id="판정_승인">승인</label>
+            <label><input type="checkbox" class="서식체크" id="판정_기각">기각</label>
+            <label><input type="checkbox" class="서식체크" id="판정_기타">기타</label>
+            (<input class="서식인풋" id="판정_기타값" style="width:50px; display:inline-block;">)
+          </td>
+          <td class="레이블" style="text-align:center; font-size:9px;">삼양이엔지</td>
+          <td class="레이블" style="text-align:center; font-size:10px;">작성</td>
+          <td class="레이블" style="text-align:center; font-size:10px;">검토</td>
+          <td class="레이블" style="text-align:center; font-size:10px;">승인</td>
+          <td class="레이블" style="text-align:center; font-size:10px;">확인</td>
+        </tr>
+        <!-- 차종 + 서명 rowspan -->
+        <tr style="height:44px;">
+          <td class="레이블">차 종</td>
+          <td><input class="서식인풋" id="f_차종"></td>
+          <td class="레이블">공급자명</td>
+          <td><input class="서식인풋" id="f_공급자명"></td>
+          <td class="레이블">EO NO</td>
+          <td style="color:#c0392b;"><input class="서식인풋" id="f_EO_NO" style="color:#c0392b;"></td>
+          <td rowspan="3" style="text-align:center; vertical-align:middle;">
+            <div style="width:52px; height:52px; border:2px solid #888; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:9px; color:#777; font-weight:bold; line-height:1.3;">삼양<br>이엔지</div>
+          </td>
+          <td rowspan="3" style="min-height:44px;"></td>
+          <td rowspan="3"></td>
+          <td rowspan="3"></td>
+          <td rowspan="3"></td>
+        </tr>
+        <!-- 품번 -->
+        <tr style="height:30px;">
+          <td class="레이블">품 번</td>
+          <td><input class="서식인풋" id="f_품번"></td>
+          <td class="레이블">품 명</td>
+          <td><input class="서식인풋" id="f_품명"></td>
+          <td class="레이블">수 량</td>
+          <td>
+            <input class="서식인풋" id="f_수량" type="number" style="width:55px; display:inline-block;"> EA
+          </td>
+        </tr>
+        <!-- 검사목적 + LOT NO -->
+        <tr style="height:28px;">
+          <td class="레이블">검사목적</td>
+          <td colspan="2" style="font-size:10px; white-space:nowrap;">
+            <label><input type="checkbox" class="서식체크" id="목적_P1">P1</label>
+            <label><input type="checkbox" class="서식체크" id="목적_P2">P2</label>
+            <label><input type="checkbox" class="서식체크" id="목적_ISIR">ISIR</label>
+            <label><input type="checkbox" class="서식체크" id="목적_정기">정기</label>
+            <label><input type="checkbox" class="서식체크" id="목적_기타">기타(</label><input class="서식인풋" id="목적_기타값" style="width:44px; display:inline-block;">)
+          </td>
+          <td class="레이블">LOT NO</td>
+          <td colspan="2"><input class="서식인풋" id="f_lot번호"></td>
+        </tr>
+      </table>
+
+      <!-- 측정 테이블 -->
+      <table class="서식테이블" id="측정테이블">
+        <colgroup>
+          <col style="width:27px">   <!-- 순번 -->
+          <col style="width:65px">   <!-- 검사항목 -->
+          <col style="width:183px">  <!-- 규격 -->
+          <col style="width:31px">   <!-- 관리구분 -->
+          <col style="width:35px">   <!-- X1 -->
+          <col style="width:35px">   <!-- X2 -->
+          <col style="width:35px">   <!-- X3 -->
+          <col style="width:35px">   <!-- X4 -->
+          <col style="width:35px">   <!-- X5 -->
+          <col style="width:50px">   <!-- 수요자확인 -->
+          <col style="width:37px">   <!-- X_bar -->
+          <col style="width:30px">   <!-- R -->
+          <col style="width:30px">   <!-- Cp -->
+          <col style="width:30px">   <!-- 확인 -->
+          <col style="width:37px">   <!-- 판정 -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th rowspan="2" class="레이블">순번</th>
+            <th rowspan="2" class="레이블">검사항목</th>
+            <th rowspan="2" class="레이블">규 격</th>
+            <th rowspan="2" class="레이블" style="font-size:9px;">관리<br>구분</th>
+            <th colspan="5" class="레이블">측 정 치</th>
+            <th rowspan="2" class="레이블" style="font-size:9px;">수요자<br>확인</th>
+            <th colspan="4" class="레이블" style="font-size:9px;">CAVITY수 : 1 EA</th>
+            <th rowspan="2" class="레이블">판정</th>
+          </tr>
+          <tr>
+            <th class="레이블" style="font-size:10px;">X<sub>1</sub></th>
+            <th class="레이블" style="font-size:10px;">X<sub>2</sub></th>
+            <th class="레이블" style="font-size:10px;">X<sub>3</sub></th>
+            <th class="레이블" style="font-size:10px;">X<sub>4</sub></th>
+            <th class="레이블" style="font-size:10px;">X<sub>5</sub></th>
+            <th class="레이블" style="font-size:10px;">X̄</th>
+            <th class="레이블" style="font-size:10px;">R</th>
+            <th class="레이블" style="font-size:10px;">Cp</th>
+            <th class="레이블" style="font-size:10px;">확인</th>
+          </tr>
+        </thead>
+        <tbody id="측정바디"></tbody>
+      </table>
+
+      <!-- 비고 -->
+      <table class="서식테이블" style="margin-top:-1px;">
+        <tr>
+          <td class="레이블" style="width:30px; vertical-align:top; padding-top:5px;">비고</td>
+          <td style="height:52px; padding:3px;">
+            <textarea class="서식인풋" id="f_비고" style="height:46px; resize:none; line-height:1.4; display:block;"></textarea>
+          </td>
+        </tr>
+      </table>
+
+      <!-- 주석 + 문서번호 -->
+      <div style="margin-top:5px; font-size:9px; color:#444; border-top:1px solid #ccc; padding-top:3px; line-height:1.6;">
+        <div>* 관리구분 : 특별특성(C), SPC항목(S), 중요관리항목(I).</div>
+        <div>* 확인란은 공급자가 제출한 성적서를 수요자가 검증이 필요한 항목에 대해 확인 후 결과를 기록하는 곳임(실 측정치)</div>
+        <div style="display:flex; justify-content:space-between; margin-top:3px; font-weight:bold; font-size:10px;">
+          <span>SYE-검사성적서-06</span>
+          <span>㈜삼양이엔지</span>
+          <span>PAGE : 1/1</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ PAGE 2 : 도막두께 증빙사진 ════ -->
+    <div class="성적서-페이퍼">
+      <div style="font-size:13px; font-weight:bold; margin-bottom:12px; text-align:center; letter-spacing:1px;">
+        (첨부)도막두께 측정 증빙사진
+      </div>
+      <table class="서식테이블">
+        <colgroup>
+          <col style="width:95px">
+          <col style="width:133px"><col style="width:133px"><col style="width:133px">
+          <col style="width:133px"><col style="width:133px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="레이블"></th>
+            <th class="레이블">사진첨부(1)</th>
+            <th class="레이블">사진첨부(2)</th>
+            <th class="레이블">사진첨부(3)</th>
+            <th class="레이블">사진첨부(4)</th>
+            <th class="레이블">사진첨부(5)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="레이블" style="background:#bdd7ee; vertical-align:middle; text-align:center; font-size:10px; line-height:1.6; padding:6px 4px;">
+              아노다이징<br>(SPEC:<br>Min.1.3μm)
+            </td>
+            <td style="height:110px;"></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr style="height:12px;">
+            <td colspan="6" style="border-color:transparent; background:white;"></td>
+          </tr>
+          <tr>
+            <th class="레이블"></th>
+            <th class="레이블">사진첨부(1)</th>
+            <th class="레이블">사진첨부(2)</th>
+            <th class="레이블">사진첨부(3)</th>
+            <th class="레이블">사진첨부(4)</th>
+            <th class="레이블">사진첨부(5)</th>
+          </tr>
+          <tr>
+            <td class="레이블" style="background:#fce5cd; vertical-align:middle; text-align:center; font-size:10px; line-height:1.6; padding:6px 4px;">
+              클리어코팅<br>(SPEC:<br>4~8μm)
+            </td>
+            <td style="height:110px;"></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /페이퍼감싸기 -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+  <script src="js/template_data.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  /* ════════════════════════════════════════
+     검사항목 고정 템플릿
+  ════════════════════════════════════════ */
+  var 검사항목템플릿 = [
+    { 순번:'1', 항목:'외 관',          규격:'부품을, 박리, 표면 갈라짐, 기포, 이물,\n얼룩, 층간 갈라짐 등 결함 없을 것',   관리:'I', 타입:'ok',  참조:'',                            병합:1  },
+    { 순번:'2', 항목:'헤어라인\n전면부',규격:'헤어라인 가공 전면부 버 또는\n날카로움 없을 것',                             관리:'I', 타입:'ok',  참조:'',                            병합:1  },
+    { 순번:'3', 항목:'신 뢰 성',       규격:'M6303-M-03(AA-DI)를 만족할것.\nM2000-T-05(3등급이하)를 만족할것.',         관리:'I', 타입:'ref', 참조:'6개월 공인기관\n성적서 참조', 병합:1  },
+    { 순번:'4', 항목:'중 금 속',       규격:'M1000-T-01을 만족할 것',                                                  관리:'I', 타입:'ref', 참조:'6개월 공인기관\n성적서 참조', 병합:1  },
+    { 순번:'5', 항목:'표면처리',       규격:'ANODIZING 처리하며 피막두께는\nSILVER Min. 1.3 μm 만족할 것',             관리:'I', 타입:'none',참조:'',                            병합:2  },
+    { 순번:'',  항목:'',              규격:'클리어 코팅 처리하며 코팅두께는\nSILVER 4 ~ 8 μm 만족할 것',               관리:'I', 타입:'none',참조:'',                            병합:-1 },
+    { 순번:'6', 항목:'코팅박리',       규격:'클리어 코팅 박리 없을 것',                                                관리:'I', 타입:'ok',  참조:'',                            병합:1  },
+    { 순번:'7', 항목:'중 량',          규격:'2.5 ± 0.075 (g)',                                                       관리:'I', 타입:'num', 참조:'',                            병합:1  }
+  ];
+
+  /* ════════════════════════════════════════
+     전역 상태
+  ════════════════════════════════════════ */
+  var 현재성적서id = null;
+
+  /* ════════════════════════════════════════
+     초기화
+  ════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', function() {
+    세션체크();
+    var 세션 = 현재세션();
+    if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+
+    var 시스템명el = document.getElementById('시스템명');
+    var 부제el    = document.getElementById('부제');
+    if (시스템명el) 시스템명el.textContent = APP_CONFIG.시스템명;
+    if (부제el)    부제el.textContent    = APP_CONFIG.부제;
+
+    날짜기본값();
+    성적서조회();
+  });
+
+  function 날짜기본값() {
+    var 오늘 = new Date();
+    var 시작 = new Date(오늘.getFullYear(), 오늘.getMonth(), 1);
+    var 포맷 = function(d) { return d.toISOString().slice(0, 10); };
+    document.getElementById('검색_시작일').value = 포맷(시작);
+    document.getElementById('검색_종료일').value = 포맷(오늘);
+  }
+
+  /* ════════════════════════════════════════
+     조회 + 목록 그리기
+  ════════════════════════════════════════ */
+  async function 성적서조회() {
+    var 시작 = document.getElementById('검색_시작일').value;
+    var 종료 = document.getElementById('검색_종료일').value;
+    var lot  = document.getElementById('검색_lot').value.trim();
+
+    var 쿼리 = 수파베이스.from('출하성적서').select('*').order('id', { ascending: false });
+    if (시작) 쿼리 = 쿼리.gte('작성일', 시작);
+    if (종료) 쿼리 = 쿼리.lte('작성일', 종료);
+    if (lot)  쿼리 = 쿼리.ilike('lot번호', '%' + lot + '%');
+
+    var { data, error } = await 쿼리;
+    if (error) { 알림표시('조회 실패: ' + error.message, '오류'); return; }
+    목록그리기(data || []);
+  }
+
+  async function 전체보기() {
+    document.getElementById('검색_lot').value = '';
+    날짜기본값();
+    await 성적서조회();
+  }
+
+  function 목록그리기(목록) {
+    var 바디 = document.getElementById('성적서목록바디');
+    document.getElementById('목록건수').textContent = '(' + 목록.length + '건)';
+    if (목록.length === 0) {
+      바디.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#9CA3AF; padding:20px;">데이터가 없습니다.</td></tr>';
+      return;
+    }
+    바디.innerHTML = '';
+    목록.forEach(function(r, i) {
+      var 판정색 = r.종합판정 === '승인' ? '#27ae60' : r.종합판정 === '기각' ? '#e74c3c' : '#f39c12';
+      var 행 = document.createElement('tr');
+      행.style.cursor = 'pointer';
+      행.onclick = function() { 성적서열기(r.id); };
+      행.innerHTML =
+        '<td style="text-align:center;">' + (i + 1) + '</td>' +
+        '<td style="text-align:center;">' + (r.작성일 || '') + '</td>' +
+        '<td style="text-align:center;">' + (r.차종 || '') + '</td>' +
+        '<td>' + (r.품명 || '') + '</td>' +
+        '<td style="text-align:center;">' + (r['lot번호'] || '') + '</td>' +
+        '<td style="text-align:center; font-weight:bold; color:' + 판정색 + ';">' + (r.종합판정 || '') + '</td>' +
+        '<td style="text-align:center;">' + (r.담당자 || '') + '</td>' +
+        '<td style="text-align:center;"><button class="버튼 파랑 소형" onclick="event.stopPropagation(); 성적서열기(' + r.id + ')">열기</button></td>';
+      바디.appendChild(행);
+    });
+  }
+
+  /* ════════════════════════════════════════
+     성적서 열기 / 닫기
+  ════════════════════════════════════════ */
+  async function 성적서열기(id) {
+    var { data, error } = await 수파베이스.from('출하성적서').select('*').eq('id', id).single();
+    if (error || !data) { 알림표시('성적서를 불러올 수 없습니다.', '오류'); return; }
+    현재성적서id = id;
+    폼채우기(data);
+    document.querySelector('.내용영역').style.display = 'none';
+    document.getElementById('페이퍼감싸기').classList.add('활성');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function 성적서닫기() {
+    현재성적서id = null;
+    document.getElementById('페이퍼감싸기').classList.remove('활성');
+    document.querySelector('.내용영역').style.display = '';
+  }
+
+  /* ════════════════════════════════════════
+     폼 채우기 / 읽기
+  ════════════════════════════════════════ */
+  function 폼채우기(r) {
+    document.getElementById('f_작성일').value    = (r.작성일 || '').slice(0, 10);
+    document.getElementById('f_차종').value      = r.차종 || '';
+    document.getElementById('f_공급자명').value  = r.공급자명 || '';
+    document.getElementById('f_EO_NO').value     = '';
+    document.getElementById('f_품번').value      = '';
+    document.getElementById('f_품명').value      = r.품명 || '';
+    document.getElementById('f_수량').value      = r.수량 || '';
+    document.getElementById('f_lot번호').value   = r['lot번호'] || '';
+    document.getElementById('f_비고').value      = r.비고 || '';
+    document.getElementById('판정_기타값').value = r.종합판정기타 || '';
+    document.getElementById('목적_기타값').value = '';
+
+    // 승인항목 체크박스
+    var 승인항목 = r.승인항목 || {};
+    document.getElementById('승인_외관').checked  = !!승인항목.외관;
+    document.getElementById('승인_치수').checked  = !!승인항목.치수;
+    document.getElementById('승인_재질').checked  = !!승인항목.재질;
+    document.getElementById('승인_성능').checked  = !!승인항목.성능;
+
+    // 종합판정 체크박스
+    var 판정 = r.종합판정 || '승인';
+    document.getElementById('판정_승인').checked = 판정 === '승인';
+    document.getElementById('판정_기각').checked = 판정 === '기각';
+    document.getElementById('판정_기타').checked = 판정 === '기타';
+
+    // 검사목적 체크박스
+    var 목적 = r.검사목적 || '정기';
+    document.getElementById('목적_P1').checked   = 목적 === 'P1';
+    document.getElementById('목적_P2').checked   = 목적 === 'P2';
+    document.getElementById('목적_ISIR').checked = 목적 === 'ISIR';
+    document.getElementById('목적_정기').checked  = 목적 === '정기';
+    document.getElementById('목적_기타').checked  = 목적 === '기타';
+
+    // 측정치 테이블
+    var 측정치 = r.측정치 || [];
+    측정테이블그리기(측정치);
+  }
+
+  function 폼읽기() {
+    // 종합판정
+    var 판정 = '승인';
+    if (document.getElementById('판정_기각').checked) 판정 = '기각';
+    else if (document.getElementById('판정_기타').checked) 판정 = '기타';
+
+    // 검사목적
+    var 목적 = '정기';
+    if (document.getElementById('목적_P1').checked) 목적 = 'P1';
+    else if (document.getElementById('목적_P2').checked) 목적 = 'P2';
+    else if (document.getElementById('목적_ISIR').checked) 목적 = 'ISIR';
+    else if (document.getElementById('목적_기타').checked) 목적 = '기타';
+
+    return {
+      '작성일':       document.getElementById('f_작성일').value,
+      '차종':         document.getElementById('f_차종').value,
+      '공급자명':     document.getElementById('f_공급자명').value,
+      'EO_NO':        document.getElementById('f_EO_NO').value,
+      '품번':         document.getElementById('f_품번').value,
+      '품명':         document.getElementById('f_품명').value,
+      '수량':         Number(document.getElementById('f_수량').value) || 0,
+      'lot번호':      document.getElementById('f_lot번호').value,
+      '비고':         document.getElementById('f_비고').value,
+      '승인항목': {
+        '외관': document.getElementById('승인_외관').checked,
+        '치수': document.getElementById('승인_치수').checked,
+        '재질': document.getElementById('승인_재질').checked,
+        '성능': document.getElementById('승인_성능').checked,
+      },
+      '종합판정':     판정,
+      '종합판정기타': document.getElementById('판정_기타값').value,
+      '검사목적':     목적,
+      '측정치':       측정치읽기()
+    };
+  }
+
+  /* ════════════════════════════════════════
+     측정 테이블 렌더링 / 읽기
+  ════════════════════════════════════════ */
+  function 측정테이블그리기(측정치) {
+    var 바디 = document.getElementById('측정바디');
+    바디.innerHTML = '';
+    검사항목템플릿.forEach(function(템플릿, idx) {
+      var m = 측정치[idx] || {};
+      var 행 = document.createElement('tr');
+      var html = '';
+
+      // 순번 + 항목 (병합 처리)
+      if (템플릿.병합 === -1) {
+        // 위 행에 rowspan=2로 병합됨 — 이 행에 순번/항목 셀 없음
+      } else if (템플릿.병합 === 2) {
+        html += '<td class="레이블" rowspan="2" style="text-align:center;">' + 템플릿.순번 + '</td>';
+        html += '<td class="레이블" rowspan="2" style="text-align:center; font-size:10px; white-space:pre-line;">' + 템플릿.항목 + '</td>';
+      } else {
+        html += '<td class="레이블" style="text-align:center;">' + 템플릿.순번 + '</td>';
+        html += '<td class="레이블" style="text-align:center; font-size:10px; white-space:pre-line;">' + 템플릿.항목 + '</td>';
+      }
+
+      // 규격
+      html += '<td style="font-size:10px; white-space:pre-line; vertical-align:middle;">' + 템플릿.규격 + '</td>';
+      // 관리구분
+      html += '<td class="레이블" style="text-align:center;">' + 템플릿.관리 + '</td>';
+
+      // 측정치 영역
+      if (템플릿.타입 === 'ref') {
+        html += '<td colspan="6" style="text-align:center; font-size:9px; color:#555; white-space:pre-line; vertical-align:middle;">' + 템플릿.참조 + '</td>';
+        html += '<td><input class="측정인풋" data-i="' + idx + '" data-f="X_bar"  value="' + (m.X_bar||'')  + '"></td>';
+        html += '<td><input class="측정인풋" data-i="' + idx + '" data-f="R"      value="' + (m.R||'')      + '"></td>';
+        html += '<td><input class="측정인풋" data-i="' + idx + '" data-f="Cp"     value="' + (m.Cp||'')     + '"></td>';
+        html += '<td><input class="측정인풋" data-i="' + idx + '" data-f="확인"   value="' + (m.확인||'')   + '"></td>';
+        html += '<td><input class="측정인풋" data-i="' + idx + '" data-f="판정"   value="' + (m.판정||'')   + '"></td>';
+      } else if (템플릿.타입 === 'none') {
+        for (var j = 0; j < 11; j++) html += '<td></td>';
+      } else {
+        ['X1','X2','X3','X4','X5','수요자확인','X_bar','R','Cp','확인','판정'].forEach(function(f) {
+          html += '<td><input class="측정인풋" data-i="' + idx + '" data-f="' + f + '" value="' + (m[f]||'') + '"></td>';
+        });
+      }
+
+      행.innerHTML = html;
+      바디.appendChild(행);
+    });
+  }
+
+  function 측정치읽기() {
+    var 결과 = [];
+    for (var i = 0; i < 8; i++) 결과.push({});
+    document.querySelectorAll('#측정바디 .측정인풋').forEach(function(el) {
+      var idx = Number(el.dataset.i);
+      var f   = el.dataset.f;
+      결과[idx][f] = el.value;
+    });
+    return 결과;
+  }
+
+  /* ════════════════════════════════════════
+     저장 / 인쇄
+  ════════════════════════════════════════ */
+  async function 성적서저장() {
+    if (!현재성적서id) { 알림표시('열린 성적서가 없습니다.', '오류'); return; }
+    var 데이터 = 폼읽기();
+    var { error } = await 수파베이스.from('출하성적서').update(데이터).eq('id', 현재성적서id);
+    if (error) { 알림표시('저장 실패: ' + error.message, '오류'); return; }
+    알림표시('저장되었습니다.', '성공');
+    성적서조회();
+  }
+
+  function 성적서인쇄() {
+    window.print();
+  }
+
+  /* ════════════════════════════════════════
+     엑셀 다운로드 (ExcelJS 템플릿 방식)
+  ════════════════════════════════════════ */
+  async function 성적서엑셀다운로드() {
+    if (!현재성적서id) { 알림표시('성적서를 먼저 열어주세요.', '오류'); return; }
+    if (typeof ExcelJS === 'undefined') { 알림표시('ExcelJS 로드 중입니다. 잠시 후 다시 시도해주세요.', '오류'); return; }
+
+    var 버튼 = document.getElementById('엑셀다운로드버튼');
+    버튼.disabled = true;
+    버튼.textContent = '생성 중...';
+
+    try {
+      var 데이터 = 폼읽기();
+
+      // 1. 템플릿 Base64 → ArrayBuffer
+      if (typeof TEMPLATE_BASE64 === 'undefined') throw new Error('템플릿 데이터가 로드되지 않았습니다.');
+      var binary = atob(TEMPLATE_BASE64);
+      var bytes  = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      var 버퍼 = bytes.buffer;
+
+      // 2. ExcelJS 로드
+      var workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(버퍼);
+      var ws = workbook.worksheets[0];
+
+      // 3. 헤더 데이터 입력
+      var 작성일str = 데이터.작성일 || '';
+      if (작성일str) {
+        var d = new Date(작성일str + 'T00:00:00');
+        작성일str = d.getFullYear() + '. ' + String(d.getMonth() + 1).padStart(2, '0') + '. ' + String(d.getDate()).padStart(2, '0') + '.';
+      }
+      ws.getCell('Y4').value  = 작성일str;
+      ws.getCell('E6').value  = 데이터.차종;
+      ws.getCell('R6').value  = '';
+      ws.getCell('E7').value  = '';
+      ws.getCell('M7').value  = 데이터.품명;
+      if (데이터.수량) ws.getCell('R7').value = 데이터.수량;
+      ws.getCell('P8').value  = 데이터['lot번호'];
+
+      // 비고
+      if (데이터.비고) ws.getCell('B25').value = 데이터.비고;
+
+      // 4. 측정치 입력
+      var 측정치 = 데이터.측정치 || [];
+      // Excel 행 번호 매핑 (측정치 인덱스 → 행 번호)
+      var 행맵 = [
+        { mIdx: 0, row: 11 },   // 외관
+        { mIdx: 1, row: 13 },   // 헤어라인
+        { mIdx: 6, row: 20 },   // 코팅박리
+        { mIdx: 7, row: 21 },   // 중량
+      ];
+      var 컬럼맵 = [
+        { col: 'O', f: 'X1' }, { col: 'P', f: 'X2' }, { col: 'Q', f: 'X3' },
+        { col: 'R', f: 'X4' }, { col: 'S', f: 'X5' },
+        { col: 'T', f: '수요자확인' },
+        { col: 'Y', f: 'X_bar' }, { col: 'Z', f: 'R' }, { col: 'AA', f: 'Cp' },
+        { col: 'AB', f: '확인' }, { col: 'AC', f: '판정' }
+      ];
+      행맵.forEach(function(맵) {
+        var m = 측정치[맵.mIdx] || {};
+        컬럼맵.forEach(function(c) {
+          var v = m[c.f];
+          if (v !== undefined && v !== null && v !== '') {
+            ws.getCell(c.col + 맵.row).value = v;
+          }
+        });
+      });
+
+      // 5. 다운로드
+      var 출력버퍼 = await workbook.xlsx.writeBuffer();
+      var blob = new Blob([출력버퍼], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href     = url;
+      var 날짜포맷 = (데이터.작성일 || '').replace(/-/g, '.');
+      a.download = (데이터.차종 ? 데이터.차종 + ' ' : '') + 날짜포맷 + (데이터['lot번호'] ? '-' + 데이터['lot번호'] : '') + '.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      알림표시('엑셀 파일이 다운로드되었습니다.', '성공');
+    } catch(e) {
+      알림표시('엑셀 생성 실패: ' + e.message, '오류');
+      console.error('엑셀 생성 오류:', e);
+    } finally {
+      버튼.disabled = false;
+      버튼.textContent = '엑셀 다운로드';
+    }
+  }
+
+  /* ════════════════════════════════════════
+     알림 표시
+  ════════════════════════════════════════ */
+  function 알림표시(메시지, 종류) {
+    var el = document.getElementById('알림박스');
+    if (!el) return;
+    el.textContent = 메시지;
+    el.className = '알림 ' + (종류 === '성공' ? '성공' : '오류');
+    el.style.display = 'block';
+    setTimeout(function() { el.style.display = 'none'; }, 3000);
+  }
+  </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>

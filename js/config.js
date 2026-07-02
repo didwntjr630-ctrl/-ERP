@@ -53,6 +53,19 @@ var APP_CONFIG = {
   ],
   메일발송URL: 'https://script.google.com/macros/s/AKfycbwbqqjznaihbxrK8m_Dd__ZfqcydygN50fOKNP-WcfPLuQ6bZ0Go-9rCnDj0SX_S0fcIg/exec',
 
+  차종매핑: {
+    '기아 45mm':               { 차종: 'CL4',        품목: 'EMBLEM' },
+    '기아 61mm':               { 차종: 'KA4',        품목: 'EMBLEM' },
+    '기아 71mm':               { 차종: 'GL3',        품목: 'EMBLEM' },
+    'H-EMBLEM SILVER(CN7 PE)': { 차종: 'CN7 PE',    품목: 'EMBLEM' },
+    'H-EMBLEM BLACK(CN7 PE)':  { 차종: 'CN7 PE',    품목: 'EMBLEM' },
+    'BEZEL(GN7)':              { 차종: 'GN7',        품목: 'BEZEL'  },
+    'MX5 BEZEL SILVER':        { 차종: 'MX5',        품목: 'BEZEL'  },
+    'MX5 BEZEL BLACK':         { 차종: 'MX5',        품목: 'BEZEL'  },
+    'GENESIS EMBLEM':          { 차종: 'JW1 PE HPV', 품목: 'EMBLEM' },
+    'GN7 F/L':                 { 차종: 'GN7 FL',     품목: 'BEZEL'  },
+  },
+
   매출고정값: {
     완료공정: 'C/T',
     규격기본:  'S/V',
