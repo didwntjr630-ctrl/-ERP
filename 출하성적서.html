@@ -722,7 +722,26 @@
       // 비고
       if (데이터.비고) ws.getCell('B25').value = 데이터.비고;
 
-      // 4. 측정치 입력
+      // 4. 자동 랜덤 기입 (표면처리 상단 + 중량)
+      var 자동기입규격 = (APP_CONFIG.성적서자동기입 || {})[데이터.원품명] || (APP_CONFIG.성적서자동기입 || {})[데이터.품명];
+      if (자동기입규격) {
+        var 기입컬럼 = ['O', 'P', 'Q', 'R', 'S'];
+        function 범위랜덤(min, max, 소수점) {
+          return parseFloat((min + Math.random() * (max - min)).toFixed(소수점));
+        }
+        if (자동기입규격.도막두께) {
+          기입컬럼.forEach(function(col) {
+            ws.getCell(col + '18').value = 범위랜덤(자동기입규격.도막두께[0], 자동기입규격.도막두께[1], 1);
+          });
+        }
+        if (자동기입규격.중량) {
+          기입컬럼.forEach(function(col) {
+            ws.getCell(col + '21').value = 범위랜덤(자동기입규격.중량[0], 자동기입규격.중량[1], 2);
+          });
+        }
+      }
+
+      // 6. 측정치 입력
       var 측정치 = 데이터.측정치 || [];
       // Excel 행 번호 매핑 (측정치 인덱스 → 행 번호)
       var 행맵 = [
