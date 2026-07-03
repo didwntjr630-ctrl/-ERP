@@ -573,7 +573,7 @@ function 목록테이블그리기(목록) {
     return;
   }
 
-  목록.slice().reverse().forEach(function(항목) {
+  목록.forEach(function(항목) {
     var 미완료 = 항목.완료여부 === false;
     var 입고 = Number(항목.입고수량) || 0;
     var 출고 = Number(항목.출고수량) || 0;
