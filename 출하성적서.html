@@ -121,6 +121,15 @@
   <!-- ── 화면 UI (조회 + 목록) ── -->
   <div class="내용영역 no-print">
     <div id="알림박스" class="알림"></div>
+    <div id="확인모달_오버레이" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; min-width:280px; max-width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div id="확인모달_메시지" style="margin-bottom:20px; font-size:14px; line-height:1.6; white-space:pre-line;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="버튼 회색" onclick="확인모달닫기()">취소</button>
+          <button class="버튼 파랑" id="확인모달_확인버튼">확인</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 조회 카드 -->
     <div class="카드 검색카드">
@@ -134,11 +143,15 @@
             <input type="date" id="검색_종료일">
           </div>
         </div>
-        <div class="검색항목">
-          <label>LOT No.</label>
-          <input type="text" id="검색_lot" placeholder="LOT 번호" style="width:160px;">
+        <div class="검색항목" style="flex:0 0 auto;">
+          <label>차종</label>
+          <input type="text" id="검색_차종" placeholder="차종" style="width:100px;">
         </div>
-        <div class="검색항목" style="justify-content:flex-end; margin-left:auto; gap:6px; display:flex; align-items:flex-end;">
+        <div class="검색항목" style="flex:0 0 auto; margin-left:-6px;">
+          <label>LOT No.</label>
+          <input type="text" id="검색_lot" placeholder="LOT 번호" style="width:140px;">
+        </div>
+        <div style="display:flex; align-items:flex-end; gap:6px; margin-left:auto;">
           <button class="버튼 파랑" onclick="성적서조회()">조 회</button>
           <button class="버튼 회색" onclick="전체보기()">전체보기</button>
         </div>
@@ -256,7 +269,7 @@
           <td class="레이블">품 번</td>
           <td><input class="서식인풋" id="f_품번"></td>
           <td class="레이블">품 명</td>
-          <td><input class="서식인풋" id="f_품명"></td>
+          <td><input class="서식인풋" id="f_품명"><input type="hidden" id="f_원품명"></td>
           <td class="레이블">수 량</td>
           <td>
             <input class="서식인풋" id="f_수량" type="number" style="width:55px; display:inline-block;"> EA
@@ -443,9 +456,8 @@
 
   function 날짜기본값() {
     var 오늘 = new Date();
-    var 시작 = new Date(오늘.getFullYear(), 오늘.getMonth(), 1);
     var 포맷 = function(d) { return d.toISOString().slice(0, 10); };
-    document.getElementById('검색_시작일').value = 포맷(시작);
+    document.getElementById('검색_시작일').value = 포맷(오늘);
     document.getElementById('검색_종료일').value = 포맷(오늘);
   }
 
@@ -456,11 +468,13 @@
     var 시작 = document.getElementById('검색_시작일').value;
     var 종료 = document.getElementById('검색_종료일').value;
     var lot  = document.getElementById('검색_lot').value.trim();
+    var 차종  = document.getElementById('검색_차종').value.trim();
 
     var 쿼리 = 수파베이스.from('출하성적서').select('*').order('id', { ascending: false });
     if (시작) 쿼리 = 쿼리.gte('작성일', 시작);
     if (종료) 쿼리 = 쿼리.lte('작성일', 종료);
     if (lot)  쿼리 = 쿼리.ilike('lot번호', '%' + lot + '%');
+    if (차종)  쿼리 = 쿼리.ilike('차종', '%' + 차종 + '%');
 
     var { data, error } = await 쿼리;
     if (error) { 알림표시('조회 실패: ' + error.message, '오류'); return; }
@@ -468,7 +482,8 @@
   }
 
   async function 전체보기() {
-    document.getElementById('검색_lot').value = '';
+    document.getElementById('검색_lot').value  = '';
+    document.getElementById('검색_차종').value = '';
     날짜기본값();
     await 성적서조회();
   }
@@ -494,7 +509,10 @@
         '<td style="text-align:center;">' + (r['lot번호'] || '') + '</td>' +
         '<td style="text-align:center; font-weight:bold; color:' + 판정색 + ';">' + (r.종합판정 || '') + '</td>' +
         '<td style="text-align:center;">' + (r.담당자 || '') + '</td>' +
-        '<td style="text-align:center;"><button class="버튼 파랑 소형" onclick="event.stopPropagation(); 성적서열기(' + r.id + ')">열기</button></td>';
+        '<td style="text-align:center; white-space:nowrap;">' +
+          '<button class="버튼 파랑 소형" onclick="event.stopPropagation(); 성적서열기(' + r.id + ')">열기</button> ' +
+          '<button class="버튼 빨강 소형" onclick="event.stopPropagation(); 성적서삭제(' + r.id + ')">삭제</button>' +
+        '</td>';
       바디.appendChild(행);
     });
   }
@@ -525,9 +543,10 @@
     document.getElementById('f_작성일').value    = (r.작성일 || '').slice(0, 10);
     document.getElementById('f_차종').value      = r.차종 || '';
     document.getElementById('f_공급자명').value  = r.공급자명 || '';
-    document.getElementById('f_EO_NO').value     = '';
-    document.getElementById('f_품번').value      = '';
+    document.getElementById('f_EO_NO').value     = r.EO_NO || '';
+    document.getElementById('f_품번').value      = r.품번 || '';
     document.getElementById('f_품명').value      = r.품명 || '';
+    document.getElementById('f_원품명').value    = r.원품명 || '';
     document.getElementById('f_수량').value      = r.수량 || '';
     document.getElementById('f_lot번호').value   = r['lot번호'] || '';
     document.getElementById('f_비고').value      = r.비고 || '';
@@ -580,6 +599,7 @@
       'EO_NO':        document.getElementById('f_EO_NO').value,
       '품번':         document.getElementById('f_품번').value,
       '품명':         document.getElementById('f_품명').value,
+      '원품명':       document.getElementById('f_원품명').value,
       '수량':         Number(document.getElementById('f_수량').value) || 0,
       'lot번호':      document.getElementById('f_lot번호').value,
       '비고':         document.getElementById('f_비고').value,
@@ -685,9 +705,11 @@
     try {
       var 데이터 = 폼읽기();
 
-      // 1. 템플릿 Base64 → ArrayBuffer
-      if (typeof TEMPLATE_BASE64 === 'undefined') throw new Error('템플릿 데이터가 로드되지 않았습니다.');
-      var binary = atob(TEMPLATE_BASE64);
+      // 1. 템플릿 Base64 → ArrayBuffer (품명별 선택)
+      if (typeof TEMPLATES === 'undefined') throw new Error('템플릿 데이터가 로드되지 않았습니다.');
+      var 선택템플릿 = TEMPLATES[데이터.원품명] || TEMPLATES[데이터.품명];
+      if (!선택템플릿) throw new Error('"' + (데이터.원품명 || 데이터.품명) + '" 품명의 템플릿이 없습니다.');
+      var binary = atob(선택템플릿);
       var bytes  = new Uint8Array(binary.length);
       for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       var 버퍼 = bytes.buffer;
@@ -703,10 +725,14 @@
         var d = new Date(작성일str + 'T00:00:00');
         작성일str = d.getFullYear() + '. ' + String(d.getMonth() + 1).padStart(2, '0') + '. ' + String(d.getDate()).padStart(2, '0') + '.';
       }
+      // 인쇄 영역: 원본 템플릿 설정 유지, printArea 없는 경우만 설정
+      if (!ws.pageSetup.printArea) {
+        ws.pageSetup.printArea = 'B1:AC61';
+      }
+
       ws.getCell('Y4').value  = 작성일str;
       ws.getCell('E6').value  = 데이터.차종;
-      ws.getCell('R6').value  = '';
-      ws.getCell('E7').value  = '';
+      // EO NO(R6), 품번(E7)은 템플릿 값 유지
       ws.getCell('M7').value  = 데이터.품명;
       if (데이터.수량) ws.getCell('R7').value = 데이터.수량;
       ws.getCell('P8').value  = 데이터['lot번호'];
@@ -714,7 +740,26 @@
       // 비고
       if (데이터.비고) ws.getCell('B25').value = 데이터.비고;
 
-      // 4. 측정치 입력
+      // 4. 자동 랜덤 기입 (표면처리 상단 + 중량)
+      var 자동기입규격 = (APP_CONFIG.성적서자동기입 || {})[데이터.원품명] || (APP_CONFIG.성적서자동기입 || {})[데이터.품명];
+      if (자동기입규격) {
+        var 기입컬럼 = ['O', 'P', 'Q', 'R', 'S'];
+        function 범위랜덤(min, max, 소수점) {
+          return parseFloat((min + Math.random() * (max - min)).toFixed(소수점));
+        }
+        if (자동기입규격.도막두께) {
+          기입컬럼.forEach(function(col) {
+            ws.getCell(col + '18').value = 범위랜덤(자동기입규격.도막두께[0], 자동기입규격.도막두께[1], 1);
+          });
+        }
+        if (자동기입규격.중량) {
+          기입컬럼.forEach(function(col) {
+            ws.getCell(col + '21').value = 범위랜덤(자동기입규격.중량[0], 자동기입규격.중량[1], 2);
+          });
+        }
+      }
+
+      // 6. 측정치 입력
       var 측정치 = 데이터.측정치 || [];
       // Excel 행 번호 매핑 (측정치 인덱스 → 행 번호)
       var 행맵 = [
@@ -761,6 +806,33 @@
       버튼.disabled = false;
       버튼.textContent = '엑셀 다운로드';
     }
+  }
+
+  /* ════════════════════════════════════════
+     성적서 삭제
+  ════════════════════════════════════════ */
+  function 성적서삭제(id) {
+    확인모달표시('정말 삭제할까요?\n되돌릴 수 없습니다.', async function() {
+      var { error } = await 수파베이스.from('출하성적서').delete().eq('id', id);
+      if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
+      알림표시('삭제되었습니다.', '성공');
+      if (현재성적서id === id) {
+        현재성적서id = null;
+        document.querySelector('.페이퍼감싸기').classList.remove('활성');
+      }
+      성적서조회();
+    });
+  }
+
+  function 확인모달표시(메시지, 콜백) {
+    document.getElementById('확인모달_메시지').textContent = 메시지;
+    var 버튼 = document.getElementById('확인모달_확인버튼');
+    버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+    document.getElementById('확인모달_오버레이').style.display = 'flex';
+  }
+
+  function 확인모달닫기() {
+    document.getElementById('확인모달_오버레이').style.display = 'none';
   }
 
   /* ════════════════════════════════════════
