@@ -121,6 +121,15 @@
   <!-- ── 화면 UI (조회 + 목록) ── -->
   <div class="내용영역 no-print">
     <div id="알림박스" class="알림"></div>
+    <div id="확인모달_오버레이" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; min-width:280px; max-width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div id="확인모달_메시지" style="margin-bottom:20px; font-size:14px; line-height:1.6; white-space:pre-line;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="버튼 회색" onclick="확인모달닫기()">취소</button>
+          <button class="버튼 파랑" id="확인모달_확인버튼">확인</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 조회 카드 -->
     <div class="카드 검색카드">
@@ -133,6 +142,10 @@
             <span class="기간구분">~</span>
             <input type="date" id="검색_종료일">
           </div>
+        </div>
+        <div class="검색항목">
+          <label>차종</label>
+          <input type="text" id="검색_차종" placeholder="차종" style="width:120px;">
         </div>
         <div class="검색항목">
           <label>LOT No.</label>
@@ -443,9 +456,8 @@
 
   function 날짜기본값() {
     var 오늘 = new Date();
-    var 시작 = new Date(오늘.getFullYear(), 오늘.getMonth(), 1);
     var 포맷 = function(d) { return d.toISOString().slice(0, 10); };
-    document.getElementById('검색_시작일').value = 포맷(시작);
+    document.getElementById('검색_시작일').value = 포맷(오늘);
     document.getElementById('검색_종료일').value = 포맷(오늘);
   }
 
@@ -456,11 +468,13 @@
     var 시작 = document.getElementById('검색_시작일').value;
     var 종료 = document.getElementById('검색_종료일').value;
     var lot  = document.getElementById('검색_lot').value.trim();
+    var 차종  = document.getElementById('검색_차종').value.trim();
 
     var 쿼리 = 수파베이스.from('출하성적서').select('*').order('id', { ascending: false });
     if (시작) 쿼리 = 쿼리.gte('작성일', 시작);
     if (종료) 쿼리 = 쿼리.lte('작성일', 종료);
     if (lot)  쿼리 = 쿼리.ilike('lot번호', '%' + lot + '%');
+    if (차종)  쿼리 = 쿼리.ilike('차종', '%' + 차종 + '%');
 
     var { data, error } = await 쿼리;
     if (error) { 알림표시('조회 실패: ' + error.message, '오류'); return; }
@@ -468,7 +482,8 @@
   }
 
   async function 전체보기() {
-    document.getElementById('검색_lot').value = '';
+    document.getElementById('검색_lot').value  = '';
+    document.getElementById('검색_차종').value = '';
     날짜기본값();
     await 성적서조회();
   }
@@ -494,7 +509,10 @@
         '<td style="text-align:center;">' + (r['lot번호'] || '') + '</td>' +
         '<td style="text-align:center; font-weight:bold; color:' + 판정색 + ';">' + (r.종합판정 || '') + '</td>' +
         '<td style="text-align:center;">' + (r.담당자 || '') + '</td>' +
-        '<td style="text-align:center;"><button class="버튼 파랑 소형" onclick="event.stopPropagation(); 성적서열기(' + r.id + ')">열기</button></td>';
+        '<td style="text-align:center; white-space:nowrap;">' +
+          '<button class="버튼 파랑 소형" onclick="event.stopPropagation(); 성적서열기(' + r.id + ')">열기</button> ' +
+          '<button class="버튼 빨강 소형" onclick="event.stopPropagation(); 성적서삭제(' + r.id + ')">삭제</button>' +
+        '</td>';
       바디.appendChild(행);
     });
   }
@@ -788,6 +806,33 @@
       버튼.disabled = false;
       버튼.textContent = '엑셀 다운로드';
     }
+  }
+
+  /* ════════════════════════════════════════
+     성적서 삭제
+  ════════════════════════════════════════ */
+  function 성적서삭제(id) {
+    확인모달표시('정말 삭제할까요?\n되돌릴 수 없습니다.', async function() {
+      var { error } = await 수파베이스.from('출하성적서').delete().eq('id', id);
+      if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
+      알림표시('삭제되었습니다.', '성공');
+      if (현재성적서id === id) {
+        현재성적서id = null;
+        document.querySelector('.페이퍼감싸기').classList.remove('활성');
+      }
+      성적서조회();
+    });
+  }
+
+  function 확인모달표시(메시지, 콜백) {
+    document.getElementById('확인모달_메시지').textContent = 메시지;
+    var 버튼 = document.getElementById('확인모달_확인버튼');
+    버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+    document.getElementById('확인모달_오버레이').style.display = 'flex';
+  }
+
+  function 확인모달닫기() {
+    document.getElementById('확인모달_오버레이').style.display = 'none';
   }
 
   /* ════════════════════════════════════════
