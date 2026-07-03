@@ -525,8 +525,8 @@
     document.getElementById('f_작성일').value    = (r.작성일 || '').slice(0, 10);
     document.getElementById('f_차종').value      = r.차종 || '';
     document.getElementById('f_공급자명').value  = r.공급자명 || '';
-    document.getElementById('f_EO_NO').value     = '';
-    document.getElementById('f_품번').value      = '';
+    document.getElementById('f_EO_NO').value     = r.EO_NO || '';
+    document.getElementById('f_품번').value      = r.품번 || '';
     document.getElementById('f_품명').value      = r.품명 || '';
     document.getElementById('f_수량').value      = r.수량 || '';
     document.getElementById('f_lot번호').value   = r['lot번호'] || '';
@@ -685,9 +685,11 @@
     try {
       var 데이터 = 폼읽기();
 
-      // 1. 템플릿 Base64 → ArrayBuffer
-      if (typeof TEMPLATE_BASE64 === 'undefined') throw new Error('템플릿 데이터가 로드되지 않았습니다.');
-      var binary = atob(TEMPLATE_BASE64);
+      // 1. 템플릿 Base64 → ArrayBuffer (품명별 선택)
+      if (typeof TEMPLATES === 'undefined') throw new Error('템플릿 데이터가 로드되지 않았습니다.');
+      var 선택템플릿 = TEMPLATES[데이터.품명];
+      if (!선택템플릿) throw new Error('"' + 데이터.품명 + '" 품명의 템플릿이 없습니다.');
+      var binary = atob(선택템플릿);
       var bytes  = new Uint8Array(binary.length);
       for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       var 버퍼 = bytes.buffer;
@@ -705,8 +707,8 @@
       }
       ws.getCell('Y4').value  = 작성일str;
       ws.getCell('E6').value  = 데이터.차종;
-      ws.getCell('R6').value  = '';
-      ws.getCell('E7').value  = '';
+      if (데이터.EO_NO) ws.getCell('R6').value = 데이터.EO_NO;
+      if (데이터.품번)  ws.getCell('E7').value = 데이터.품번;
       ws.getCell('M7').value  = 데이터.품명;
       if (데이터.수량) ws.getCell('R7').value = 데이터.수량;
       ws.getCell('P8').value  = 데이터['lot번호'];
