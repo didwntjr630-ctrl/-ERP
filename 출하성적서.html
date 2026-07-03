@@ -256,7 +256,7 @@
           <td class="레이블">품 번</td>
           <td><input class="서식인풋" id="f_품번"></td>
           <td class="레이블">품 명</td>
-          <td><input class="서식인풋" id="f_품명"></td>
+          <td><input class="서식인풋" id="f_품명"><input type="hidden" id="f_원품명"></td>
           <td class="레이블">수 량</td>
           <td>
             <input class="서식인풋" id="f_수량" type="number" style="width:55px; display:inline-block;"> EA
@@ -528,6 +528,7 @@
     document.getElementById('f_EO_NO').value     = r.EO_NO || '';
     document.getElementById('f_품번').value      = r.품번 || '';
     document.getElementById('f_품명').value      = r.품명 || '';
+    document.getElementById('f_원품명').value    = r.원품명 || '';
     document.getElementById('f_수량').value      = r.수량 || '';
     document.getElementById('f_lot번호').value   = r['lot번호'] || '';
     document.getElementById('f_비고').value      = r.비고 || '';
@@ -580,6 +581,7 @@
       'EO_NO':        document.getElementById('f_EO_NO').value,
       '품번':         document.getElementById('f_품번').value,
       '품명':         document.getElementById('f_품명').value,
+      '원품명':       document.getElementById('f_원품명').value,
       '수량':         Number(document.getElementById('f_수량').value) || 0,
       'lot번호':      document.getElementById('f_lot번호').value,
       '비고':         document.getElementById('f_비고').value,
@@ -687,8 +689,8 @@
 
       // 1. 템플릿 Base64 → ArrayBuffer (품명별 선택)
       if (typeof TEMPLATES === 'undefined') throw new Error('템플릿 데이터가 로드되지 않았습니다.');
-      var 선택템플릿 = TEMPLATES[데이터.품명];
-      if (!선택템플릿) throw new Error('"' + 데이터.품명 + '" 품명의 템플릿이 없습니다.');
+      var 선택템플릿 = TEMPLATES[데이터.원품명] || TEMPLATES[데이터.품명];
+      if (!선택템플릿) throw new Error('"' + (데이터.원품명 || 데이터.품명) + '" 품명의 템플릿이 없습니다.');
       var binary = atob(선택템플릿);
       var bytes  = new Uint8Array(binary.length);
       for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
