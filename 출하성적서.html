@@ -744,6 +744,23 @@
       // 4. 자동 랜덤 기입 (표면처리 상단 + 중량)
       var 자동기입규격 = (APP_CONFIG.성적서자동기입 || {})[데이터.원품명] || (APP_CONFIG.성적서자동기입 || {})[데이터.품명];
       var 도막두께값들 = [];
+
+      // xlsx 항목별 실제 행 번호 동적 파악 (C열 항목명 검색)
+      var 항목행 = {};
+      for (var _r = 9; _r <= 28; _r++) {
+        var _v = String(ws.getCell('C' + _r).value || '').replace(/\s+/g, '');
+        if (!_v) _v = String(ws.getCell('B' + _r).value || '').replace(/\s+/g, '');
+        if (_v.indexOf('외관') > -1   && !항목행['외관'])    항목행['외관']    = _r;
+        if (_v.indexOf('헤어라인') > -1 && !항목행['헤어라인']) 항목행['헤어라인'] = _r;
+        if (_v.indexOf('신뢰') > -1   && !항목행['신뢰성'])  항목행['신뢰성']  = _r;
+        if (_v.indexOf('중금속') > -1  && !항목행['중금속']) 항목행['중금속']  = _r;
+        if (_v.indexOf('표면처리') > -1 && !항목행['표면처리']) 항목행['표면처리'] = _r;
+        if (_v.indexOf('코팅박리') > -1 && !항목행['코팅박리']) 항목행['코팅박리'] = _r;
+        if (_v.indexOf('중량') > -1   && !항목행['중량'])    항목행['중량']    = _r;
+      }
+      var 도막두께행 = 항목행['표면처리'] || 18;
+      var 엑셀중량행  = 항목행['중량']    || 21;
+
       if (자동기입규격) {
         var 기입컬럼 = ['O', 'P', 'Q', 'R', 'S'];
         function 범위랜덤(min, max, 소수점) {
@@ -752,13 +769,13 @@
         if (자동기입규격.도막두께) {
           기입컬럼.forEach(function(col) {
             var v = 범위랜덤(자동기입규격.도막두께[0], 자동기입규격.도막두께[1], 1);
-            ws.getCell(col + '18').value = v;
+            ws.getCell(col + 도막두께행).value = v;
             도막두께값들.push(v);
           });
         }
         if (자동기입규격.중량) {
           기입컬럼.forEach(function(col) {
-            ws.getCell(col + '21').value = 범위랜덤(자동기입규격.중량[0], 자동기입규격.중량[1], 2);
+            ws.getCell(col + 엑셀중량행).value = 범위랜덤(자동기입규격.중량[0], 자동기입규격.중량[1], 2);
           });
         }
 
@@ -802,13 +819,16 @@
 
       // 6. 측정치 입력
       var 측정치 = 데이터.측정치 || [];
-      // Excel 행 번호 매핑 (측정치 인덱스 → 행 번호)
+      // xlsx 파일에서 동적으로 파악한 항목행을 기반으로 행맵 구성
       var 행맵 = [
-        { mIdx: 0, row: 11 },   // 외관
-        { mIdx: 1, row: 13 },   // 헤어라인
-        { mIdx: 6, row: 20 },   // 코팅박리
-        { mIdx: 7, row: 21 },   // 중량
-      ];
+        { mIdx: 0, key: '외관' },
+        { mIdx: 1, key: '헤어라인' },
+        { mIdx: 2, key: '신뢰성' },
+        { mIdx: 3, key: '중금속' },
+        { mIdx: 6, key: '코팅박리' },
+        { mIdx: 7, key: '중량' },
+      ].filter(function(x) { return !!항목행[x.key]; })
+       .map(function(x) { return { mIdx: x.mIdx, row: 항목행[x.key] }; });
       var 컬럼맵 = [
         { col: 'O', f: 'X1' }, { col: 'P', f: 'X2' }, { col: 'Q', f: 'X3' },
         { col: 'R', f: 'X4' }, { col: 'S', f: 'X5' },
