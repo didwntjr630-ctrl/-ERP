@@ -169,6 +169,17 @@
     </div>
   </div>
 
+  <!-- 확인 모달 -->
+  <div id="확인모달_오버레이" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:8px; padding:24px; min-width:280px; max-width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+      <div id="확인모달_메시지" style="margin-bottom:20px; font-size:14px; line-height:1.6; white-space:pre-line;"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="버튼 회색" onclick="확인모달닫기()">취소</button>
+        <button class="버튼 파랑" id="확인모달_확인버튼">확인</button>
+      </div>
+    </div>
+  </div>
+
   <div class="admin-wrap">
 
     <!-- 승인 대기 -->
@@ -206,10 +217,11 @@
             <th>상태</th>
             <th>신청일시</th>
             <th>승인일시</th>
+            <th>조치</th>
           </tr>
         </thead>
         <tbody id="all-tbody">
-          <tr class="empty-row"><td colspan="5">계정 정보를 불러오는 중...</td></tr>
+          <tr class="empty-row"><td colspan="6">계정 정보를 불러오는 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -230,6 +242,38 @@
     document.title = APP_CONFIG.시스템명 + ' - 관리자';
     var 세션 = 현재세션();
     if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명 + ' [관리자]';
+
+    var _알림타이머 = null;
+    function _알림표시(메시지, 종류) {
+      var el = document.getElementById('admin-알림') || (function() {
+        var d = document.createElement('div');
+        d.id = 'admin-알림';
+        d.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:none;';
+        document.body.appendChild(d);
+        return d;
+      })();
+      el.textContent = 메시지;
+      el.style.background = 종류 === '성공' ? '#d4edda' : '#f8d7da';
+      el.style.color = 종류 === '성공' ? '#155724' : '#721c24';
+      el.style.display = 'block';
+      clearTimeout(_알림타이머);
+      _알림타이머 = setTimeout(function() { el.style.display = 'none'; }, 3000);
+    }
+
+    function 확인모달표시(메시지, 콜백) {
+      document.getElementById('확인모달_메시지').textContent = 메시지;
+      var 버튼 = document.getElementById('확인모달_확인버튼');
+      버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+      document.getElementById('확인모달_오버레이').style.display = 'flex';
+    }
+
+    function 확인모달닫기() {
+      document.getElementById('확인모달_오버레이').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') 확인모달닫기();
+    });
 
     function _날짜형식(iso) {
       if (!iso) return '-';
@@ -272,18 +316,24 @@
       }
 
       /* 전체 계정 테이블 */
+      var 내세션 = 현재세션();
       var aBody = document.getElementById('all-tbody');
       if (목록.length === 0) {
-        aBody.innerHTML = '<tr class="empty-row"><td colspan="5">등록된 계정이 없습니다.</td></tr>';
+        aBody.innerHTML = '<tr class="empty-row"><td colspan="6">등록된 계정이 없습니다.</td></tr>';
       } else {
         aBody.innerHTML = 목록.map(function(a) {
           var 이름셀 = a['사원명'] + (a['관리자여부'] ? '<span class="badge-admin">관리자</span>' : '');
+          var 나자신 = 내세션 && 내세션.사원명 === a['사원명'];
+          var 조치셀 = 나자신
+            ? '<span style="font-size:11px; color:#aaa;">본인</span>'
+            : '<button class="btn-reject" onclick="계정삭제처리(' + a.id + ', \'' + a['사원명'] + '\')">삭제</button>';
           return '<tr>'
             + '<td style="font-weight:bold;">' + 이름셀 + '</td>'
             + '<td>' + a['직급'] + '</td>'
             + '<td>' + _상태뱃지(a['상태']) + '</td>'
             + '<td>' + _날짜형식(a['created_at']) + '</td>'
             + '<td>' + _날짜형식(a['승인일시']) + '</td>'
+            + '<td>' + 조치셀 + '</td>'
             + '</tr>';
         }).join('');
       }
@@ -291,15 +341,27 @@
 
     async function 승인처리(id) {
       var 결과 = await 계정승인(id);
-      if (!결과.성공) { alert('승인 실패: ' + 결과.메시지); return; }
+      if (!결과.성공) { _알림표시('승인 실패: ' + 결과.메시지, '오류'); return; }
+      _알림표시('승인되었습니다.', '성공');
       목록새로고침();
     }
 
     async function 거부처리(id) {
-      if (!confirm('이 계정을 거부하시겠습니까?')) return;
-      var 결과 = await 계정거부(id);
-      if (!결과.성공) { alert('거부 실패: ' + 결과.메시지); return; }
-      목록새로고침();
+      확인모달표시('이 계정을 거부하시겠습니까?', async function() {
+        var 결과 = await 계정거부(id);
+        if (!결과.성공) { _알림표시('거부 실패: ' + 결과.메시지, '오류'); return; }
+        _알림표시('거부 처리되었습니다.', '성공');
+        목록새로고침();
+      });
+    }
+
+    async function 계정삭제처리(id, 사원명) {
+      확인모달표시(사원명 + ' 계정을 완전히 삭제하시겠습니까?\n되돌릴 수 없습니다.', async function() {
+        var 결과 = await 계정삭제(id);
+        if (!결과.성공) { _알림표시('삭제 실패: ' + 결과.메시지, '오류'); return; }
+        _알림표시(사원명 + ' 계정이 삭제되었습니다.', '성공');
+        목록새로고침();
+      });
     }
 
     // 초기 로드
