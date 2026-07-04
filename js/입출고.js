@@ -103,6 +103,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     .channel('app_broadcast')
     .on('broadcast', { event: '확정갱신' }, _실시간갱신)
     .subscribe();
+
+  // 폴링: 5초마다 확정 상태 체크 (Realtime 보완용)
+  setInterval(async function() {
+    if (현재작업공정 !== '출하검사') return;
+    var 이전크기 = 확정된id목록.size;
+    var 이전목록 = new Set(확정된id목록);
+    await 확정id목록갱신();
+    var 변경 = 확정된id목록.size !== 이전크기;
+    if (!변경) {
+      for (var _id of 확정된id목록) { if (!이전목록.has(_id)) { 변경 = true; break; } }
+    }
+    if (변경) 공정필터목록갱신();
+  }, 5000);
 });
 
 /* ── 날짜 기본값 ── */
