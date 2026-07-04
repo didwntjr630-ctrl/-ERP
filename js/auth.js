@@ -74,6 +74,15 @@ async function 계정승인(계정id) {
   return error ? { 성공: false, 메시지: error.message } : { 성공: true };
 }
 
+/* 관리자 전용: 계정 삭제 */
+async function 계정삭제(계정id) {
+  var { error } = await 수파베이스
+    .from('사용자계정')
+    .delete()
+    .eq('id', 계정id);
+  return error ? { 성공: false, 메시지: error.message } : { 성공: true };
+}
+
 /* 관리자 전용: 계정 거부 */
 async function 계정거부(계정id) {
   var { error } = await 수파베이스
