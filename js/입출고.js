@@ -18,6 +18,7 @@ var 현재작업공정 = null;
 var 출발공정목록 = [];
 var 도착공정목록 = [];
 var 확정된id목록 = new Set();
+var _앱브로드캐스트채널 = null;
 
 /* ── 폼 임시저장 / 복원 (페이지 이탈 후 복귀 대비) ── */
 var 폼임시저장키 = 'erp_폼임시저장';
@@ -98,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     .on('postgres_changes', { event: '*', schema: 'public', table: '입출고기록' }, _실시간갱신)
     .subscribe();
   // broadcast: 확정처리 완료 신호 수신
-  수파베이스
+  _앱브로드캐스트채널 = 수파베이스
     .channel('app_broadcast')
     .on('broadcast', { event: '확정갱신' }, _실시간갱신)
     .subscribe();
@@ -1077,7 +1078,7 @@ function 확정처리() {
     }
 
     // 다른 클라이언트에 확정 완료 신호 전송
-    수파베이스.channel('app_broadcast').send({ type: 'broadcast', event: '확정갱신', payload: {} });
+    if (_앱브로드캐스트채널) _앱브로드캐스트채널.send({ type: 'broadcast', event: '확정갱신', payload: {} });
 
     await 성적서자동생성(선택항목);
 
