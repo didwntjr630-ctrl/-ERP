@@ -88,12 +88,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // 다른 PC의 변경을 실시간으로 반영 (Supabase Realtime)
   var _실시간타이머 = null;
+  function _실시간갱신() {
+    clearTimeout(_실시간타이머);
+    _실시간타이머 = setTimeout(공정필터목록갱신, 400);
+  }
   수파베이스
     .channel('입출고실시간')
-    .on('postgres_changes', { event: '*', schema: 'public', table: '입출고기록' }, function() {
-      clearTimeout(_실시간타이머);
-      _실시간타이머 = setTimeout(공정필터목록갱신, 400);
-    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: '입출고기록' }, _실시간갱신)
+    .on('postgres_changes', { event: '*', schema: 'public', table: '매출기록' }, _실시간갱신)
     .subscribe();
 });
 
