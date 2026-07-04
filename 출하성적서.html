@@ -719,9 +719,15 @@
       var 자동기입규격 = (APP_CONFIG.성적서자동기입 || {})[데이터.원품명] || (APP_CONFIG.성적서자동기입 || {})[데이터.품명];
       var workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(버퍼);
-      var 시트번호 = (자동기입규격 && 자동기입규격.시트번호) || 0;
-      var ws = workbook.worksheets[시트번호];
-      if (!ws) throw new Error('시트를 찾을 수 없습니다. (시트번호: ' + 시트번호 + ', 총: ' + workbook.worksheets.length + ')');
+      // "출 하 검 사 성 적 서" 텍스트가 있는 시트 자동 탐색
+      var ws = null;
+      for (var _si = 0; _si < workbook.worksheets.length; _si++) {
+        var _wsCheck = workbook.worksheets[_si];
+        var _v2 = String(_wsCheck.getCell('B2').value || '').replace(/\s+/g, '');
+        if (_v2.indexOf('출하검사성적서') > -1) { ws = _wsCheck; break; }
+      }
+      if (!ws) ws = workbook.worksheets[0];
+      if (!ws) throw new Error('사용 가능한 시트를 찾을 수 없습니다.');
 
       // 3. 헤더 데이터 입력
       var 작성일str = 데이터.작성일 || '';
