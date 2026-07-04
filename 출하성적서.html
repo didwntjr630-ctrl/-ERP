@@ -716,9 +716,11 @@
       var 버퍼 = bytes.buffer;
 
       // 2. ExcelJS 로드
+      var 자동기입규격 = (APP_CONFIG.성적서자동기입 || {})[데이터.원품명] || (APP_CONFIG.성적서자동기입 || {})[데이터.품명];
       var workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(버퍼);
-      var ws = workbook.worksheets[0];
+      var 시트번호 = (자동기입규격 && 자동기입규격.시트번호) || 0;
+      var ws = workbook.worksheets[시트번호];
 
       // 3. 헤더 데이터 입력
       var 작성일str = 데이터.작성일 || '';
@@ -742,7 +744,6 @@
       if (데이터.비고) ws.getCell('B25').value = 데이터.비고;
 
       // 4. 자동 랜덤 기입 (표면처리 상단 + 중량)
-      var 자동기입규격 = (APP_CONFIG.성적서자동기입 || {})[데이터.원품명] || (APP_CONFIG.성적서자동기입 || {})[데이터.품명];
       var 도막두께값들 = [];
 
       // xlsx 항목별 실제 행 번호 동적 파악 (C열 항목명 검색)
