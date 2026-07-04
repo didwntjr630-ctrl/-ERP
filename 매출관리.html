@@ -696,6 +696,14 @@
     수기항목로드();
     데이터로드();
 
+    var _매출타이머 = null;
+    수파베이스.channel('매출실시간')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '매출기록' }, function() {
+        clearTimeout(_매출타이머);
+        _매출타이머 = setTimeout(데이터로드, 400);
+      })
+      .subscribe();
+
     document.addEventListener('keydown', function(e) {
       if (e.key !== 'Escape') return;
       if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }

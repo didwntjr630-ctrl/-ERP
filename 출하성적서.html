@@ -453,6 +453,14 @@
 
     날짜기본값();
     성적서조회();
+
+    var _성적서타이머 = null;
+    수파베이스.channel('성적서실시간')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '출하성적서' }, function() {
+        clearTimeout(_성적서타이머);
+        _성적서타이머 = setTimeout(성적서조회, 400);
+      })
+      .subscribe();
   });
 
   function 날짜기본값() {
