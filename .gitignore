@@ -2,3 +2,5 @@ node_modules/
 package.json
 package-lock.json
 ~$*
+build_coating_images.js
+도막두께/

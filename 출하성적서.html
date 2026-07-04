@@ -413,6 +413,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
   <script src="js/template_data.js"></script>
+  <script src="js/도막두께_이미지.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
@@ -762,53 +763,39 @@
         }
 
         // 5. 도막두께 증빙사진 삽입 (아노다이징 5칸)
-        if (자동기입규격.이미지폴더 && 도막두께값들.length === 5) {
+        if (자동기입규격.이미지폴더 && 도막두께값들.length === 5 && typeof 도막두께이미지 !== 'undefined') {
           var 폴더 = 자동기입규격.이미지폴더;
-          var 모든이미지 = ws.getImages();
-          console.log('[도막두께] getImages 수:', 모든이미지.length, 모든이미지);
+          var 폴더이미지 = 도막두께이미지[폴더] || {};
 
-          // 도막두께 테이블 이미지 위치 동적 감지 (row 28 이후, col 0~3 사이에서 시작)
-          var 테이블이미지 = 모든이미지.find(function(img) {
+          // 도막두께 테이블 이미지 위치 동적 감지, 실패 시 고정값
+          var 테이블이미지 = ws.getImages().find(function(img) {
             return img.range.tl.nativeRow >= 28 && img.range.tl.nativeCol <= 2;
           });
-          console.log('[도막두께] 테이블이미지:', 테이블이미지);
+          var 기준Row = 테이블이미지 ? 테이블이미지.range.tl.nativeRow : 30;
+          var 끝Row   = 테이블이미지 ? 테이블이미지.range.br.nativeRow : (ws.rowCount - 2);
+          var 기준Col = 테이블이미지 ? 테이블이미지.range.tl.nativeCol : 1;
+          var 끝Col   = 테이블이미지 ? 테이블이미지.range.br.nativeCol : 28;
 
-          // 감지 실패 시 고정 좌표 사용
-          var 기준Row, 끝Row, 기준Col, 끝Col;
-          if (테이블이미지) {
-            기준Row = 테이블이미지.range.tl.nativeRow;
-            끝Row   = 테이블이미지.range.br.nativeRow;
-            기준Col = 테이블이미지.range.tl.nativeCol;
-            끝Col   = 테이블이미지.range.br.nativeCol;
-          } else {
-            기준Row = 30; 끝Row = ws.rowCount - 2; 기준Col = 1; 끝Col = 28;
-          }
-
-          var 총높이     = 끝Row - 기준Row;
           var 사진시작Row = 기준Row + 3;
-          var 사진끝Row   = 기준Row + Math.floor(총높이 / 2) - 1;
+          var 사진끝Row   = 기준Row + Math.floor((끝Row - 기준Row) / 2) - 1;
           var 사진시작Col = 기준Col + 2;
           var 칸폭        = Math.floor((끝Col - 기준Col - 2) / 5);
-          console.log('[도막두께] 사진 좌표 - Row:', 사진시작Row, '~', 사진끝Row, '| Col 시작:', 사진시작Col, '칸폭:', 칸폭);
 
           for (var i = 0; i < 5; i++) {
-            var 값 = 도막두께값들[i];
-            var 파일명 = 값.toFixed(1) + '.png';
-            var url = '/도막두께/' + 폴더 + '/' + 파일명;
-            console.log('[도막두께] fetch 시도:', url);
+            var 키 = 도막두께값들[i].toFixed(1);
+            var b64 = 폴더이미지[키];
+            if (!b64) continue;
             try {
-              var res = await fetch(url);
-              console.log('[도막두께] fetch 결과:', url, res.status);
-              if (!res.ok) continue;
-              var buf = await res.arrayBuffer();
-              var imgId = workbook.addImage({ buffer: buf, extension: 'png' });
+              var binary = atob(b64);
+              var bytes  = new Uint8Array(binary.length);
+              for (var j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+              var imgId = workbook.addImage({ buffer: bytes.buffer, extension: 'png' });
               ws.addImage(imgId, {
                 tl: { col: 사진시작Col + i * 칸폭,       row: 사진시작Row },
                 br: { col: 사진시작Col + (i + 1) * 칸폭, row: 사진끝Row },
                 editAs: 'oneCell'
               });
-              console.log('[도막두께] 삽입 완료:', 파일명);
-            } catch(imgErr) { console.error('[도막두께] 실패:', url, imgErr); }
+            } catch(imgErr) { console.error('도막두께 사진 삽입 실패:', 키, imgErr); }
           }
         }
       }
