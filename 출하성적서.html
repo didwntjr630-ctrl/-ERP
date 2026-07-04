@@ -762,7 +762,7 @@
       var 엑셀중량행  = 항목행['중량'] || (자동기입규격 && 자동기입규격.중량행) || null;
 
       if (자동기입규격) {
-        var 기입컬럼 = ['O', 'P', 'Q', 'R', 'S'];
+        var 기입컬럼 = (자동기입규격.기입컬럼) || ['O', 'P', 'Q', 'R', 'S'];
         function 범위랜덤(min, max, 소수점) {
           return parseFloat((min + Math.random() * (max - min)).toFixed(소수점));
         }
