@@ -61,6 +61,15 @@
 
   <div class="내용영역">
     <div id="알림박스" class="알림" style="position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:9999; min-width:260px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:14px; font-weight:600;"></div>
+    <div id="확인모달_오버레이" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; min-width:280px; max-width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div id="확인모달_메시지" style="margin-bottom:20px; font-size:14px; line-height:1.6; white-space:pre-line;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="버튼 회색" onclick="확인모달닫기()">취소</button>
+          <button class="버튼 파랑" id="확인모달_확인버튼">확인</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 검색 카드 -->
     <div class="카드 검색카드">
@@ -423,12 +432,24 @@
       알림표시('메일 발송 완료 → ' + 선택이름 + ' (' + 선택이메일 + ')', '성공');
     }
 
+    function 확인모달표시(메시지, 콜백) {
+      document.getElementById('확인모달_메시지').textContent = 메시지;
+      var 버튼 = document.getElementById('확인모달_확인버튼');
+      버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+      document.getElementById('확인모달_오버레이').style.display = 'flex';
+    }
+
+    function 확인모달닫기() {
+      document.getElementById('확인모달_오버레이').style.display = 'none';
+    }
+
     async function 매출삭제(id) {
-      if (!confirm('이 매출 기록을 삭제하시겠습니까?')) return;
-      var { error } = await 수파베이스.from('매출기록').delete().eq('id', id);
-      if (error) { alert('삭제 실패: ' + error.message); return; }
-      전체데이터 = 전체데이터.filter(function(h) { return h.id !== id; });
-      필터적용();
+      확인모달표시('이 매출 기록을 삭제하시겠습니까?', async function() {
+        var { error } = await 수파베이스.from('매출기록').delete().eq('id', id);
+        if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
+        전체데이터 = 전체데이터.filter(function(h) { return h.id !== id; });
+        필터적용();
+      });
     }
 
     /* ── 단가 관리 ── */
@@ -706,6 +727,7 @@
 
     document.addEventListener('keydown', function(e) {
       if (e.key !== 'Escape') return;
+      if (document.getElementById('확인모달_오버레이').style.display !== 'none') { 확인모달닫기(); return; }
       if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
       if (document.getElementById('단가수정_오버레이').style.display !== 'none') { 단가수정팝업닫기(); return; }
     });
