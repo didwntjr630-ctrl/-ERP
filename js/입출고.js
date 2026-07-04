@@ -92,10 +92,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     clearTimeout(_실시간타이머);
     _실시간타이머 = setTimeout(공정필터목록갱신, 400);
   }
+  // postgres_changes: 입출고기록 변경 (저장·수정·삭제)
   수파베이스
     .channel('입출고실시간')
     .on('postgres_changes', { event: '*', schema: 'public', table: '입출고기록' }, _실시간갱신)
-    .on('postgres_changes', { event: '*', schema: 'public', table: '매출기록' }, _실시간갱신)
+    .subscribe();
+  // broadcast: 확정처리 완료 신호 수신
+  수파베이스
+    .channel('app_broadcast')
+    .on('broadcast', { event: '확정갱신' }, _실시간갱신)
     .subscribe();
 });
 
@@ -1070,6 +1075,9 @@ function 확정처리() {
       알림표시('매출 저장 실패: ' + result.error.message, '오류');
       return;
     }
+
+    // 다른 클라이언트에 확정 완료 신호 전송
+    수파베이스.channel('app_broadcast').send({ type: 'broadcast', event: '확정갱신', payload: {} });
 
     await 성적서자동생성(선택항목);
 
