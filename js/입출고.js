@@ -265,6 +265,14 @@ async function 공정필터목록갱신() {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
   }
 
+  // 출하검사: 조회 기간 날짜 필터 적용 (기본값 = 이번 달)
+  if (현재작업공정 === '출하검사') {
+    var _시작 = document.getElementById('검색_시작일').value;
+    var _종료 = document.getElementById('검색_종료일').value;
+    if (_시작) 결과 = 결과.filter(function(h) { return (h.일자||'') >= _시작; });
+    if (_종료) 결과 = 결과.filter(function(h) { return (h.일자||'') <= _종료; });
+  }
+
   목록테이블그리기(결과);
 
   var 안내 = document.getElementById('검색결과안내');
