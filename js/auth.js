@@ -27,10 +27,13 @@ async function 로그인시도(사원명, 암호) {
 
 /* 계정 신청 (사원명 중복 불가) */
 async function 계정신청(사원명, 암호) {
+  var 이름 = (사원명 || '').trim();
+  if (!이름) return { 성공: false, 메시지: '이름을 입력해주세요.' };
+
   var { data: 기존, error: 조회오류 } = await 수파베이스
     .from('사용자계정')
     .select('id, 상태')
-    .eq('사원명', 사원명)
+    .eq('사원명', 이름)
     .maybeSingle();
 
   if (조회오류) return { 성공: false, 메시지: '서버 오류: ' + 조회오류.message };
@@ -41,9 +44,13 @@ async function 계정신청(사원명, 암호) {
 
   var { error } = await 수파베이스
     .from('사용자계정')
-    .insert({ '사원명': 사원명, '암호해시': _암호해시(암호), '상태': 'pending' });
+    .insert({ '사원명': 이름, '암호해시': _암호해시(암호), '상태': 'pending' });
 
-  return error ? { 성공: false, 메시지: '생성 실패: ' + error.message } : { 성공: true };
+  if (error) {
+    var 메시지 = error.code === '23505' ? '이미 존재하는 이름입니다.' : '생성 실패: ' + error.message;
+    return { 성공: false, 메시지: 메시지 };
+  }
+  return { 성공: true };
 }
 
 /* 암호 변경 */
