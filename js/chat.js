@@ -122,8 +122,8 @@ function _채팅스타일주입() {
     '.ch-confirm-ok{padding:7px 16px;border:none;border-radius:6px;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;}' +
 
     /* 나가기 버튼 */
-    '.ch-leave-btn{background:none;border:1px solid rgba(255,255,255,.25);color:#d1d5db;cursor:pointer;font-size:11px;padding:3px 10px;border-radius:4px;font-family:inherit;transition:all .15s;display:none;}' +
-    '.ch-leave-btn:hover{background:rgba(239,68,68,.2);border-color:#ef4444;color:#fca5a5;}';
+    '.ch-leave-btn{background:rgba(239,68,68,.2);border:1px solid #ef4444;color:#fca5a5;cursor:pointer;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;font-family:inherit;transition:all .15s;display:none;}' +
+    '.ch-leave-btn:hover{background:#ef4444;color:#fff;}';
   document.head.appendChild(s);
 }
 
@@ -687,10 +687,11 @@ function 채팅방나가기() {
   if (_현재방 === 'global') return;
   var room = _현재방;
   var 세션 = 현재세션();
-  _채팅확인표시('이 채팅방에서 나가시겠습니까?\n(대화 내용이 모두 삭제됩니다)', async function() {
+  _채팅확인표시('이 채팅방에서 나가시겠습니까?\n(내가 보낸 메시지만 삭제됩니다)', async function() {
+    if (!세션) return;
     await Promise.all([
-      수파베이스.from('채팅메시지').delete().eq('방id', room),
-      세션 ? 수파베이스.from('채팅읽음상태').delete().eq('방id', room) : Promise.resolve()
+      수파베이스.from('채팅메시지').delete().eq('방id', room).eq('발신자명', 세션.사원명),
+      수파베이스.from('채팅읽음상태').delete().eq('방id', room).eq('사원명', 세션.사원명)
     ]);
     방선택('global');
   });
