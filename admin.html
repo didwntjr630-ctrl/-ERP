@@ -156,8 +156,22 @@
 </head>
 <body>
 
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
   <!-- 헤더 -->
   <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
     <div class="메뉴바-좌">
       <span id="header-title"></span>
       <span class="메뉴바-부제" id="header-sub"></span>
@@ -233,9 +247,11 @@
   <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
   <script>
     세션체크();
     관리자체크();
+    접속자패널초기화();
 
     document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span style="color:#F97316; font-style:italic;">ERP</span>');
     document.getElementById('header-sub').textContent = APP_CONFIG.부제;

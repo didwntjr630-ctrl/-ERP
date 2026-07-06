@@ -12,6 +12,137 @@ body {
   color: #111827;
 }
 
+/* ===== 사이드바 & 햄버거 ===== */
+.햄버거버튼 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  margin-right: 12px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.햄버거버튼:hover { background: rgba(255,255,255,0.1); }
+.햄버거버튼 span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #D1D5DB;
+  border-radius: 2px;
+}
+
+.사이드바오버레이 {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.3);
+  z-index: 8888;
+}
+
+.사이드바 {
+  position: fixed;
+  top: 0; left: -260px;
+  width: 240px;
+  height: 100%;
+  background: #1f2937;
+  z-index: 8889;
+  transition: left 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+}
+.사이드바.열림 { left: 0; }
+
+.사이드바헤더 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid #374151;
+  color: #f9fafb;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.사이드바헤더 button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.사이드바헤더 button:hover { background: rgba(255,255,255,0.08); color: #f9fafb; }
+
+.사이드바섹션제목 {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b7280;
+  padding: 16px 16px 8px;
+}
+
+.접속자항목 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin: 0 6px;
+}
+.접속자항목:hover { background: rgba(255,255,255,0.05); }
+
+.접속자점 {
+  color: #22c55e;
+  font-size: 9px;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.접속자이름 {
+  font-size: 13px;
+  color: #e5e7eb;
+  font-weight: 500;
+}
+
+.햄버거뱃지래퍼 {
+  position: relative;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+}
+
+#접속자수뱃지 {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #22c55e;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  pointer-events: none;
+}
+
 /* ===== 상단 메뉴바 ===== */
 .메뉴바 {
   background-color: #374151;
