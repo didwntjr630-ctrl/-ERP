@@ -80,9 +80,10 @@ function _채팅스타일주입() {
     '.ch-sender{font-size:11px;color:#6b7280;font-weight:600;padding:0 2px;margin-bottom:1px;}' +
     '.ch-bubble{background:#f3f4f6;border-radius:10px 10px 10px 2px;padding:7px 10px;font-size:13px;color:#111827;line-height:1.5;word-break:break-word;}' +
     '.ch-row.mine .ch-bubble{background:#374151;color:#f9fafb;border-radius:10px 10px 2px 10px;}' +
-    '.ch-row-meta{display:flex;align-items:center;gap:3px;margin-top:2px;}' +
-    '.ch-read-num{font-size:10px;font-weight:700;color:#f97316;min-width:8px;line-height:1;}' +
-    '.ch-ts{font-size:10px;color:#9ca3af;padding:0 2px;line-height:1;}' +
+    '.ch-msg-wrap{display:flex;align-items:flex-end;gap:4px;}' +
+    '.ch-msg-info{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}' +
+    '.ch-read-num{font-size:10px;font-weight:700;color:#f97316;line-height:1;}' +
+    '.ch-ts{font-size:10px;color:#9ca3af;line-height:1;}' +
 
     /* 파일 미리보기 */
     '.ch-preview{display:none;padding:6px 12px;border-top:1px solid #f3f4f6;align-items:center;gap:6px;background:#f9fafb;flex-shrink:0;}' +
@@ -258,13 +259,25 @@ function _메시지DOM추가(msg) {
   row.className = 'ch-row' + (내글 ? ' mine' : '');
   row.setAttribute('data-msgtime', msg.created_at);
   row.setAttribute('data-sender', msg.발신자명);
-  row.innerHTML =
-    (!내글 ? '<div class="ch-sender">' + _esc(msg.발신자명) + '</div>' : '') +
-    '<div class="ch-bubble">' + 내용HTML + '</div>' +
-    '<div class="ch-row-meta">' +
-      (내글 ? '<span class="ch-read-num">' + (안읽음 > 0 ? String(안읽음) : '') + '</span>' : '') +
-      '<span class="ch-ts">' + 시간 + '</span>' +
-    '</div>';
+  if (내글) {
+    row.innerHTML =
+      '<div class="ch-msg-wrap">' +
+        '<div class="ch-msg-info">' +
+          '<span class="ch-read-num">' + (안읽음 > 0 ? String(안읽음) : '') + '</span>' +
+          '<span class="ch-ts">' + 시간 + '</span>' +
+        '</div>' +
+        '<div class="ch-bubble">' + 내용HTML + '</div>' +
+      '</div>';
+  } else {
+    row.innerHTML =
+      '<div class="ch-sender">' + _esc(msg.발신자명) + '</div>' +
+      '<div class="ch-msg-wrap">' +
+        '<div class="ch-bubble">' + 내용HTML + '</div>' +
+        '<div class="ch-msg-info" style="align-items:flex-start;">' +
+          '<span class="ch-ts">' + 시간 + '</span>' +
+        '</div>' +
+      '</div>';
+  }
 
   el.appendChild(row);
 }
@@ -497,7 +510,7 @@ function DM목록갱신() {
 
 function _채팅실시간구독() {
   _채팅채널 = 수파베이스
-    .channel('chat_rt_' + Date.now())
+    .channel('erp_chat')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: '채팅메시지' }, function(payload) {
       var msg = payload.new;
       var 세션 = 현재세션();
