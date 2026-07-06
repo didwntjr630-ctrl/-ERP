@@ -10,6 +10,7 @@ var _현재방 = 'global';
 var _채팅열림 = false;
 var _현재방읽음상태 = [];   // [{사원명, 마지막읽음}] — 현재 열린 방의 읽음 상태
 var _시스템사용자수 = 1;     // 전체 승인된 계정 수 (전체방 안읽음 계산용)
+var _컨텍스트메뉴대상id = null;
 
 var _CHAT = {
   보관일수: 3,
@@ -31,6 +32,7 @@ function 채팅초기화() {
     DM목록갱신();
     안읽음수갱신();
   }, 1600);
+  document.addEventListener('click', function() { _컨텍스트메뉴닫기(); });
 }
 
 /* ── 스타일 주입 ──────────────────────────────── */
@@ -102,7 +104,26 @@ function _채팅스타일주입() {
     '.ch-toast{position:fixed;bottom:88px;right:24px;background:#1f2937;color:#f9fafb;border-radius:10px;padding:10px 14px;z-index:9500;max-width:220px;box-shadow:0 4px 16px rgba(0,0,0,.3);display:none;gap:10px;align-items:flex-start;cursor:pointer;border:1px solid #374151;}' +
     '.ch-toast-from{font-size:11px;font-weight:700;color:#f97316;margin-bottom:2px;}' +
     '.ch-toast-msg{font-size:12px;line-height:1.4;}' +
-    '.ch-toast-x{background:none;border:none;color:#6b7280;cursor:pointer;font-size:12px;flex-shrink:0;padding:0;line-height:1;align-self:flex-start;}';
+    '.ch-toast-x{background:none;border:none;color:#6b7280;cursor:pointer;font-size:12px;flex-shrink:0;padding:0;line-height:1;align-self:flex-start;}' +
+
+    /* 컨텍스트 메뉴 */
+    '.ch-ctx{position:fixed;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:9999;display:none;overflow:hidden;min-width:110px;}' +
+    '.ch-ctx-btn{display:block;width:100%;padding:9px 16px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;font-family:inherit;transition:background .12s;white-space:nowrap;}' +
+    '.ch-ctx-btn:hover{background:#f9fafb;}' +
+    '.ch-ctx-btn.danger{color:#ef4444;}' +
+    '.ch-ctx-btn.danger:hover{background:#fef2f2;}' +
+
+    /* 채팅 내부 확인 오버레이 */
+    '.ch-confirm-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:9800;display:none;align-items:center;justify-content:center;}' +
+    '.ch-confirm-box{background:#fff;border-radius:10px;padding:22px 20px;max-width:280px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.2);}' +
+    '.ch-confirm-msg{font-size:13px;line-height:1.7;color:#111827;margin-bottom:18px;white-space:pre-line;}' +
+    '.ch-confirm-btns{display:flex;gap:8px;justify-content:flex-end;}' +
+    '.ch-confirm-cancel{padding:7px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit;}' +
+    '.ch-confirm-ok{padding:7px 16px;border:none;border-radius:6px;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;}' +
+
+    /* 나가기 버튼 */
+    '.ch-leave-btn{background:none;border:1px solid rgba(255,255,255,.25);color:#d1d5db;cursor:pointer;font-size:11px;padding:3px 10px;border-radius:4px;font-family:inherit;transition:all .15s;display:none;}' +
+    '.ch-leave-btn:hover{background:rgba(239,68,68,.2);border-color:#ef4444;color:#fca5a5;}';
   document.head.appendChild(s);
 }
 
@@ -127,11 +148,30 @@ function _채팅위젯주입() {
       '<span id="채팅안읽음배지" class="ch-btn-badge"></span>' +
     '</button>' +
 
+    /* 컨텍스트 메뉴 */
+    '<div id="채팅컨텍스트메뉴" class="ch-ctx">' +
+      '<button class="ch-ctx-btn danger" onclick="_메시지삭제실행()">삭제</button>' +
+    '</div>' +
+
+    /* 확인 오버레이 */
+    '<div id="채팅확인오버레이" class="ch-confirm-overlay">' +
+      '<div class="ch-confirm-box">' +
+        '<div class="ch-confirm-msg" id="채팅확인메시지"></div>' +
+        '<div class="ch-confirm-btns">' +
+          '<button class="ch-confirm-cancel" onclick="_채팅확인취소()">취소</button>' +
+          '<button class="ch-confirm-ok" id="채팅확인OK">확인</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
     /* 채팅창 */
     '<div id="채팅창" class="ch-win">' +
       '<div class="ch-head">' +
         '<span class="ch-head-title">채팅</span>' +
-        '<button class="ch-head-close" onclick="채팅창닫기()">✕</button>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<button id="채팅나가기버튼" class="ch-leave-btn" onclick="채팅방나가기()">나가기</button>' +
+          '<button class="ch-head-close" onclick="채팅창닫기()">✕</button>' +
+        '</div>' +
       '</div>' +
       '<div class="ch-body">' +
 
@@ -206,6 +246,9 @@ function 방선택(roomId) {
   }
   document.getElementById('채팅방제목').textContent = 제목;
 
+  var 나가기btn = document.getElementById('채팅나가기버튼');
+  if (나가기btn) 나가기btn.style.display = roomId !== 'global' ? 'block' : 'none';
+
   _메시지불러오기(roomId);
   읽음처리(roomId);
 }
@@ -259,6 +302,10 @@ function _메시지DOM추가(msg) {
   row.className = 'ch-row' + (내글 ? ' mine' : '');
   row.setAttribute('data-msgtime', msg.created_at);
   row.setAttribute('data-sender', msg.발신자명);
+  if (내글 && msg.id) {
+    row.setAttribute('data-msgid', msg.id);
+    row.addEventListener('contextmenu', function(e) { _컨텍스트메뉴열기(e, msg.id); });
+  }
   if (내글) {
     row.innerHTML =
       '<div class="ch-msg-wrap">' +
@@ -527,6 +574,12 @@ function _채팅실시간구독() {
         }
       }
     })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: '채팅메시지' }, function(payload) {
+      var el = document.getElementById('채팅메시지목록');
+      if (!el) return;
+      var row = el.querySelector('[data-msgid="' + payload.old.id + '"]');
+      if (row) el.removeChild(row);
+    })
     .on('broadcast', { event: 'read_update' }, function(payload) {
       var p = payload.payload;
       if (p.방id !== _현재방) return;
@@ -591,6 +644,76 @@ function _채팅토스트(발신자, 내용) {
   el.style.display = 'flex';
   clearTimeout(el._t);
   el._t = setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+/* ── 컨텍스트 메뉴 ──────────────────────────────── */
+
+function _컨텍스트메뉴열기(e, msgId) {
+  e.preventDefault();
+  e.stopPropagation();
+  _컨텍스트메뉴대상id = msgId;
+  var menu = document.getElementById('채팅컨텍스트메뉴');
+  if (!menu) return;
+  menu.style.display = 'block';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  setTimeout(function() {
+    var rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) menu.style.left = (e.clientX - rect.width) + 'px';
+    if (rect.bottom > window.innerHeight) menu.style.top = (e.clientY - rect.height) + 'px';
+  }, 0);
+}
+
+function _컨텍스트메뉴닫기() {
+  var menu = document.getElementById('채팅컨텍스트메뉴');
+  if (menu) menu.style.display = 'none';
+  _컨텍스트메뉴대상id = null;
+}
+
+function _메시지삭제실행() {
+  var id = _컨텍스트메뉴대상id;
+  _컨텍스트메뉴닫기();
+  if (!id) return;
+  _채팅확인표시('이 메시지를 삭제하시겠습니까?', function() { _메시지삭제(id); });
+}
+
+async function _메시지삭제(id) {
+  await 수파베이스.from('채팅메시지').delete().eq('id', id);
+}
+
+/* ── 채팅방 나가기 ──────────────────────────────── */
+
+function 채팅방나가기() {
+  if (_현재방 === 'global') return;
+  var room = _현재방;
+  var 세션 = 현재세션();
+  _채팅확인표시('이 채팅방에서 나가시겠습니까?\n(대화 내용이 모두 삭제됩니다)', async function() {
+    await Promise.all([
+      수파베이스.from('채팅메시지').delete().eq('방id', room),
+      세션 ? 수파베이스.from('채팅읽음상태').delete().eq('방id', room) : Promise.resolve()
+    ]);
+    방선택('global');
+  });
+}
+
+/* ── 확인 오버레이 ──────────────────────────────── */
+
+function _채팅확인표시(메시지, 콜백) {
+  var overlay = document.getElementById('채팅확인오버레이');
+  var msgEl = document.getElementById('채팅확인메시지');
+  var okBtn = document.getElementById('채팅확인OK');
+  if (!overlay) return;
+  msgEl.textContent = 메시지;
+  overlay.style.display = 'flex';
+  okBtn.onclick = function() {
+    overlay.style.display = 'none';
+    콜백();
+  };
+}
+
+function _채팅확인취소() {
+  var overlay = document.getElementById('채팅확인오버레이');
+  if (overlay) overlay.style.display = 'none';
 }
 
 /* ── 유틸 ───────────────────────────────────────── */
