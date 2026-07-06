@@ -8,6 +8,8 @@
 var _채팅채널 = null;
 var _현재방 = 'global';
 var _채팅열림 = false;
+var _현재방읽음상태 = [];   // [{사원명, 마지막읽음}] — 현재 열린 방의 읽음 상태
+var _시스템사용자수 = 1;     // 전체 승인된 계정 수 (전체방 안읽음 계산용)
 
 var _CHAT = {
   보관일수: 3,
@@ -24,6 +26,7 @@ function 채팅초기화() {
   _채팅위젯주입();
   _오래된메시지삭제();
   _채팅실시간구독();
+  _시스템사용자수조회();
   setTimeout(function() {
     DM목록갱신();
     안읽음수갱신();
@@ -77,7 +80,9 @@ function _채팅스타일주입() {
     '.ch-sender{font-size:11px;color:#6b7280;font-weight:600;padding:0 2px;margin-bottom:1px;}' +
     '.ch-bubble{background:#f3f4f6;border-radius:10px 10px 10px 2px;padding:7px 10px;font-size:13px;color:#111827;line-height:1.5;word-break:break-word;}' +
     '.ch-row.mine .ch-bubble{background:#374151;color:#f9fafb;border-radius:10px 10px 2px 10px;}' +
-    '.ch-ts{font-size:10px;color:#9ca3af;padding:0 2px;margin-top:2px;}' +
+    '.ch-row-meta{display:flex;align-items:center;gap:3px;margin-top:2px;}' +
+    '.ch-read-num{font-size:10px;font-weight:700;color:#f97316;min-width:8px;line-height:1;}' +
+    '.ch-ts{font-size:10px;color:#9ca3af;padding:0 2px;line-height:1;}' +
 
     /* 파일 미리보기 */
     '.ch-preview{display:none;padding:6px 12px;border-top:1px solid #f3f4f6;align-items:center;gap:6px;background:#f9fafb;flex-shrink:0;}' +
@@ -212,18 +217,18 @@ async function _메시지불러오기(roomId) {
 
   var 기준 = _기준일시();
 
-  var { data, error } = await 수파베이스
-    .from('채팅메시지')
-    .select('*')
-    .eq('방id', roomId)
-    .gte('created_at', 기준)
-    .order('created_at', { ascending: true });
+  var [메시지결과, 읽음결과] = await Promise.all([
+    수파베이스.from('채팅메시지').select('*').eq('방id', roomId).gte('created_at', 기준).order('created_at', { ascending: true }),
+    수파베이스.from('채팅읽음상태').select('사원명,마지막읽음').eq('방id', roomId)
+  ]);
+  _현재방읽음상태 = 읽음결과.data || [];
 
   el.innerHTML = '';
-  if (error) {
+  if (메시지결과.error) {
     el.innerHTML = '<div style="padding:20px;text-align:center;color:#ef4444;font-size:12px;">불러오기 실패</div>';
     return;
   }
+  var data = 메시지결과.data;
   if (!data || data.length === 0) {
     el.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px;">메시지가 없습니다.</div>';
     return;
@@ -247,12 +252,19 @@ function _메시지DOM추가(msg) {
 
   var 내용HTML = _내용렌더(msg, 내글);
 
+  var 안읽음 = 내글 ? _안읽음수계산(msg.created_at, msg.발신자명) : 0;
+
   var row = document.createElement('div');
   row.className = 'ch-row' + (내글 ? ' mine' : '');
+  row.setAttribute('data-msgtime', msg.created_at);
+  row.setAttribute('data-sender', msg.발신자명);
   row.innerHTML =
     (!내글 ? '<div class="ch-sender">' + _esc(msg.발신자명) + '</div>' : '') +
     '<div class="ch-bubble">' + 내용HTML + '</div>' +
-    '<div class="ch-ts">' + 시간 + '</div>';
+    '<div class="ch-row-meta">' +
+      (내글 ? '<span class="ch-read-num">' + (안읽음 > 0 ? String(안읽음) : '') + '</span>' : '') +
+      '<span class="ch-ts">' + 시간 + '</span>' +
+    '</div>';
 
   el.appendChild(row);
 }
@@ -372,10 +384,28 @@ function 파일첨부취소() {
 async function 읽음처리(roomId) {
   var 세션 = 현재세션();
   if (!세션) return;
+  var 시각 = new Date().toISOString();
   await 수파베이스.from('채팅읽음상태').upsert(
-    { 사원명: 세션.사원명, 방id: roomId, 마지막읽음: new Date().toISOString() },
+    { 사원명: 세션.사원명, 방id: roomId, 마지막읽음: 시각 },
     { onConflict: '사원명,방id' }
   );
+
+  // 현재 방이면 로컬 상태 즉시 반영 + 배지 갱신
+  if (roomId === _현재방) {
+    var 기존 = _현재방읽음상태.find(function(r) { return r.사원명 === 세션.사원명; });
+    if (기존) 기존.마지막읽음 = 시각;
+    else _현재방읽음상태.push({ 사원명: 세션.사원명, 마지막읽음: 시각 });
+  }
+
+  // Broadcast → 상대방이 실시간으로 배지 제거
+  if (_채팅채널) {
+    _채팅채널.send({
+      type: 'broadcast',
+      event: 'read_update',
+      payload: { 방id: roomId, 사원명: 세션.사원명, 시각: 시각 }
+    });
+  }
+
   안읽음수갱신();
 }
 
@@ -484,7 +514,51 @@ function _채팅실시간구독() {
         }
       }
     })
+    .on('broadcast', { event: 'read_update' }, function(payload) {
+      var p = payload.payload;
+      if (p.방id !== _현재방) return;
+      // 로컬 읽음 상태 갱신 후 배지 업데이트
+      var 기존 = _현재방읽음상태.find(function(r) { return r.사원명 === p.사원명; });
+      if (기존) 기존.마지막읽음 = p.시각;
+      else _현재방읽음상태.push({ 사원명: p.사원명, 마지막읽음: p.시각 });
+      _읽음배지갱신();
+    })
     .subscribe();
+}
+
+/* ── 읽음 배지 갱신 ─────────────────────────────── */
+
+function _읽음배지갱신() {
+  document.querySelectorAll('.ch-row.mine[data-msgtime]').forEach(function(row) {
+    var T = row.getAttribute('data-msgtime');
+    var 발신자 = row.getAttribute('data-sender');
+    var 수 = _안읽음수계산(T, 발신자);
+    var badge = row.querySelector('.ch-read-num');
+    if (badge) badge.textContent = 수 > 0 ? String(수) : '';
+  });
+}
+
+function _안읽음수계산(created_at, 발신자명) {
+  if (_현재방 === 'global') {
+    var 읽은수 = _현재방읽음상태.filter(function(r) {
+      return r.사원명 !== 발신자명 && r.마지막읽음 >= created_at;
+    }).length;
+    var 대상수 = Math.max(0, _시스템사용자수 - 1);
+    return Math.max(0, 대상수 - 읽은수);
+  } else {
+    var 상대방 = _현재방.split(':').filter(function(n) { return n !== 발신자명; })[0];
+    if (!상대방) return 0;
+    var 상대읽음 = _현재방읽음상태.find(function(r) { return r.사원명 === 상대방; });
+    return (!상대읽음 || 상대읽음.마지막읽음 < created_at) ? 1 : 0;
+  }
+}
+
+async function _시스템사용자수조회() {
+  var { count } = await 수파베이스
+    .from('사용자계정')
+    .select('id', { count: 'exact', head: true })
+    .eq('상태', 'approved');
+  _시스템사용자수 = count || 1;
 }
 
 /* ── 오래된 메시지 삭제 ─────────────────────────── */
