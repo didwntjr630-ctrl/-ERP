@@ -50,11 +50,15 @@ function 접속자목록갱신() {
 }
 
 function 사이드바열기() {
-  document.getElementById('사이드바오버레이').style.display = 'block';
-  document.getElementById('사이드바').classList.add('열림');
+  var 오버레이 = document.getElementById('사이드바오버레이');
+  var 사이드바 = document.getElementById('사이드바');
+  if (오버레이) 오버레이.style.display = 'block';
+  if (사이드바) { 사이드바.classList.add('열림'); 사이드바.style.left = '0'; }
 }
 
 function 사이드바닫기() {
-  document.getElementById('사이드바오버레이').style.display = 'none';
-  document.getElementById('사이드바').classList.remove('열림');
+  var 오버레이 = document.getElementById('사이드바오버레이');
+  var 사이드바 = document.getElementById('사이드바');
+  if (오버레이) 오버레이.style.display = 'none';
+  if (사이드바) { 사이드바.classList.remove('열림'); 사이드바.style.left = '-260px'; }
 }
