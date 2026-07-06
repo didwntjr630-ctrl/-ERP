@@ -86,6 +86,7 @@ function _채팅스타일주입() {
     '.ch-msg-info{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}' +
     '.ch-read-num{font-size:10px;font-weight:700;color:#f97316;line-height:1;}' +
     '.ch-ts{font-size:10px;color:#9ca3af;line-height:1;}' +
+    '.ch-bubble.deleted{background:#f3f4f6 !important;color:#9ca3af !important;font-style:italic;font-size:12px;}' +
 
     /* 파일 미리보기 */
     '.ch-preview{display:none;padding:6px 12px;border-top:1px solid #f3f4f6;align-items:center;gap:6px;background:#f9fafb;flex-shrink:0;}' +
@@ -578,7 +579,12 @@ function _채팅실시간구독() {
       var el = document.getElementById('채팅메시지목록');
       if (!el) return;
       var row = el.querySelector('[data-msgid="' + payload.old.id + '"]');
-      if (row) el.removeChild(row);
+      if (!row) return;
+      var bubble = row.querySelector('.ch-bubble');
+      if (bubble) { bubble.textContent = '삭제된 메시지입니다'; bubble.className = 'ch-bubble deleted'; }
+      var readNum = row.querySelector('.ch-read-num');
+      if (readNum) readNum.textContent = '';
+      row.setAttribute('data-deleted', '1');
     })
     .on('broadcast', { event: 'read_update' }, function(payload) {
       var p = payload.payload;
@@ -651,6 +657,8 @@ function _채팅토스트(발신자, 내용) {
 function _컨텍스트메뉴열기(e, msgId) {
   e.preventDefault();
   e.stopPropagation();
+  var el = document.getElementById('채팅메시지목록');
+  if (el) { var r = el.querySelector('[data-msgid="' + msgId + '"]'); if (r && r.getAttribute('data-deleted') === '1') return; }
   _컨텍스트메뉴대상id = msgId;
   var menu = document.getElementById('채팅컨텍스트메뉴');
   if (!menu) return;
