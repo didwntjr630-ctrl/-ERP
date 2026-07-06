@@ -101,8 +101,22 @@
 </head>
 <body>
 
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이 no-print" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바 no-print" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
   <!-- ── 메뉴바 ── -->
   <div class="메뉴바 no-print">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
     <a href="main.html" class="회사명">
       <span class="회사명_메인" id="시스템명"></span>
       <span class="회사명_부제" id="부제"></span>
@@ -416,6 +430,7 @@
   <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
   <script>
   /* ════════════════════════════════════════
      검사항목 고정 템플릿
@@ -441,6 +456,7 @@
   ════════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', function() {
     세션체크();
+    접속자패널초기화();
     var 세션 = 현재세션();
     if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
 

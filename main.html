@@ -210,8 +210,29 @@
 </head>
 <body>
 
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:8888;display:none;"></div>
+  <div id="사이드바" style="position:fixed;top:0;left:-260px;width:240px;height:100%;background:#1f2937;z-index:8889;transition:left 0.25s ease;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid #374151;color:#f9fafb;font-size:14px;font-weight:700;">
+      <span>접속 현황</span>
+      <button onclick="사이드바닫기()" style="background:none;border:none;color:#9ca3af;font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px;">✕</button>
+    </div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#6b7280;padding:16px 16px 8px;">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
   <!-- 헤더 -->
   <div class="header">
+    <div style="display:flex;align-items:center;gap:0;">
+      <div style="position:relative;margin-right:12px;">
+        <button onclick="사이드바열기()" title="접속자 현황" style="display:flex;flex-direction:column;justify-content:center;gap:5px;width:36px;height:36px;padding:6px;cursor:pointer;background:none;border:none;border-radius:4px;">
+          <span style="display:block;width:100%;height:2px;background:#D1D5DB;border-radius:2px;"></span>
+          <span style="display:block;width:100%;height:2px;background:#D1D5DB;border-radius:2px;"></span>
+          <span style="display:block;width:100%;height:2px;background:#D1D5DB;border-radius:2px;"></span>
+        </button>
+        <span id="접속자수뱃지" style="position:absolute;top:-4px;right:-4px;background:#22c55e;color:white;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none;"></span>
+      </div>
+    </div>
     <div class="header-left">
 <div class="header-title" id="header-title"></div>
       <div class="header-sub" id="header-sub"></div>
@@ -339,8 +360,10 @@
   <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
   <script>
     세션체크();
+    접속자패널초기화();
     document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span>ERP</span>');
     document.getElementById('header-sub').textContent = APP_CONFIG.부제;
     document.title = APP_CONFIG.시스템명 + ' - 메인';
