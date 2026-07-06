@@ -24,9 +24,10 @@ function 접속자목록갱신() {
   var state = _접속자채널.presenceState();
   var 접속자들 = [];
   Object.keys(state).forEach(function(key) {
-    (state[key] || []).forEach(function(u) {
-      if (u.사원명) 접속자들.push({ 사원명: u.사원명, 직급: u.직급 || '' });
-    });
+    var 항목들 = state[key] || [];
+    if (항목들.length > 0 && 항목들[0].사원명) {
+      접속자들.push({ 사원명: 항목들[0].사원명, 직급: 항목들[0].직급 || '' });
+    }
   });
 
   var 목록el = document.getElementById('접속자목록');
