@@ -34,6 +34,7 @@ function 접속자목록갱신() {
   if (!목록el) return;
 
   document.getElementById('접속자수뱃지').textContent = 접속자들.length || '';
+  if (typeof DM목록갱신 === 'function') DM목록갱신();
 
   if (접속자들.length === 0) {
     목록el.innerHTML = '<div style="padding:16px 0; color:#9ca3af; font-size:12px; text-align:center;">접속자가 없습니다.</div>';
