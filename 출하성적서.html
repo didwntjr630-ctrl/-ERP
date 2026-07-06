@@ -859,7 +859,11 @@
       var a    = document.createElement('a');
       a.href     = url;
       var 날짜포맷 = (데이터.작성일 || '').replace(/-/g, '.');
-      a.download = (데이터.차종 ? 데이터.차종 + ' ' : '') + 날짜포맷 + (데이터['lot번호'] ? '-' + 데이터['lot번호'] : '') + '.xlsx';
+      var _파일명차종 = 데이터.차종 || '';
+      var _원품명 = (데이터.원품명 || 데이터.품명 || '').toUpperCase();
+      if (_파일명차종 === 'CN7 PE' && _원품명.indexOf('SILVER') > -1) _파일명차종 = 'CN7 PE S/V';
+      else if (_파일명차종 === 'CN7 PE' && _원품명.indexOf('BLACK') > -1) _파일명차종 = 'CN7 PE B/K';
+      a.download = (_파일명차종 ? _파일명차종 + ' ' : '') + 날짜포맷 + (데이터['lot번호'] ? '-' + 데이터['lot번호'] : '') + '.xlsx';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
