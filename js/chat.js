@@ -302,7 +302,7 @@ function _메시지DOM추가(msg) {
   row.className = 'ch-row' + (내글 ? ' mine' : '');
   row.setAttribute('data-msgtime', msg.created_at);
   row.setAttribute('data-sender', msg.발신자명);
-  if (내글 && msg.id) {
+  if (msg.id) {
     row.setAttribute('data-msgid', msg.id);
     row.addEventListener('contextmenu', function(e) { _컨텍스트메뉴열기(e, msg.id); });
   }
