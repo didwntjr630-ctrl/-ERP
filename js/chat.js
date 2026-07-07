@@ -399,9 +399,8 @@ async function 메시지전송() {
 /* ── 파일 업로드 ────────────────────────────────── */
 
 async function _파일업로드(파일) {
-  var 세션 = 현재세션();
-  var 안전파일명 = 파일.name.replace(/[^a-zA-Z0-9.\-_가-힣]/g, '_');
-  var 경로 = 세션.사원명 + '/' + Date.now() + '_' + 안전파일명;
+  var 확장자 = 파일.name.includes('.') ? '.' + 파일.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '') : '';
+  var 경로 = Date.now() + '_' + Math.random().toString(36).slice(2, 8) + 확장자;
 
   var { error } = await 수파베이스.storage.from(_CHAT.버킷).upload(경로, 파일);
   if (error) { alert('파일 업로드 실패: ' + error.message); return null; }
