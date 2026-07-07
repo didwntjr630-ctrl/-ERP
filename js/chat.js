@@ -585,15 +585,10 @@ function _채팅실시간구독() {
       }
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: '채팅메시지' }, function(payload) {
-      var el = document.getElementById('채팅메시지목록');
-      if (!el) return;
-      var row = el.querySelector('[data-msgid="' + payload.old.id + '"]');
-      if (!row) return;
-      var bubble = row.querySelector('.ch-bubble');
-      if (bubble) { bubble.textContent = '삭제된 메시지입니다'; bubble.className = 'ch-bubble deleted'; }
-      var readNum = row.querySelector('.ch-read-num');
-      if (readNum) readNum.textContent = '';
-      row.setAttribute('data-deleted', '1');
+      if (payload.old && payload.old.id) _메시지삭제DOM(payload.old.id);
+    })
+    .on('broadcast', { event: 'msg_delete' }, function(payload) {
+      _메시지삭제DOM(payload.payload.id);
     })
     .on('broadcast', { event: 'read_update' }, function(payload) {
       var p = payload.payload;
@@ -694,8 +689,23 @@ function _메시지삭제실행() {
   _채팅확인표시('이 메시지를 삭제하시겠습니까?', function() { _메시지삭제(id); });
 }
 
+function _메시지삭제DOM(id) {
+  var el = document.getElementById('채팅메시지목록');
+  if (!el) return;
+  var row = el.querySelector('[data-msgid="' + id + '"]');
+  if (!row || row.getAttribute('data-deleted') === '1') return;
+  var bubble = row.querySelector('.ch-bubble');
+  if (bubble) { bubble.textContent = '삭제된 메시지입니다'; bubble.className = 'ch-bubble deleted'; }
+  var readNum = row.querySelector('.ch-read-num');
+  if (readNum) readNum.textContent = '';
+  row.setAttribute('data-deleted', '1');
+}
+
 async function _메시지삭제(id) {
   await 수파베이스.from('채팅메시지').delete().eq('id', id);
+  if (_채팅채널) {
+    _채팅채널.send({ type: 'broadcast', event: 'msg_delete', payload: { id: id } });
+  }
 }
 
 /* ── 채팅방 나가기 ──────────────────────────────── */
