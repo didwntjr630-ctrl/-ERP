@@ -704,13 +704,10 @@ function 채팅방나가기() {
   if (_현재방 === 'global') return;
   var room = _현재방;
   var 세션 = 현재세션();
-  _채팅확인표시('이 채팅방에서 나가시겠습니까?\n(내가 보낸 메시지만 삭제됩니다)', async function() {
+  _채팅확인표시('이 채팅방에서 나가시겠습니까?', async function() {
     if (!세션) return;
     _숨긴DM[room] = true;
-    await Promise.all([
-      수파베이스.from('채팅메시지').delete().eq('방id', room).eq('발신자명', 세션.사원명),
-      수파베이스.from('채팅읽음상태').delete().eq('방id', room).eq('사원명', 세션.사원명)
-    ]);
+    await 수파베이스.from('채팅읽음상태').delete().eq('방id', room).eq('사원명', 세션.사원명);
     방선택('global');
     DM목록갱신();
   });
