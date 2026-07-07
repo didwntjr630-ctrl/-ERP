@@ -129,6 +129,20 @@ function 로그아웃() {
   location.href = 'login.html';
 }
 
+/* 메인화면 버튼 자동 주입 — main.html·login.html·admin.html 제외 모든 페이지 */
+document.addEventListener('DOMContentLoaded', function() {
+  var 페이지 = location.pathname.split('/').pop();
+  if (페이지 === 'main.html' || 페이지 === 'login.html' || 페이지 === 'admin.html') return;
+  var 로그아웃버튼 = document.querySelector('button[onclick="로그아웃()"]');
+  if (!로그아웃버튼) return;
+  var btn = document.createElement('button');
+  btn.textContent = '메인화면';
+  btn.className = 로그아웃버튼.className;
+  btn.setAttribute('onclick', "location.href='main.html'");
+  btn.style.marginRight = '6px';
+  로그아웃버튼.parentNode.insertBefore(btn, 로그아웃버튼);
+});
+
 function 세션체크() {
   if (!현재세션()) { location.href = 'login.html'; return false; }
   return true;
