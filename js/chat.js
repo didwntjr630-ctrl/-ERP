@@ -29,6 +29,7 @@ function 채팅초기화() {
   _오래된메시지삭제();
   _채팅실시간구독();
   _시스템사용자수조회();
+  _알림권한요청();
   setTimeout(function() {
     DM목록갱신();
     안읽음수갱신();
@@ -581,6 +582,7 @@ function _채팅실시간구독() {
         안읽음수갱신();
         if (_내방인가(msg.방id, 세션.사원명) && msg.발신자명 !== 세션.사원명) {
           _채팅토스트(msg.발신자명, msg.내용 || '[파일]');
+          _데스크탑알림(msg.발신자명, msg.내용 || '[파일]', msg.방id);
         }
       }
     })
@@ -741,6 +743,32 @@ function _채팅확인표시(메시지, 콜백) {
 function _채팅확인취소() {
   var overlay = document.getElementById('채팅확인오버레이');
   if (overlay) overlay.style.display = 'none';
+}
+
+/* ── 데스크탑 알림 ──────────────────────────────── */
+
+function _알림권한요청() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function _데스크탑알림(발신자, 내용, roomId) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible' && _채팅열림) return;
+  var 미리보기 = String(내용 || '[파일]');
+  if (미리보기.length > 60) 미리보기 = 미리보기.slice(0, 60) + '...';
+  var noti = new Notification('삼양ERP — ' + 발신자, {
+    body: 미리보기,
+    icon: 'favicon.ico'
+  });
+  noti.onclick = function() {
+    window.focus();
+    채팅창열기();
+    방선택(roomId);
+    noti.close();
+  };
+  setTimeout(function() { noti.close(); }, 5000);
 }
 
 /* ── 유틸 ───────────────────────────────────────── */
