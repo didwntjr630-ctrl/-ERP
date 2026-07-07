@@ -90,26 +90,38 @@
 </head>
 <body>
 
-<!-- ── 헤더 ── -->
-<div class="header">
-  <div class="header-left">
-    <button class="사이드바토글" onclick="사이드바토글()">☰</button>
-    <div class="header-logo">삼양<span style="color:#f97316">ERP</span> <span style="font-size:12px;font-weight:400;color:#9ca3af;">급여관리</span></div>
+<!-- 사이드바 -->
+<div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+<div class="사이드바" id="사이드바">
+  <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+  <div class="사이드바섹션제목">현재 접속자</div>
+  <div id="접속자목록"></div>
+</div>
+
+<!-- 상단 메뉴바 -->
+<div class="메뉴바">
+  <div class="햄버거뱃지래퍼">
+    <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+      <span></span><span></span><span></span>
+    </button>
+    <span id="접속자수뱃지"></span>
   </div>
-  <nav class="header-nav" id="headerNav"></nav>
+  <a href="main.html" class="회사명">
+    <span class="회사명_메인" id="시스템명"></span>
+    <span class="회사명_부제" id="부제"></span>
+  </a>
+  <nav>
+    <a class="비활성">매출 관리</a>
+    <a class="활성">급여 관리</a>
+  </nav>
   <div class="우측정보">
     <span class="사용자명" id="user-info"></span>
     <button onclick="로그아웃()">로그아웃</button>
   </div>
 </div>
 
-<!-- ── 사이드바 ── -->
-<div id="사이드바" class="사이드바">
-  <div class="접속자패널" id="접속자패널"></div>
-</div>
-
-<!-- ── 본문 ── -->
-<div class="컨텐츠영역">
+<!-- 본문 -->
+<div class="내용영역">
   <div id="급여알림" class="알림메시지"></div>
 
   <!-- 탭 바 -->
@@ -269,7 +281,7 @@
     </div>
   </div>
 
-</div><!-- /컨텐츠영역 -->
+</div><!-- /내용영역 -->
 
 <!-- ── 직원 추가/수정 폼 오버레이 ── -->
 <div id="직원폼" class="폼오버레이" onclick="if(event.target===this)직원폼닫기()">
@@ -297,6 +309,7 @@
 <!-- ── 스크립트 ── -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/config.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/presence.js"></script>
@@ -307,6 +320,10 @@
 
   var 세션 = 현재세션();
   if (세션) document.getElementById('user-info').textContent = (세션.직급||'') + ' ' + 세션.사원명;
+
+  document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+  document.getElementById('부제').textContent = APP_CONFIG.부제;
+  document.title = APP_CONFIG.시스템명 + ' - 급여관리';
 
   function 특수시간표시(종류) {
     var el = document.getElementById('시간입력영역');
