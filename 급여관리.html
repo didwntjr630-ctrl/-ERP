@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 급여관리</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── 탭 ── */
+    .급여탭바 { display:flex; gap:4px; margin-bottom:18px; border-bottom:2px solid #e5e7eb; padding-bottom:0; }
+    .급여탭버튼 { padding:8px 18px; border:none; background:none; cursor:pointer; font-size:13px; font-weight:600; color:#6b7280; border-bottom:2px solid transparent; margin-bottom:-2px; font-family:inherit; transition:color .15s; }
+    .급여탭버튼.활성 { color:#f97316; border-bottom-color:#f97316; }
+    .급여탭버튼:hover { color:#374151; }
+
+    /* ── 공통 폼 ── */
+    .급여폼행 { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+    .급여폼행 label { font-size:12px; color:#374151; font-weight:600; white-space:nowrap; }
+    .급여폼행 input, .급여폼행 select {
+      border:1px solid #d1d5db; border-radius:6px; padding:6px 10px;
+      font-size:13px; font-family:inherit; height:32px; outline:none;
+      transition:border-color .15s;
+    }
+    .급여폼행 input:focus, .급여폼행 select:focus { border-color:#f97316; }
+    .급여폼행 input[type="month"] { width:140px; }
+    .급여폼행 input[type="date"] { width:150px; }
+    .급여폼행 input[type="number"] { width:110px; }
+    .급여폼행 input[type="text"] { width:130px; }
+
+    /* ── 테이블 ── */
+    .급여테이블 { width:100%; border-collapse:collapse; font-size:13px; }
+    .급여테이블 th { background:#374151; color:#f9fafb; padding:8px 10px; text-align:left; font-weight:600; font-size:12px; }
+    .급여테이블 td { padding:7px 10px; border-bottom:1px solid #f3f4f6; }
+    .급여테이블 tr:hover td { background:#fafafa; }
+    .테이블래퍼 { overflow-x:auto; }
+
+    /* ── 버튼 ── */
+    .소버튼 { padding:3px 10px; border-radius:4px; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-size:12px; font-family:inherit; transition:all .15s; }
+    .소버튼:hover { background:#f3f4f6; }
+    .소버튼.수정 { border-color:#3b82f6; color:#3b82f6; }
+    .소버튼.수정:hover { background:#eff6ff; }
+    .소버튼.삭제 { border-color:#ef4444; color:#ef4444; }
+    .소버튼.삭제:hover { background:#fef2f2; }
+    .주버튼 { padding:7px 18px; border-radius:6px; border:none; background:#374151; color:#fff; cursor:pointer; font-size:13px; font-weight:600; font-family:inherit; transition:background .15s; }
+    .주버튼:hover { background:#f97316; }
+    .주버튼.성공 { background:#16a34a; }
+    .주버튼.성공:hover { background:#15803d; }
+
+    /* ── 직원 폼 오버레이 ── */
+    .폼오버레이 { display:none; position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.4); z-index:900; align-items:center; justify-content:center; }
+    .폼오버레이.열림 { display:flex; }
+    .폼박스 { background:#fff; border-radius:10px; padding:24px; width:320px; box-shadow:0 8px 30px rgba(0,0,0,.2); }
+    .폼박스 h4 { margin:0 0 16px; font-size:15px; color:#374151; }
+    .폼필드 { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+    .폼필드 label { font-size:12px; font-weight:600; color:#6b7280; }
+    .폼필드 input { border:1px solid #d1d5db; border-radius:6px; padding:7px 10px; font-size:13px; font-family:inherit; outline:none; }
+    .폼필드 input:focus { border-color:#f97316; }
+    .폼버튼행 { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+
+    /* ── 알림 ── */
+    .알림메시지 { display:none; padding:8px 14px; border-radius:6px; font-size:13px; margin-bottom:12px; }
+    .알림메시지.정보 { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+    .알림메시지.성공 { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; }
+    .알림메시지.오류 { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+
+    /* ── CAPS 업로드 ── */
+    .업로드존 { border:2px dashed #d1d5db; border-radius:8px; padding:20px; text-align:center; cursor:pointer; transition:border-color .15s; }
+    .업로드존:hover { border-color:#f97316; }
+    .업로드존 input { display:none; }
+
+    /* ── 명세서 ── */
+    .명세서헤더 { text-align:center; margin-bottom:16px; }
+    .명세서헤더 h3 { margin:0 0 4px; font-size:18px; color:#374151; }
+    .명세서테이블 { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px; }
+    .명세서테이블 th { background:#f3f4f6; padding:6px 8px; text-align:center; font-size:11px; border:1px solid #e5e7eb; }
+    .명세서테이블 td { padding:5px 8px; border:1px solid #e5e7eb; text-align:center; }
+    .명세서합계 { background:#f9fafb; border-radius:8px; padding:16px; }
+    .명세서행 { display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
+    .명세서행.합계 { font-size:16px; font-weight:700; color:#f97316; border-top:2px solid #e5e7eb; padding-top:10px; margin-top:6px; }
+    .명세서합계 hr { border:none; border-top:1px solid #e5e7eb; margin:8px 0; }
+
+    /* ── 급여 계산 결과 ── */
+    #급여결과바디 td { font-size:12px; }
+    .결과강조 { font-weight:700; color:#374151; }
+
+    /* ── 섹션 구분 ── */
+    .섹션박스 { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin-bottom:16px; }
+    .섹션박스 h4 { margin:0 0 12px; font-size:13px; font-weight:700; color:#374151; border-bottom:1px solid #f3f4f6; padding-bottom:8px; }
+  </style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<div class="header">
+  <div class="header-left">
+    <button class="사이드바토글" onclick="사이드바토글()">☰</button>
+    <div class="header-logo">삼양<span style="color:#f97316">ERP</span> <span style="font-size:12px;font-weight:400;color:#9ca3af;">급여관리</span></div>
+  </div>
+  <nav class="header-nav" id="headerNav"></nav>
+  <div class="우측정보">
+    <span class="사용자명" id="user-info"></span>
+    <button onclick="로그아웃()">로그아웃</button>
+  </div>
+</div>
+
+<!-- ── 사이드바 ── -->
+<div id="사이드바" class="사이드바">
+  <div class="접속자패널" id="접속자패널"></div>
+</div>
+
+<!-- ── 본문 ── -->
+<div class="컨텐츠영역">
+  <div id="급여알림" class="알림메시지"></div>
+
+  <!-- 탭 바 -->
+  <div class="급여탭바">
+    <button class="급여탭버튼" data-tab="직원"     onclick="급여탭선택('직원')">직원 관리</button>
+    <button class="급여탭버튼" data-tab="근태"     onclick="급여탭선택('근태')">근태 입력</button>
+    <button class="급여탭버튼" data-tab="공휴일"   onclick="급여탭선택('공휴일')">공휴일</button>
+    <button class="급여탭버튼" data-tab="급여계산" onclick="급여탭선택('급여계산')">급여 계산</button>
+    <button class="급여탭버튼" data-tab="명세서"   onclick="급여탭선택('명세서')">명세서</button>
+  </div>
+
+  <!-- ══ 탭1: 직원 관리 ══ -->
+  <div class="급여탭내용" data-tab="직원">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:15px;color:#374151;">직원 목록</h3>
+      <button class="주버튼" onclick="직원추가폼열기()">+ 직원 추가</button>
+    </div>
+    <div class="테이블래퍼">
+      <table class="급여테이블">
+        <thead><tr><th>이름</th><th>직급</th><th>시급</th><th>관리</th></tr></thead>
+        <tbody id="직원테이블바디"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 탭2: 근태 입력 ══ -->
+  <div class="급여탭내용" data-tab="근태" style="display:none;">
+    <!-- CAPS 업로드 -->
+    <div class="섹션박스">
+      <h4>CAPS 출퇴근 파일 업로드</h4>
+      <div class="급여폼행">
+        <label>년월</label>
+        <input type="month" id="근태년월" onchange="_근태년월=this.value;특수근태목록그리기();">
+      </div>
+      <label class="업로드존" for="CAPS파일입력">
+        <input type="file" id="CAPS파일입력" accept=".xls,.xlsx" onchange="CAPS업로드(this)">
+        <div style="font-size:28px;margin-bottom:6px;">📂</div>
+        <div style="font-size:13px;color:#374151;font-weight:600;">CAPS 엑셀 파일 클릭하여 선택</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px;">.xls / .xlsx 지원</div>
+      </label>
+    </div>
+
+    <!-- 특수 근태 등록 -->
+    <div class="섹션박스">
+      <h4>연차 / 반차 / 외출 / 조퇴 / 결근 등록</h4>
+      <div class="급여폼행">
+        <label>직원</label>
+        <select id="특수근태직원" style="width:140px;">
+          <option value="">직원 선택</option>
+        </select>
+        <label>날짜</label>
+        <input type="date" id="특수근태날짜">
+        <label>종류</label>
+        <select id="특수근태종류" style="width:100px;" onchange="특수시간표시(this.value)">
+          <option value="연차">연차</option>
+          <option value="반차">반차</option>
+          <option value="외출">외출</option>
+          <option value="조퇴">조퇴</option>
+          <option value="결근">결근</option>
+        </select>
+        <span id="시간입력영역" style="display:none;">
+          <label>시간(h)</label>
+          <input type="number" id="특수근태시간" value="0" min="0" max="8" step="0.5" style="width:70px;">
+        </span>
+        <button class="주버튼 성공" onclick="특수근태등록()">등록</button>
+      </div>
+    </div>
+
+    <!-- 특수 근태 목록 -->
+    <div class="섹션박스">
+      <h4>등록된 특수 근태</h4>
+      <div class="테이블래퍼">
+        <table class="급여테이블">
+          <thead><tr><th>날짜</th><th>직원</th><th>종류</th><th>시간</th><th>관리</th></tr></thead>
+          <tbody id="특수근태바디"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 탭3: 공휴일 ══ -->
+  <div class="급여탭내용" data-tab="공휴일" style="display:none;">
+    <div class="섹션박스">
+      <h4>공휴일 추가</h4>
+      <div class="급여폼행">
+        <label>날짜</label>
+        <input type="date" id="공휴일날짜">
+        <label>명칭</label>
+        <input type="text" id="공휴일명칭" placeholder="예: 광복절" style="width:160px;">
+        <button class="주버튼 성공" onclick="공휴일추가()">추가</button>
+      </div>
+    </div>
+    <div class="섹션박스">
+      <h4>공휴일 목록</h4>
+      <div class="급여폼행">
+        <label>년도</label>
+        <input type="number" id="공휴일년도" value="2026" style="width:90px;" onchange="공휴일목록그리기()">
+      </div>
+      <div class="테이블래퍼">
+        <table class="급여테이블">
+          <thead><tr><th>날짜</th><th>명칭</th><th>관리</th></tr></thead>
+          <tbody id="공휴일바디"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 탭4: 급여 계산 ══ -->
+  <div class="급여탭내용" data-tab="급여계산" style="display:none;">
+    <div class="섹션박스">
+      <h4>급여 계산 기준</h4>
+      <div style="font-size:12px;color:#6b7280;line-height:1.8;">
+        정규 근무: 08:30 ~ 17:30 (점심 12:00~13:00 무급) &nbsp;|&nbsp;
+        연장수당: 18:00 이후 × 1.5배 &nbsp;|&nbsp;
+        주말/공휴일: × 1.5배 &nbsp;|&nbsp;
+        소득세: 3.3%
+      </div>
+    </div>
+    <div class="섹션박스">
+      <div class="급여폼행">
+        <label>년월</label>
+        <input type="month" id="급여계산년월">
+        <button class="주버튼" onclick="급여계산실행()">급여 계산 실행</button>
+      </div>
+      <div class="테이블래퍼">
+        <table class="급여테이블">
+          <thead>
+            <tr>
+              <th>직원</th><th>시급</th><th>정규시간</th><th>연장시간</th>
+              <th>기본급</th><th>수당합계</th><th>공제합계</th><th>실수령액</th><th>명세서</th>
+            </tr>
+          </thead>
+          <tbody id="급여결과바디">
+            <tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:20px;">년월 선택 후 계산을 실행하세요</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 탭5: 명세서 ══ -->
+  <div class="급여탭내용" data-tab="명세서" style="display:none;">
+    <div class="섹션박스">
+      <div class="급여폼행">
+        <label>직원</label>
+        <select id="명세서직원선택" style="width:150px;"><option value="">직원 선택</option></select>
+        <label>년월</label>
+        <input type="month" id="명세서년월">
+        <button class="주버튼" onclick="명세서조회()">조회</button>
+        <button class="소버튼" onclick="window.print()">인쇄</button>
+      </div>
+    </div>
+    <div class="섹션박스">
+      <div id="명세서내용">
+        <p style="text-align:center;color:#9ca3af;">직원과 년월을 선택 후 조회하세요.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /컨텐츠영역 -->
+
+<!-- ── 직원 추가/수정 폼 오버레이 ── -->
+<div id="직원폼" class="폼오버레이" onclick="if(event.target===this)직원폼닫기()">
+  <div class="폼박스">
+    <h4 id="직원폼제목">직원 추가</h4>
+    <div class="폼필드">
+      <label>이름 *</label>
+      <input type="text" id="직원이름입력" placeholder="홍길동">
+    </div>
+    <div class="폼필드">
+      <label>직급</label>
+      <input type="text" id="직원직급입력" placeholder="대리">
+    </div>
+    <div class="폼필드">
+      <label>시급 (원) *</label>
+      <input type="number" id="직원시급입력" placeholder="15000" min="0">
+    </div>
+    <div class="폼버튼행">
+      <button class="소버튼" onclick="직원폼닫기()">취소</button>
+      <button class="주버튼" onclick="직원저장()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 스크립트 ── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/presence.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/급여.js"></script>
+<script>
+  세션체크();
+
+  var 세션 = 현재세션();
+  if (세션) document.getElementById('user-info').textContent = (세션.직급||'') + ' ' + 세션.사원명;
+
+  function 특수시간표시(종류) {
+    var el = document.getElementById('시간입력영역');
+    el.style.display = (종류 === '외출' || 종류 === '조퇴') ? 'inline-flex' : 'none';
+  }
+
+  window.addEventListener('DOMContentLoaded', function() {
+    접속자패널초기화();
+    채팅초기화();
+    급여관리초기화();
+  });
+</script>
+</body>
+</html>
