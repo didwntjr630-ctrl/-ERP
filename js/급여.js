@@ -262,13 +262,8 @@ async function 출근현황그리기() {
     th날짜들 +
     '</tr></thead><tbody>' + 행들 + '</tbody></table>';
 
-  if (_직원목록.length > 8) {
-    래퍼.style.maxHeight = 'calc(100vh - 250px)';
-    래퍼.style.overflowY = 'auto';
-  } else {
-    래퍼.style.maxHeight = '';
-    래퍼.style.overflowY = '';
-  }
+  래퍼.style.overflowY = 'auto';
+  래퍼.style.maxHeight = _직원목록.length > 8 ? '540px' : '';
 }
 
 function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
