@@ -230,7 +230,7 @@ async function 출근현황그리기() {
       var hobj = _공휴일목록.find(function(h) { return h.날짜 === 날짜; });
       if (hobj) 공휴명 = '<div style="font-size:9px;font-weight:400;color:#fca5a5;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px;">' + hobj.명칭 + '</div>';
     }
-    return '<th style="min-width:52px;max-width:60px;text-align:center;padding:6px 3px;background:' + 헤더배경 + ';color:' + 요일색 + ';">' +
+    return '<th style="min-width:52px;max-width:60px;text-align:center;padding:6px 3px;position:sticky;top:0;z-index:2;background:' + 헤더배경 + ';color:' + 요일색 + ';">' +
       '<div style="font-weight:700;">' + 날짜텍스트 + '</div>' +
       '<div style="font-size:10px;font-weight:400;">' + 요일 + '</div>' +
       공휴명 + '</th>';
@@ -258,9 +258,17 @@ async function 출근현황그리기() {
   래퍼.innerHTML =
     '<table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%;">' +
     '<thead><tr style="background:#374151;color:#f9fafb;">' +
-    '<th style="padding:8px 10px;text-align:center;position:sticky;left:0;background:#374151;z-index:2;min-width:80px;">이름</th>' +
+    '<th style="padding:8px 10px;text-align:center;position:sticky;top:0;left:0;background:#374151;z-index:3;min-width:80px;">이름</th>' +
     th날짜들 +
     '</tr></thead><tbody>' + 행들 + '</tbody></table>';
+
+  if (_직원목록.length > 8) {
+    래퍼.style.maxHeight = '490px';
+    래퍼.style.overflowY = 'auto';
+  } else {
+    래퍼.style.maxHeight = '';
+    래퍼.style.overflowY = '';
+  }
 }
 
 function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
