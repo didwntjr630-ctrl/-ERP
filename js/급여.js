@@ -217,50 +217,49 @@ async function 출근현황그리기() {
     _근태기록맵[r.직원id + '_' + r.날짜] = r;
   });
 
-  var th직원 = _직원목록.map(function(e) {
-    return '<th style="min-width:100px;text-align:center;padding:6px 4px;">' +
-      (e.직급 ? '<div style="font-size:10px;color:#9ca3af;font-weight:400;">' + e.직급 + '</div>' : '') +
-      '<div>' + e.이름 + '</div></th>';
-  }).join('');
-
-  var 행들 = 날짜들.map(function(날짜) {
+  var th날짜들 = 날짜들.map(function(날짜) {
     var d = new Date(날짜 + 'T00:00:00');
     var 요일 = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
     var 빨간 = 빨간날인가(날짜);
-    var 공휴 = 공휴일인가(날짜);
-    var 주말 = 주말인가(날짜);
-    var 행배경 = 빨간 ? 'background:#fff5f5;' : '';
     var 날짜텍스트 = (d.getMonth() + 1) + '/' + d.getDate();
-    var 요일색 = 빨간 ? '#ef4444' : (d.getDay() === 6 ? '#3b82f6' : '#374151');
+    var 요일색 = 빨간 ? '#fca5a5' : (d.getDay() === 6 ? '#93c5fd' : '#f9fafb');
+    var 헤더배경 = 빨간 ? '#4b1c1c' : '#374151';
+    var 공휴 = 공휴일인가(날짜);
     var 공휴명 = '';
     if (공휴) {
       var hobj = _공휴일목록.find(function(h) { return h.날짜 === 날짜; });
-      if (hobj) 공휴명 = '<div style="font-size:9px;color:#ef4444;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px;">' + hobj.명칭 + '</div>';
+      if (hobj) 공휴명 = '<div style="font-size:9px;font-weight:400;color:#fca5a5;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px;">' + hobj.명칭 + '</div>';
     }
+    return '<th style="min-width:52px;max-width:60px;text-align:center;padding:6px 3px;background:' + 헤더배경 + ';color:' + 요일색 + ';">' +
+      '<div style="font-weight:700;">' + 날짜텍스트 + '</div>' +
+      '<div style="font-size:10px;font-weight:400;">' + 요일 + '</div>' +
+      공휴명 + '</th>';
+  }).join('');
 
-    var 셀들 = _직원목록.map(function(emp) {
+  var 행들 = _직원목록.map(function(emp) {
+    var 셀들 = 날짜들.map(function(날짜) {
+      var 빨간 = 빨간날인가(날짜);
+      var 주말 = 주말인가(날짜);
+      var 공휴 = 공휴일인가(날짜);
       var 기록 = _근태기록맵[emp.id + '_' + 날짜];
+      var 셀배경 = 빨간 ? 'background:#fff5f5;' : '';
       return '<td data-empid="' + emp.id + '" data-date="' + 날짜 + '" ' +
-        'style="padding:3px;text-align:center;border:1px solid #f0f0f0;vertical-align:top;' + 행배경 + '">' +
-        _근태셀HTML(emp.id, 날짜, 기록, 빨간, 주말, 공휴) +
-        '</td>';
+        'style="padding:3px;text-align:center;border:1px solid #f0f0f0;vertical-align:top;' + 셀배경 + '">' +
+        _근태셀HTML(emp.id, 날짜, 기록, 빨간, 주말, 공휴) + '</td>';
     }).join('');
 
-    var 행배경CSS = 빨간 ? '#fff5f5' : '#fff';
-    return '<tr style="' + 행배경 + '">' +
-      '<td style="padding:4px 8px;white-space:nowrap;border:1px solid #f0f0f0;font-size:12px;font-weight:600;position:sticky;left:0;background:' + 행배경CSS + ';z-index:1;">' +
-        날짜텍스트 + 공휴명 + '</td>' +
-      '<td style="padding:4px 8px;text-align:center;border:1px solid #f0f0f0;font-weight:700;color:' + 요일색 + ';font-size:12px;position:sticky;left:64px;background:' + 행배경CSS + ';z-index:1;">' + 요일 + '</td>' +
-      셀들 +
-    '</tr>';
+    return '<tr>' +
+      '<td style="padding:6px 10px;white-space:nowrap;border:1px solid #f0f0f0;font-size:12px;font-weight:600;position:sticky;left:0;background:#fff;z-index:1;">' +
+      (emp.직급 ? '<div style="font-size:10px;color:#9ca3af;font-weight:400;">' + emp.직급 + '</div>' : '') +
+      '<div>' + emp.이름 + '</div></td>' +
+      셀들 + '</tr>';
   }).join('');
 
   래퍼.innerHTML =
     '<table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%;">' +
     '<thead><tr style="background:#374151;color:#f9fafb;">' +
-    '<th style="padding:8px;width:64px;min-width:64px;text-align:left;position:sticky;left:0;background:#374151;z-index:2;">날짜</th>' +
-    '<th style="padding:8px;width:36px;min-width:36px;position:sticky;left:64px;background:#374151;z-index:2;">요일</th>' +
-    th직원 +
+    '<th style="padding:8px 10px;text-align:center;position:sticky;left:0;background:#374151;z-index:2;min-width:80px;">이름</th>' +
+    th날짜들 +
     '</tr></thead><tbody>' + 행들 + '</tbody></table>';
 }
 
