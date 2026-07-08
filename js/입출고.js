@@ -271,8 +271,8 @@ async function 공정필터목록갱신() {
   if (현재작업공정 === '출하검사') {
     var _시작 = document.getElementById('검색_시작일').value;
     var _종료 = document.getElementById('검색_종료일').value;
-    if (_시작) 결과 = 결과.filter(function(h) { return (h.일자||'') >= _시작; });
-    if (_종료) 결과 = 결과.filter(function(h) { return (h.일자||'') <= _종료; });
+    if (_시작) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') >= _시작; });
+    if (_종료) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') <= _종료; });
   }
 
   목록테이블그리기(결과);
@@ -667,7 +667,7 @@ async function 출하현황요약() {
     return h.공정 === '출하검사'
       && (!품명필터   || h.품명     === 품명필터)
       && (!납품처필터 || h.도착공정 === 납품처필터)
-      && (!월필터     || (h.일자 || '').startsWith(월필터));
+      && (!월필터     || (h.출고일자 || h.일자 || '').startsWith(월필터));
   });
 
   var 품목집계 = {};
