@@ -230,9 +230,9 @@ async function 출근현황그리기() {
       var hobj = _공휴일목록.find(function(h) { return h.날짜 === 날짜; });
       if (hobj) 공휴명 = '<div style="font-size:9px;font-weight:400;color:#fca5a5;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px;">' + hobj.명칭 + '</div>';
     }
-    return '<th style="min-width:52px;max-width:60px;text-align:center;padding:6px 3px;position:sticky;top:0;z-index:2;background:' + 헤더배경 + ';color:' + 요일색 + ';">' +
+    return '<th style="min-width:68px;max-width:76px;text-align:center;padding:8px 4px;position:sticky;top:0;z-index:2;background:' + 헤더배경 + ';color:' + 요일색 + ';">' +
       '<div style="font-weight:700;">' + 날짜텍스트 + '</div>' +
-      '<div style="font-size:10px;font-weight:400;">' + 요일 + '</div>' +
+      '<div style="font-size:11px;font-weight:400;">' + 요일 + '</div>' +
       공휴명 + '</th>';
   }).join('');
 
@@ -249,21 +249,21 @@ async function 출근현황그리기() {
     }).join('');
 
     return '<tr>' +
-      '<td style="padding:6px 10px;white-space:nowrap;border:1px solid #f0f0f0;font-size:12px;font-weight:600;position:sticky;left:0;background:#fff;z-index:1;">' +
-      (emp.직급 ? '<div style="font-size:10px;color:#9ca3af;font-weight:400;">' + emp.직급 + '</div>' : '') +
+      '<td style="padding:8px 12px;white-space:nowrap;border:1px solid #f0f0f0;font-size:13px;font-weight:600;position:sticky;left:0;background:#fff;z-index:1;">' +
+      (emp.직급 ? '<div style="font-size:11px;color:#9ca3af;font-weight:400;">' + emp.직급 + '</div>' : '') +
       '<div>' + emp.이름 + '</div></td>' +
       셀들 + '</tr>';
   }).join('');
 
   래퍼.innerHTML =
-    '<table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%;">' +
+    '<table style="border-collapse:collapse;font-size:13px;width:max-content;min-width:100%;">' +
     '<thead><tr style="background:#374151;color:#f9fafb;">' +
-    '<th style="padding:8px 10px;text-align:center;position:sticky;top:0;left:0;background:#374151;z-index:3;min-width:80px;">이름</th>' +
+    '<th style="padding:10px 12px;text-align:center;position:sticky;top:0;left:0;background:#374151;z-index:3;min-width:100px;">이름</th>' +
     th날짜들 +
     '</tr></thead><tbody>' + 행들 + '</tbody></table>';
 
   if (_직원목록.length > 8) {
-    래퍼.style.maxHeight = '490px';
+    래퍼.style.maxHeight = 'calc(100vh - 250px)';
     래퍼.style.overflowY = 'auto';
   } else {
     래퍼.style.maxHeight = '';
