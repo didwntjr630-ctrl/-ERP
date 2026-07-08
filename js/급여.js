@@ -113,6 +113,7 @@ function 직원목록그리기() {
   tbody.innerHTML = _직원목록.map(function(e) {
     return '<tr>' +
       '<td>' + e.이름 + '</td>' +
+      '<td>' + (e.소속 || '-') + '</td>' +
       '<td>' + (e.직급 || '-') + '</td>' +
       '<td>' + Number(e.시급).toLocaleString() + '원</td>' +
       '<td>' + Number(e.직급수당 || 0).toLocaleString() + '원</td>' +
@@ -129,7 +130,7 @@ function 직원목록그리기() {
 function 직원추가폼열기() {
   _선택직원id = null;
   document.getElementById('직원폼제목').textContent = '직원 추가';
-  ['직원이름입력','직원직급입력','직원시급입력','직원직급수당입력','직원근속수당입력','직원입사일입력']
+  ['직원이름입력','직원소속입력','직원직급입력','직원시급입력','직원직급수당입력','직원근속수당입력','직원입사일입력']
     .forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('직원폼').style.display = 'block';
   document.getElementById('직원이름입력').focus();
@@ -141,6 +142,7 @@ function 직원수정폼(id) {
   _선택직원id = id;
   document.getElementById('직원폼제목').textContent = '직원 수정';
   document.getElementById('직원이름입력').value = e.이름;
+  document.getElementById('직원소속입력').value = e.소속 || '';
   document.getElementById('직원직급입력').value = e.직급 || '';
   document.getElementById('직원시급입력').value = e.시급;
   document.getElementById('직원직급수당입력').value = e.직급수당 || 0;
@@ -155,6 +157,7 @@ function 직원폼닫기() {
 
 async function 직원저장() {
   var 이름 = document.getElementById('직원이름입력').value.trim();
+  var 소속 = document.getElementById('직원소속입력').value.trim();
   var 직급 = document.getElementById('직원직급입력').value.trim();
   var 시급 = parseFloat(document.getElementById('직원시급입력').value) || 0;
   var 직급수당 = parseFloat(document.getElementById('직원직급수당입력').value) || 0;
@@ -164,7 +167,7 @@ async function 직원저장() {
   if (!이름) { 알림('이름을 입력하세요.', '오류'); return; }
   if (시급 <= 0) { 알림('시급을 올바르게 입력하세요.', '오류'); return; }
 
-  var payload = { 이름: 이름, 직급: 직급, 시급: 시급, 직급수당: 직급수당, 근속수당: 근속수당, 입사일: 입사일 };
+  var payload = { 이름: 이름, 소속: 소속, 직급: 직급, 시급: 시급, 직급수당: 직급수당, 근속수당: 근속수당, 입사일: 입사일 };
   var error;
   if (_선택직원id) {
     ({ error } = await 수파베이스.from('직원정보').update(payload).eq('id', _선택직원id));
