@@ -246,22 +246,22 @@ async function 출근현황그리기() {
         '</td>';
     }).join('');
 
+    var 행배경CSS = 빨간 ? '#fff5f5' : '#fff';
     return '<tr style="' + 행배경 + '">' +
-      '<td style="padding:4px 8px;white-space:nowrap;border:1px solid #f0f0f0;font-size:12px;font-weight:600;">' +
+      '<td style="padding:4px 8px;white-space:nowrap;border:1px solid #f0f0f0;font-size:12px;font-weight:600;position:sticky;left:0;background:' + 행배경CSS + ';z-index:1;">' +
         날짜텍스트 + 공휴명 + '</td>' +
-      '<td style="padding:4px 8px;text-align:center;border:1px solid #f0f0f0;font-weight:700;color:' + 요일색 + ';font-size:12px;">' + 요일 + '</td>' +
+      '<td style="padding:4px 8px;text-align:center;border:1px solid #f0f0f0;font-weight:700;color:' + 요일색 + ';font-size:12px;position:sticky;left:64px;background:' + 행배경CSS + ';z-index:1;">' + 요일 + '</td>' +
       셀들 +
     '</tr>';
   }).join('');
 
   래퍼.innerHTML =
-    '<div style="overflow-x:auto;">' +
-    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+    '<table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%;">' +
     '<thead><tr style="background:#374151;color:#f9fafb;">' +
-    '<th style="padding:8px;min-width:60px;text-align:left;">날짜</th>' +
-    '<th style="padding:8px;min-width:30px;">요일</th>' +
+    '<th style="padding:8px;width:64px;min-width:64px;text-align:left;position:sticky;left:0;background:#374151;z-index:2;">날짜</th>' +
+    '<th style="padding:8px;width:36px;min-width:36px;position:sticky;left:64px;background:#374151;z-index:2;">요일</th>' +
     th직원 +
-    '</tr></thead><tbody>' + 행들 + '</tbody></table></div>';
+    '</tr></thead><tbody>' + 행들 + '</tbody></table>';
 }
 
 function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
