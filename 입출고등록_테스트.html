@@ -249,7 +249,8 @@
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
         <div class="페이지제목" style="font-size:15px; margin-bottom:0;">출하 현황</div>
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <input type="month" id="출하현황_월필터" onchange="출하현황요약()" style="font-size:13px; padding:4px 8px; border:1px solid #c0cfe0; border-radius:3px; height:30px; background:#fff;">
+          <input type="month" id="출하현황_월필터" style="font-size:13px; padding:4px 8px; border:1px solid #c0cfe0; border-radius:3px; height:30px; background:#fff;">
+          <button class="돋보기버튼" onclick="출하현황요약()" title="월 조회" style="background:#f97316;border-color:#f97316;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <input type="text" id="출하현황_품명필터" readonly placeholder="전체 품목" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:150px; background:#fff; cursor:pointer;" onclick="출하현황품목조회팝업열기()">
           <button class="돋보기버튼" onclick="출하현황품목조회팝업열기()" title="품목 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <input type="text" id="출하현황_납품처필터" readonly placeholder="전체 납품처" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:140px; background:#fff; cursor:pointer;" onclick="출하현황납품처조회팝업열기()">
