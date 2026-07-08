@@ -98,9 +98,9 @@ function 직원목록그리기() {
     return '<tr>' +
       '<td>' + e.이름 + '</td>' +
       '<td>' + (e.직급 || '-') + '</td>' +
-      '<td style="text-align:right;">' + Number(e.시급).toLocaleString() + '원</td>' +
-      '<td style="text-align:right;">' + Number(e.직급수당 || 0).toLocaleString() + '원</td>' +
-      '<td style="text-align:right;">' + Number(e.근속수당 || 0).toLocaleString() + '원</td>' +
+      '<td>' + Number(e.시급).toLocaleString() + '원</td>' +
+      '<td>' + Number(e.직급수당 || 0).toLocaleString() + '원</td>' +
+      '<td>' + Number(e.근속수당 || 0).toLocaleString() + '원</td>' +
       '<td>' + (e.입사일 || '-') + '</td>' +
       '<td>' +
         '<button class="소버튼 수정" onclick="직원수정폼(' + e.id + ')">수정</button> ' +

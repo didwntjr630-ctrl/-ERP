@@ -27,10 +27,6 @@
     .급여폼행 input[type="text"] { width:130px; }
 
     /* ── 테이블 ── */
-    .급여테이블 { width:100%; border-collapse:collapse; font-size:13px; }
-    .급여테이블 th { background:#374151; color:#f9fafb; padding:8px 10px; text-align:left; font-weight:600; font-size:12px; }
-    .급여테이블 td { padding:7px 10px; border-bottom:1px solid #f3f4f6; }
-    .급여테이블 tr:hover td { background:#fafafa; }
     .테이블래퍼 { overflow-x:auto; }
 
     /* ── 버튼 ── */
@@ -135,14 +131,11 @@
       <button class="주버튼" onclick="직원추가폼열기()">+ 직원 추가</button>
     </div>
     <div class="테이블래퍼">
-      <table class="급여테이블">
+      <table class="테이블감싸기">
         <thead>
           <tr>
-            <th>이름</th><th>직급</th>
-            <th style="text-align:right;">시급</th>
-            <th style="text-align:right;">직급수당(월)</th>
-            <th style="text-align:right;">근속수당(월)</th>
-            <th>입사일</th><th>관리</th>
+            <th>이름</th><th>직급</th><th>시급</th>
+            <th>직급수당(월)</th><th>근속수당(월)</th><th>입사일</th><th>관리</th>
           </tr>
         </thead>
         <tbody id="직원테이블바디"></tbody>
@@ -192,7 +185,7 @@
         <input type="number" id="공휴일년도" value="2026" style="width:90px;" onchange="공휴일목록그리기()">
       </div>
       <div class="테이블래퍼">
-        <table class="급여테이블">
+        <table class="테이블감싸기">
           <thead><tr><th>날짜</th><th>명칭</th><th>관리</th></tr></thead>
           <tbody id="공휴일바디"></tbody>
         </table>
@@ -220,7 +213,7 @@
         <button class="주버튼" onclick="급여계산실행()">급여 계산 실행</button>
       </div>
       <div class="테이블래퍼">
-        <table class="급여테이블">
+        <table class="테이블감싸기">
           <thead>
             <tr>
               <th>직원</th><th>시급</th><th>정규/연장</th><th>주말시간</th>
