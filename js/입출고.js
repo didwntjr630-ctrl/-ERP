@@ -126,6 +126,8 @@ function 오늘날짜세팅() {
           String(d.getDate()).padStart(2,'0');
   var el = document.getElementById('출고일자');
   if (el) el.value = v;
+  var 월el = document.getElementById('출하현황_월필터');
+  if (월el) 월el.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
 
 /* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
@@ -269,8 +271,8 @@ async function 공정필터목록갱신() {
   if (현재작업공정 === '출하검사') {
     var _시작 = document.getElementById('검색_시작일').value;
     var _종료 = document.getElementById('검색_종료일').value;
-    if (_시작) 결과 = 결과.filter(function(h) { return (h.일자||'') >= _시작; });
-    if (_종료) 결과 = 결과.filter(function(h) { return (h.일자||'') <= _종료; });
+    if (_시작) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') >= _시작; });
+    if (_종료) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') <= _종료; });
   }
 
   목록테이블그리기(결과);
@@ -660,10 +662,12 @@ async function 출하현황요약() {
   var 전체 = await 데이터불러오기();
   var 품명필터   = document.getElementById('출하현황_품명필터').value;
   var 납품처필터 = document.getElementById('출하현황_납품처필터').value;
+  var 월필터     = document.getElementById('출하현황_월필터').value;
   var 출하데이터 = 전체.filter(function(h) {
     return h.공정 === '출하검사'
       && (!품명필터   || h.품명     === 품명필터)
-      && (!납품처필터 || h.도착공정 === 납품처필터);
+      && (!납품처필터 || h.도착공정 === 납품처필터)
+      && (!월필터     || (h.출고일자 || h.일자 || '').startsWith(월필터));
   });
 
   var 품목집계 = {};
@@ -743,6 +747,8 @@ function 출하현황납품처조회팝업열기() {
 function 출하현황필터초기화() {
   document.getElementById('출하현황_품명필터').value   = '';
   document.getElementById('출하현황_납품처필터').value = '';
+  var d = new Date();
+  document.getElementById('출하현황_월필터').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   출하현황요약();
 }
 
