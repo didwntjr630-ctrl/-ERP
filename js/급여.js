@@ -75,6 +75,22 @@ async function 급여관리초기화() {
   _출근년월 = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   await Promise.all([직원목록불러오기(), 공휴일목록불러오기()]);
   급여탭선택('직원');
+
+  var _급여실시간타이머 = null;
+  function _급여실시간갱신() {
+    clearTimeout(_급여실시간타이머);
+    _급여실시간타이머 = setTimeout(async function() {
+      await Promise.all([직원목록불러오기(), 공휴일목록불러오기()]);
+      급여탭선택(_급여탭);
+    }, 400);
+  }
+
+  수파베이스.channel('급여실시간')
+    .on('postgres_changes', { event: '*', schema: 'public', table: '직원정보' }, _급여실시간갱신)
+    .on('postgres_changes', { event: '*', schema: 'public', table: '근태기록' }, _급여실시간갱신)
+    .on('postgres_changes', { event: '*', schema: 'public', table: '급여결과' }, _급여실시간갱신)
+    .on('postgres_changes', { event: '*', schema: 'public', table: '공휴일' },   _급여실시간갱신)
+    .subscribe();
 }
 
 /* ══════════════════════════════════════════════════
