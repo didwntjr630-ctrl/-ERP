@@ -9,6 +9,7 @@ var _공휴일셋 = new Set();
 var _근태기록맵 = {};
 var _선택직원id = null;
 var _출근년월 = '';
+var _마지막로컬변경 = 0;
 
 var PAYROLL = {
   정규시간: 8,
@@ -83,12 +84,14 @@ async function 급여관리초기화() {
   function _급여실시간갱신() {
     clearTimeout(_급여실시간타이머);
     _급여실시간타이머 = setTimeout(async function() {
-      // 직원 폼이 열려있으면 스킵 (입력 중 재렌더링 방지)
+      // 직원 폼이 열려있으면 스킵
       var 직원폼 = document.getElementById('직원폼');
       if (직원폼 && 직원폼.style.display !== 'none') return;
-      // 출근현황 숫자 입력란 포커스 중이면 스킵 (연장·지각·외출 입력 중 방지)
+      // 출근현황 숫자 입력란 포커스 중이면 스킵
       var 포커스 = document.activeElement;
       if (포커스 && 포커스.type === 'number' && 포커스.closest('#출근현황테이블래퍼')) return;
+      // 내가 방금 변경한 경우 1.5초간 스킵 (자기 변경 재렌더링 방지)
+      if (Date.now() - _마지막로컬변경 < 1500) return;
 
       await Promise.all([직원목록불러오기(), 공휴일목록불러오기()]);
       급여탭선택(_급여탭);
@@ -368,6 +371,7 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
 }
 
 async function 근태등록버튼(직원id, 날짜, 종류) {
+  _마지막로컬변경 = Date.now();
   var { data, error } = await 수파베이스.from('근태기록')
     .upsert({ 직원id: 직원id, 날짜: 날짜, 근태종류: 종류, 연장시간: 0, 지각시간: 0, 외출시간: 0, 야간시간: 0 }, { onConflict: '직원id,날짜' })
     .select().single();
@@ -377,6 +381,7 @@ async function 근태등록버튼(직원id, 날짜, 종류) {
 }
 
 async function 근태삭제버튼(기록id, 직원id, 날짜) {
+  _마지막로컬변경 = Date.now();
   var { error } = await 수파베이스.from('근태기록').delete().eq('id', 기록id);
   if (error) { 알림('삭제 실패', '오류'); return; }
   delete _근태기록맵[직원id + '_' + 날짜];
