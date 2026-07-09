@@ -939,3 +939,141 @@ async function 명세서조회() {
 
   document.getElementById('명세서내용').innerHTML = html;
 }
+
+/* ══════════════════════════════════════════════════
+   근태표 출력 (A4 가로 인쇄)
+══════════════════════════════════════════════════ */
+
+async function 근태표출력() {
+  var 년월 = document.getElementById('출근년월').value || _출근년월;
+  if (!년월) { 알림('년월을 선택하세요.', '오류'); return; }
+
+  var 년 = parseInt(년월.split('-')[0]);
+  var 월 = parseInt(년월.split('-')[1]);
+  var 말일 = new Date(년, 월, 0).getDate();
+  var 요일명 = ['일','월','화','수','목','금','토'];
+
+  var 날짜들 = [];
+  for (var d = 1; d <= 말일; d++) {
+    var 날짜str = 년월 + '-' + String(d).padStart(2, '0');
+    var dt = new Date(년, 월 - 1, d);
+    날짜들.push({ 날짜: 날짜str, 일: d, 요일: dt.getDay() });
+  }
+
+  var { data: 기록들 } = await 수파베이스.from('근태기록')
+    .select('*')
+    .gte('날짜', 년월 + '-01')
+    .lte('날짜', 년월 + '-' + String(말일).padStart(2, '0'));
+
+  var 기록맵 = {};
+  (기록들 || []).forEach(function(r) {
+    기록맵[r.직원id + '_' + r.날짜] = r;
+  });
+
+  var 공휴일set = new Set(_공휴일목록.map(function(h) { return h.날짜; }));
+
+  var 소속별 = {};
+  _직원목록.forEach(function(e) {
+    var s = e.소속 || '미분류';
+    if (!소속별[s]) 소속별[s] = [];
+    소속별[s].push(e);
+  });
+
+  var 종류표시 = {
+    '정상출근': { 텍스트: '○', 색: '#15803d', 배경: '#dcfce7' },
+    '결근':     { 텍스트: '×', 색: '#dc2626', 배경: '#fef2f2' },
+    '반차':     { 텍스트: '반', 색: '#1d4ed8', 배경: '#eff6ff' },
+    '연차':     { 텍스트: '연', 색: '#1d4ed8', 배경: '#dbeafe' },
+    '주말출근': { 텍스트: '출', 색: '#c2410c', 배경: '#fff7ed' },
+    '공휴일출근':{ 텍스트: '출', 색: '#7e22ce', 배경: '#fdf4ff' }
+  };
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>' + 년 + '년 ' + 월 + '월 근태표</title>' +
+    '<style>' +
+    '@page{size:A4 landscape;margin:6mm;}' +
+    '*{box-sizing:border-box;}' +
+    'body{font-family:"맑은 고딕","Apple SD Gothic Neo",sans-serif;font-size:7.5px;margin:0;padding:0;}' +
+    'h2{text-align:center;font-size:12px;margin:0 0 4px;letter-spacing:1px;}' +
+    'table{border-collapse:collapse;width:100%;table-layout:fixed;}' +
+    'th,td{border:1px solid #888;padding:1px 0;text-align:center;overflow:hidden;white-space:nowrap;}' +
+    '.h-고정{width:18px;font-weight:700;background:#e8edf4;}' +
+    '.h-이름{width:34px;font-weight:700;background:#e8edf4;}' +
+    '.h-날짜{font-weight:700;background:#e8edf4;}' +
+    '.h-소계{width:22px;font-weight:700;background:#e8edf4;}' +
+    '.주말{color:#c00;}' +
+    '.소속행 td{background:#1a3a5c;color:#fff;font-weight:700;font-size:8px;padding:2px;}' +
+    '.빈행 td{height:8px;background:#fafafa;}' +
+    '.데이터행 td{height:16px;}' +
+    '.범례{margin-top:6px;font-size:8px;display:flex;gap:12px;align-items:center;}' +
+    '</style></head><body>' +
+    '<h2>' + 년 + '년 ' + 월 + '월 근태표</h2>' +
+    '<table><thead>' +
+    '<tr>' +
+    '<th class="h-고정" rowspan="2">순번</th>' +
+    '<th class="h-이름" rowspan="2">성명</th>';
+
+  날짜들.forEach(function(날) {
+    var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
+    html += '<th class="h-날짜' + (isRed ? ' 주말' : '') + '">' +
+      월 + '.' + String(날.일).padStart(2,'0') + '</th>';
+  });
+
+  html += '<th class="h-소계" rowspan="2">출근<br>일수</th></tr><tr>';
+
+  날짜들.forEach(function(날) {
+    var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
+    html += '<th class="h-날짜' + (isRed ? ' 주말' : '') + '">' + 요일명[날.요일] + '</th>';
+  });
+
+  html += '</tr></thead><tbody>';
+
+  var 전체순번 = 0;
+  Object.keys(소속별).forEach(function(소속) {
+    var 인원 = 소속별[소속].length;
+    html += '<tr class="소속행"><td colspan="' + (2 + 날짜들.length + 1) + '">[ ' + 소속 + ' ] — ' + 인원 + '명</td></tr>';
+
+    소속별[소속].forEach(function(직원) {
+      전체순번++;
+      var 출근수 = 0;
+      html += '<tr class="데이터행"><td>' + 전체순번 + '</td><td style="text-align:left;padding-left:2px;">' + 직원.이름 + '</td>';
+
+      날짜들.forEach(function(날) {
+        var 기록 = 기록맵[직원.id + '_' + 날.날짜];
+        var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
+
+        if (!기록) {
+          html += '<td' + (isRed ? ' style="background:#fff0f0;"' : '') + '></td>';
+          return;
+        }
+
+        var 종류 = 기록.근태종류;
+        var 표시 = 종류표시[종류];
+        if (!표시) { html += '<td></td>'; return; }
+
+        if (종류 === '정상출근' || 종류 === '주말출근' || 종류 === '공휴일출근') 출근수++;
+
+        html += '<td style="background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;">' + 표시.텍스트 + '</td>';
+      });
+
+      html += '<td style="font-weight:700;">' + 출근수 + '</td></tr>';
+      html += '<tr class="빈행"><td colspan="' + (2 + 날짜들.length + 1) + '"></td></tr>';
+    });
+  });
+
+  html += '</tbody></table>' +
+    '<div class="범례">범례: ' +
+    '<span style="color:#15803d;">○ 정상출근</span>' +
+    '<span style="color:#dc2626;">× 결근</span>' +
+    '<span style="color:#1d4ed8;">반 반차</span>' +
+    '<span style="color:#1d4ed8;">연 연차</span>' +
+    '<span style="color:#c2410c;">출 주말/공휴일출근</span>' +
+    '</div>' +
+    '</body></html>';
+
+  var win = window.open('', '_blank', 'width=1200,height=800');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 600);
+}
