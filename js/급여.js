@@ -479,9 +479,46 @@ async function 공휴일삭제(id) {
    탭4 — 급여 계산
 ══════════════════════════════════════════════════ */
 
-function 급여계산화면초기화() {
+async function 급여계산화면초기화() {
   var el = document.getElementById('급여계산년월');
   if (el && !el.value) el.value = _출근년월;
+  await 급여결과불러오기();
+}
+
+async function 급여결과불러오기() {
+  var 년월 = document.getElementById('급여계산년월').value;
+  if (!년월) return;
+
+  var { data } = await 수파베이스.from('급여결과').select('*').eq('년월', 년월).order('직원id');
+  if (!data || data.length === 0) {
+    document.getElementById('급여결과바디').innerHTML =
+      '<tr><td colspan="11" style="text-align:center;color:#9ca3af;padding:20px;">년월 선택 후 계산을 실행하세요</td></tr>';
+    return;
+  }
+
+  var 결과들 = data.map(function(d) {
+    var 직원 = _직원목록.find(function(e) { return e.id === d.직원id; });
+    return {
+      직원id: d.직원id,
+      직원명: 직원 ? 직원.이름 : ('직원#' + d.직원id),
+      시급: 직원 ? Number(직원.시급) : 0,
+      정규시간: d.정규시간 || 0,
+      연장시간: d.연장시간 || 0,
+      주말시간: d.주말시간 || 0,
+      공휴일시간: d.공휴일시간 || 0,
+      기본급: d.기본급 || 0,
+      연장수당: d.연장수당 || 0,
+      주말수당: d.주말수당 || 0,
+      직급수당: d.직급수당 || 0,
+      근속수당: d.근속수당 || 0,
+      주휴수당: d.주휴수당 || 0,
+      결근공제: d.결근공제 || 0,
+      소득세: d.소득세 || 0,
+      실수령액: d.실수령액 || 0
+    };
+  });
+
+  _급여결과그리기(결과들);
 }
 
 async function 급여계산실행() {
