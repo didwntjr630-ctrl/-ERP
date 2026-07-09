@@ -746,28 +746,65 @@ function _급여결과그리기(결과들) {
     '</tr>';
   }).join('');
 
-  // 최종 지출 계산
-  var 총지급액 = 결과들.reduce(function(s, r) { return s + r.실수령액; }, 0);
-  var 수수료 = Math.round(총지급액 * PAYROLL.수수료율);
-  var 사대보험 = Math.round(총지급액 * PAYROLL.사대보험율);
-  var 최종지출 = 총지급액 + 수수료 + 사대보험;
+  // 소속별 그룹핑
+  var 소속별 = {};
+  결과들.forEach(function(r) {
+    var 직원 = _직원목록.find(function(e) { return e.id === r.직원id; });
+    var 소속key = (직원 && 직원.소속) ? 직원.소속 : '미분류';
+    if (!소속별[소속key]) 소속별[소속key] = [];
+    소속별[소속key].push(r);
+  });
 
   var 지출박스 = document.getElementById('급여최종지출');
-  if (지출박스) {
-    지출박스.innerHTML =
-      '<h4 style="margin:0 0 12px;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #f3f4f6;padding-bottom:8px;">업체 최종 지출 내역</h4>' +
-      '<table style="width:100%;font-size:13px;border-collapse:collapse;">' +
-      '<tr><td style="padding:5px 0;color:#6b7280;">직원 총 지급액 (원천징수 전)</td>' +
-        '<td style="padding:5px 0;text-align:right;">' + 총지급액.toLocaleString() + '원</td></tr>' +
-      '<tr><td style="padding:5px 0;color:#6b7280;">수수료 (' + (PAYROLL.수수료율 * 100).toFixed(0) + '%)</td>' +
-        '<td style="padding:5px 0;text-align:right;">' + 수수료.toLocaleString() + '원</td></tr>' +
-      '<tr><td style="padding:5px 0;color:#6b7280;">사업주 4대보험 (' + (PAYROLL.사대보험율 * 100).toFixed(1) + '%)</td>' +
-        '<td style="padding:5px 0;text-align:right;">' + 사대보험.toLocaleString() + '원</td></tr>' +
-      '<tr style="border-top:2px solid #374151;">' +
-        '<td style="padding:8px 0;font-weight:700;font-size:14px;">합 계</td>' +
-        '<td style="padding:8px 0;text-align:right;font-weight:700;font-size:16px;color:#dc2626;">' + 최종지출.toLocaleString() + '원</td></tr>' +
-      '</table>';
-  }
+  if (!지출박스) return;
+
+  var 전체합계 = 0;
+  var 지출html =
+    '<h4 style="margin:0 0 12px;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #f3f4f6;padding-bottom:8px;">업체 최종 지출 내역</h4>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+    '<thead><tr style="background:#374151;color:#fff;">' +
+    '<th style="padding:6px 8px;text-align:left;">직원</th>' +
+    '<th style="padding:6px 8px;text-align:right;">실수령액</th>' +
+    '<th style="padding:6px 8px;text-align:right;">수수료(' + (PAYROLL.수수료율*100).toFixed(0) + '%)</th>' +
+    '<th style="padding:6px 8px;text-align:right;">4대보험(' + (PAYROLL.사대보험율*100).toFixed(1) + '%)</th>' +
+    '<th style="padding:6px 8px;text-align:right;">합계</th>' +
+    '</tr></thead><tbody>';
+
+  Object.keys(소속별).forEach(function(소속) {
+    var 소속합계 = 0;
+    지출html += '<tr style="background:#f3f4f6;">' +
+      '<td colspan="5" style="padding:6px 8px;font-weight:700;color:#374151;font-size:12px;">[' + 소속 + ']</td></tr>';
+
+    소속별[소속].forEach(function(r) {
+      var 수수료 = Math.round(r.실수령액 * PAYROLL.수수료율);
+      var 사대보험 = Math.round(r.실수령액 * PAYROLL.사대보험율);
+      var 합계 = r.실수령액 + 수수료 + 사대보험;
+      소속합계 += 합계;
+      전체합계 += 합계;
+      지출html +=
+        '<tr>' +
+        '<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;">' + r.직원명 + '</td>' +
+        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;">' + r.실수령액.toLocaleString() + '</td>' +
+        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;color:#6b7280;">' + 수수료.toLocaleString() + '</td>' +
+        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;color:#6b7280;">' + 사대보험.toLocaleString() + '</td>' +
+        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;font-weight:600;">' + 합계.toLocaleString() + '</td>' +
+        '</tr>';
+    });
+
+    지출html +=
+      '<tr style="background:#fff7ed;">' +
+      '<td colspan="4" style="padding:5px 8px;text-align:right;color:#6b7280;font-size:11px;">' + 소속 + ' 소계</td>' +
+      '<td style="padding:5px 8px;text-align:right;font-weight:700;color:#f97316;">' + 소속합계.toLocaleString() + '원</td>' +
+      '</tr>';
+  });
+
+  지출html +=
+    '</tbody><tfoot><tr style="background:#1a3a5c;color:#fff;">' +
+    '<td colspan="4" style="padding:10px 8px;font-weight:700;font-size:13px;">총 합계</td>' +
+    '<td style="padding:10px 8px;text-align:right;font-weight:700;font-size:16px;">' + 전체합계.toLocaleString() + '원</td>' +
+    '</tr></tfoot></table>';
+
+  지출박스.innerHTML = 지출html;
 }
 
 /* ══════════════════════════════════════════════════
