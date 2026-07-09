@@ -307,10 +307,6 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
       'style="' + BST + 'font-size:10px;padding:2px 5px;background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd;">반차</button>' +
       '<button onclick="근태등록버튼(' + 직원id + ',\'' + 날짜 + '\',\'연차\')" ' +
       'style="' + BST + 'font-size:10px;padding:2px 5px;background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd;">연차</button>' +
-      '<button onclick="근태등록버튼(' + 직원id + ',\'' + 날짜 + '\',\'지각\')" ' +
-      'style="' + BST + 'font-size:10px;padding:2px 5px;background:#fefce8;color:#854d0e;border:1px solid #fde047;">지각</button>' +
-      '<button onclick="근태등록버튼(' + 직원id + ',\'' + 날짜 + '\',\'외출\')" ' +
-      'style="' + BST + 'font-size:10px;padding:2px 5px;background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;">외출</button>' +
       '</div>';
   }
 
@@ -323,8 +319,6 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
     '연차':       { bg: '#eff6ff', border: '#93c5fd', color: '#1d4ed8', 라벨: '연차 8h' },
     '주말출근':   { bg: '#fff7ed', border: '#fed7aa', color: '#c2410c', 라벨: '주말 8h' },
     '공휴일출근': { bg: '#fdf4ff', border: '#e9d5ff', color: '#7e22ce', 라벨: '공휴 8h' },
-    '지각':       { bg: '#fefce8', border: '#fde047', color: '#854d0e', 라벨: '지각' },
-    '외출':       { bg: '#ecfdf5', border: '#6ee7b7', color: '#065f46', 라벨: '외출' }
   };
   var s = 스타일맵[종류] || 스타일맵['정상출근'];
 
@@ -336,19 +330,26 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
     '</div>';
 
   if (종류 !== '결근') {
-    if (종류 === '지각' || 종류 === '외출') {
+    if (종류 === '정상출근') {
       var 지각h = Number(기록.지각시간) || 0;
+      var 외출h = Number(기록.외출시간) || 0;
       html += '<div style="display:flex;align-items:center;gap:2px;">' +
-        '<span style="font-size:10px;color:#6b7280;">공제</span>' +
+        '<span style="font-size:10px;color:#ca8a04;">지각</span>' +
         '<input type="number" value="' + 지각h + '" min="0" max="8" step="0.5" ' +
-        'style="width:42px;font-size:10px;border:1px solid #d1d5db;border-radius:3px;padding:1px 3px;text-align:center;" ' +
-        'onchange="지각시간변경(' + 기록.id + ',this.value)" title="공제 시간">' +
-        '<span style="font-size:10px;color:#6b7280;">h</span></div>';
+        'style="width:36px;font-size:10px;border:1px solid #fde047;border-radius:3px;padding:1px 3px;text-align:center;" ' +
+        'onchange="지각시간변경(' + 기록.id + ',this.value)" title="지각 시간">' +
+        '<span style="font-size:10px;color:#ca8a04;">h</span></div>';
+      html += '<div style="display:flex;align-items:center;gap:2px;">' +
+        '<span style="font-size:10px;color:#059669;">외출</span>' +
+        '<input type="number" value="' + 외출h + '" min="0" max="8" step="0.5" ' +
+        'style="width:36px;font-size:10px;border:1px solid #6ee7b7;border-radius:3px;padding:1px 3px;text-align:center;" ' +
+        'onchange="외출시간변경(' + 기록.id + ',this.value)" title="외출 시간">' +
+        '<span style="font-size:10px;color:#059669;">h</span></div>';
     }
     html += '<div style="display:flex;align-items:center;gap:2px;">' +
       '<span style="font-size:10px;color:#6b7280;">연장</span>' +
       '<input type="number" value="' + 연장 + '" min="0" max="12" step="0.5" ' +
-      'style="width:42px;font-size:10px;border:1px solid #d1d5db;border-radius:3px;padding:1px 3px;text-align:center;" ' +
+      'style="width:36px;font-size:10px;border:1px solid #d1d5db;border-radius:3px;padding:1px 3px;text-align:center;" ' +
       'onchange="연장시간변경(' + 기록.id + ',this.value)" title="연장근무 시간">' +
       '<span style="font-size:10px;color:#6b7280;">h</span></div>';
   }
@@ -358,7 +359,7 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
 
 async function 근태등록버튼(직원id, 날짜, 종류) {
   var { data, error } = await 수파베이스.from('근태기록')
-    .upsert({ 직원id: 직원id, 날짜: 날짜, 근태종류: 종류, 연장시간: 0, 지각시간: 0 }, { onConflict: '직원id,날짜' })
+    .upsert({ 직원id: 직원id, 날짜: 날짜, 근태종류: 종류, 연장시간: 0, 지각시간: 0, 외출시간: 0 }, { onConflict: '직원id,날짜' })
     .select().single();
   if (error) { 알림('등록 실패: ' + error.message, '오류'); return; }
   _근태기록맵[직원id + '_' + 날짜] = data;
@@ -389,6 +390,17 @@ async function 지각시간변경(기록id, 시간) {
   for (var key in _근태기록맵) {
     if (_근태기록맵[key].id === 기록id) {
       _근태기록맵[key].지각시간 = 지각;
+      break;
+    }
+  }
+}
+
+async function 외출시간변경(기록id, 시간) {
+  var 외출 = Math.min(8, Math.max(0, parseFloat(시간) || 0));
+  await 수파베이스.from('근태기록').update({ 외출시간: 외출 }).eq('id', 기록id);
+  for (var key in _근태기록맵) {
+    if (_근태기록맵[key].id === 기록id) {
+      _근태기록맵[key].외출시간 = 외출;
       break;
     }
   }
@@ -534,7 +546,7 @@ function _급여계산(직원, 기록들, 년, 월) {
     var 주말 = 주말인가(r.날짜);
 
     if (종류 === '정상출근') {
-      정규시간 += 8;
+      정규시간 += Math.max(0, 8 - (Number(r.지각시간)||0) - (Number(r.외출시간)||0));
       연장시간 += 연장;
     } else if (종류 === '주말출근') {
       주말시간 += 8 + 연장;
@@ -547,10 +559,6 @@ function _급여계산(직원, 기록들, 년, 월) {
       연장시간 += 연장;
     } else if (종류 === '연차') {
       연차시간 += 8;
-      연장시간 += 연장;
-    } else if (종류 === '지각' || 종류 === '외출') {
-      var 공제h = Number(r.지각시간) || 0;
-      정규시간 += Math.max(0, 8 - 공제h);
       연장시간 += 연장;
     }
     상세.push({ 날짜: r.날짜, 종류: 종류, 연장: 연장 });
