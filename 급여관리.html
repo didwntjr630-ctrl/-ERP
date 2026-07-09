@@ -162,7 +162,9 @@
         <label>년월</label>
         <input type="month" id="출근년월" onchange="출근현황그리기()">
         <button class="소버튼" onclick="출근현황그리기()" style="margin-left:4px;">새로고침</button>
-        <button class="소버튼" onclick="근태표출력()" style="margin-left:8px;background:#1a3a5c;color:#fff;border-color:#1a3a5c;">근태표 출력</button>
+        <select id="근태표소속선택" style="margin-left:12px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;height:32px;"></select>
+        <button class="소버튼" onclick="근태표출력()" style="margin-left:4px;background:#1a3a5c;color:#fff;border-color:#1a3a5c;">근태표 출력</button>
+        <button class="소버튼" onclick="근태표엑셀()" style="margin-left:4px;background:#15803d;color:#fff;border-color:#15803d;">엑셀 다운로드</button>
       </div>
       <div class="근태범례">
         <span style="color:#6b7280;font-weight:600;">범례:</span>
