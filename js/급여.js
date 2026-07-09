@@ -369,7 +369,7 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
         '<span style="font-size:10px;color:#7e22ce;">야간</span>' +
         '<input type="number" value="' + 야간h + '" min="0" max="24" step="0.5" ' +
         'style="width:36px;font-size:10px;border:1px solid #e9d5ff;border-radius:3px;padding:1px 3px;text-align:center;" ' +
-        'onchange="야간시간변경(' + 기록.id + ',this.value)" title="야간(18시 이후) 시간 × 2.0배">' +
+        'onchange="야간시간변경(' + 기록.id + ',this.value)" title="18시 이후 근무시간 (총 근무시간 이내, ×2.0배 적용)">' +
         '<span style="font-size:10px;color:#7e22ce;">h</span></div>';
     }
   }
@@ -647,7 +647,8 @@ function _급여계산(직원, 기록들, 년, 월) {
 
   var 기본급      = (정규시간 + 반차시간 + 연차시간) * 시급;
   var 연장수당    = 연장시간 * 시급 * PAYROLL.연장배율;
-  var 주말수당    = (주말시간 + 공휴일시간) * 시급 * PAYROLL.주말배율;
+  var 주말주간    = Math.max(0, (주말시간 + 공휴일시간) - 야간주말시간);
+  var 주말수당    = 주말주간 * 시급 * PAYROLL.주말배율;
   var 야간수당    = 야간주말시간 * 시급 * PAYROLL.야간주말배율;
   var 교통비      = 교통비일수 * PAYROLL.일교통비;
   var 결근공제    = 결근일수 * 8 * 시급;
