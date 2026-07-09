@@ -988,12 +988,34 @@ async function 근태표출력() {
     '공휴일출근':{ 텍스트: '출', 색: '#7e22ce', 배경: '#fdf4ff' }
   };
 
+  var 소속목록 = Object.keys(소속별);
+
+  function _근태표헤더(소속, 인원) {
+    var h = '<div class="페이지">' +
+      '<h2>' + 년 + '년 ' + 월 + '월 근태표 &nbsp;|&nbsp; ' + 소속 + ' (' + 인원 + '명)</h2>' +
+      '<table><thead>' +
+      '<tr><th class="h-고정" rowspan="2">순번</th><th class="h-이름" rowspan="2">성명</th>';
+    날짜들.forEach(function(날) {
+      var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
+      h += '<th class="h-날짜' + (isRed ? ' 주말' : '') + '">' + 월 + '.' + String(날.일).padStart(2,'0') + '</th>';
+    });
+    h += '<th class="h-소계" rowspan="2">출근<br>일수</th></tr><tr>';
+    날짜들.forEach(function(날) {
+      var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
+      h += '<th class="h-날짜' + (isRed ? ' 주말' : '') + '">' + 요일명[날.요일] + '</th>';
+    });
+    h += '</tr></thead><tbody>';
+    return h;
+  }
+
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<title>' + 년 + '년 ' + 월 + '월 근태표</title>' +
     '<style>' +
     '@page{size:A4 landscape;margin:6mm;}' +
     '*{box-sizing:border-box;}' +
     'body{font-family:"맑은 고딕","Apple SD Gothic Neo",sans-serif;font-size:7.5px;margin:0;padding:0;}' +
+    '.페이지{page-break-after:always;}' +
+    '.페이지:last-child{page-break-after:avoid;}' +
     'h2{text-align:center;font-size:12px;margin:0 0 4px;letter-spacing:1px;}' +
     'table{border-collapse:collapse;width:100%;table-layout:fixed;}' +
     'th,td{border:1px solid #888;padding:1px 0;text-align:center;overflow:hidden;white-space:nowrap;}' +
@@ -1002,41 +1024,26 @@ async function 근태표출력() {
     '.h-날짜{font-weight:700;background:#e8edf4;}' +
     '.h-소계{width:22px;font-weight:700;background:#e8edf4;}' +
     '.주말{color:#c00;}' +
-    '.소속행 td{background:#1a3a5c;color:#fff;font-weight:700;font-size:8px;padding:2px;}' +
     '.빈행 td{height:8px;background:#fafafa;}' +
     '.데이터행 td{height:16px;}' +
-    '.범례{margin-top:6px;font-size:8px;display:flex;gap:12px;align-items:center;}' +
-    '</style></head><body>' +
-    '<h2>' + 년 + '년 ' + 월 + '월 근태표</h2>' +
-    '<table><thead>' +
-    '<tr>' +
-    '<th class="h-고정" rowspan="2">순번</th>' +
-    '<th class="h-이름" rowspan="2">성명</th>';
+    '.범례{margin-top:5px;font-size:8px;display:flex;gap:12px;align-items:center;}' +
+    '</style></head><body>';
 
-  날짜들.forEach(function(날) {
-    var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
-    html += '<th class="h-날짜' + (isRed ? ' 주말' : '') + '">' +
-      월 + '.' + String(날.일).padStart(2,'0') + '</th>';
-  });
+  var 범례 = '<div class="범례">범례: ' +
+    '<span style="color:#15803d;">○ 정상출근</span>' +
+    '<span style="color:#dc2626;">× 결근</span>' +
+    '<span style="color:#1d4ed8;">반 반차</span>' +
+    '<span style="color:#1d4ed8;">연 연차</span>' +
+    '<span style="color:#c2410c;">출 주말/공휴일출근</span>' +
+    '</div>';
 
-  html += '<th class="h-소계" rowspan="2">출근<br>일수</th></tr><tr>';
+  소속목록.forEach(function(소속) {
+    var 직원들 = 소속별[소속];
+    html += _근태표헤더(소속, 직원들.length);
 
-  날짜들.forEach(function(날) {
-    var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
-    html += '<th class="h-날짜' + (isRed ? ' 주말' : '') + '">' + 요일명[날.요일] + '</th>';
-  });
-
-  html += '</tr></thead><tbody>';
-
-  var 전체순번 = 0;
-  Object.keys(소속별).forEach(function(소속) {
-    var 인원 = 소속별[소속].length;
-    html += '<tr class="소속행"><td colspan="' + (2 + 날짜들.length + 1) + '">[ ' + 소속 + ' ] — ' + 인원 + '명</td></tr>';
-
-    소속별[소속].forEach(function(직원) {
-      전체순번++;
+    직원들.forEach(function(직원, idx) {
       var 출근수 = 0;
-      html += '<tr class="데이터행"><td>' + 전체순번 + '</td><td style="text-align:left;padding-left:2px;">' + 직원.이름 + '</td>';
+      html += '<tr class="데이터행"><td>' + (idx + 1) + '</td><td style="text-align:left;padding-left:2px;">' + 직원.이름 + '</td>';
 
       날짜들.forEach(function(날) {
         var 기록 = 기록맵[직원.id + '_' + 날.날짜];
@@ -1059,17 +1066,9 @@ async function 근태표출력() {
       html += '<td style="font-weight:700;">' + 출근수 + '</td></tr>';
       html += '<tr class="빈행"><td colspan="' + (2 + 날짜들.length + 1) + '"></td></tr>';
     });
-  });
 
-  html += '</tbody></table>' +
-    '<div class="범례">범례: ' +
-    '<span style="color:#15803d;">○ 정상출근</span>' +
-    '<span style="color:#dc2626;">× 결근</span>' +
-    '<span style="color:#1d4ed8;">반 반차</span>' +
-    '<span style="color:#1d4ed8;">연 연차</span>' +
-    '<span style="color:#c2410c;">출 주말/공휴일출근</span>' +
-    '</div>' +
-    '</body></html>';
+    html += '</tbody></table>' + 범례 + '</div>';
+  });
 
   var win = window.open('', '_blank', 'width=1200,height=800');
   win.document.write(html);
