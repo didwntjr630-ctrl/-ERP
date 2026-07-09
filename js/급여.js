@@ -19,7 +19,11 @@ var PAYROLL = {
   주휴시간: 8,
   일교통비: 3000,
   수수료율: 0.07,
-  사대보험율: 0.101
+  국민연금율: 0.0475,
+  건강보험율: 0.03595,
+  장기요양율: 0.1314,   // 건강보험료의 13.14%
+  고용보험율: 0.009,
+  부가세율: 0.1
 };
 
 /* ── 유틸 ────────────────────────────────────────── */
@@ -765,9 +769,9 @@ function _급여결과그리기(결과들) {
     '<thead><tr style="background:#374151;color:#fff;">' +
     '<th style="padding:6px 8px;text-align:left;">직원</th>' +
     '<th style="padding:6px 8px;text-align:right;">실수령액</th>' +
-    '<th style="padding:6px 8px;text-align:right;">수수료(' + (PAYROLL.수수료율*100).toFixed(0) + '%)</th>' +
-    '<th style="padding:6px 8px;text-align:right;">4대보험(' + (PAYROLL.사대보험율*100).toFixed(1) + '%)</th>' +
-    '<th style="padding:6px 8px;text-align:right;">합계</th>' +
+    '<th style="padding:6px 8px;text-align:right;">수수료(7%)</th>' +
+    '<th style="padding:6px 8px;text-align:right;">4대보험</th>' +
+    '<th style="padding:6px 8px;text-align:right;">소계</th>' +
     '</tr></thead><tbody>';
 
   Object.keys(소속별).forEach(function(소속) {
@@ -777,17 +781,23 @@ function _급여결과그리기(결과들) {
 
     소속별[소속].forEach(function(r) {
       var 수수료 = Math.round(r.실수령액 * PAYROLL.수수료율);
-      var 사대보험 = Math.round(r.실수령액 * PAYROLL.사대보험율);
-      var 합계 = r.실수령액 + 수수료 + 사대보험;
-      소속합계 += 합계;
-      전체합계 += 합계;
+      var 국민연금 = Math.round(r.실수령액 * PAYROLL.국민연금율);
+      var 건강보험 = Math.round(r.실수령액 * PAYROLL.건강보험율);
+      var 장기요양 = Math.round(건강보험 * PAYROLL.장기요양율);
+      var 고용보험 = Math.round(r.실수령액 * PAYROLL.고용보험율);
+      var 사대보험계 = 국민연금 + 건강보험 + 장기요양 + 고용보험;
+      var 소계 = r.실수령액 + 수수료 + 사대보험계;
+      소속합계 += 소계;
+      전체합계 += 소계;
       지출html +=
         '<tr>' +
         '<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;">' + r.직원명 + '</td>' +
         '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;">' + r.실수령액.toLocaleString() + '</td>' +
         '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;color:#6b7280;">' + 수수료.toLocaleString() + '</td>' +
-        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;color:#6b7280;">' + 사대보험.toLocaleString() + '</td>' +
-        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;font-weight:600;">' + 합계.toLocaleString() + '</td>' +
+        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;color:#6b7280;">' +
+          '<span title="국민연금 ' + 국민연금.toLocaleString() + ' / 건강보험 ' + 건강보험.toLocaleString() + ' / 장기요양 ' + 장기요양.toLocaleString() + ' / 고용보험 ' + 고용보험.toLocaleString() + '" style="cursor:help;border-bottom:1px dashed #9ca3af;">' + 사대보험계.toLocaleString() + '</span>' +
+        '</td>' +
+        '<td style="padding:5px 8px;text-align:right;border-bottom:1px solid #f0f0f0;font-weight:600;">' + 소계.toLocaleString() + '</td>' +
         '</tr>';
     });
 
@@ -798,11 +808,25 @@ function _급여결과그리기(결과들) {
       '</tr>';
   });
 
+  var 부가세 = Math.round(전체합계 * PAYROLL.부가세율);
+  var 부가세포함합계 = 전체합계 + 부가세;
+
   지출html +=
-    '</tbody><tfoot><tr style="background:#1a3a5c;color:#fff;">' +
-    '<td colspan="4" style="padding:10px 8px;font-weight:700;font-size:13px;">총 합계</td>' +
-    '<td style="padding:10px 8px;text-align:right;font-weight:700;font-size:16px;">' + 전체합계.toLocaleString() + '원</td>' +
-    '</tr></tfoot></table>';
+    '</tbody><tfoot>' +
+    '<tr style="background:#374151;color:#e5e7eb;">' +
+    '<td colspan="4" style="padding:8px 8px;font-weight:600;font-size:13px;">공급가액</td>' +
+    '<td style="padding:8px 8px;text-align:right;font-weight:600;font-size:14px;">' + 전체합계.toLocaleString() + '원</td>' +
+    '</tr>' +
+    '<tr style="background:#4b5563;color:#d1d5db;">' +
+    '<td colspan="4" style="padding:8px 8px;font-size:13px;">부가세 (10%)</td>' +
+    '<td style="padding:8px 8px;text-align:right;font-size:13px;">' + 부가세.toLocaleString() + '원</td>' +
+    '</tr>' +
+    '<tr style="background:#1a3a5c;color:#fff;">' +
+    '<td colspan="4" style="padding:10px 8px;font-weight:700;font-size:13px;">합계 (VAT 포함)</td>' +
+    '<td style="padding:10px 8px;text-align:right;font-weight:700;font-size:16px;">' + 부가세포함합계.toLocaleString() + '원</td>' +
+    '</tr>' +
+    '</tfoot></table>' +
+    '<p style="font-size:11px;color:#6b7280;margin-top:6px;">4대보험 = 국민연금 4.75% + 건강보험 3.595% + 장기요양 13.14%of건강보험 + 고용보험 0.9% | 항목에 마우스 올리면 상세 확인</p>';
 
   지출박스.innerHTML = 지출html;
 }
