@@ -77,6 +77,18 @@
     .근태범례 { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; align-items:center; font-size:11px; }
     .범례항목 { display:flex; align-items:center; gap:4px; }
     .범례색 { width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.1); }
+
+    /* ── 인쇄: 명세서만 A4 세로 출력 ── */
+    @media print {
+      @page { size: A4 portrait; margin: 15mm; }
+      .메뉴바, .사이드바, .사이드바오버레이, .급여탭바, #급여알림, .폼오버레이 { display:none !important; }
+      .급여탭내용 { display:none !important; }
+      [data-tab="명세서"] { display:block !important; }
+      [data-tab="명세서"] > .섹션박스:first-child { display:none !important; }
+      [data-tab="명세서"] > .섹션박스:last-child { border:none !important; padding:0 !important; margin:0 !important; box-shadow:none !important; }
+      .내용영역 { padding:0 !important; margin:0 !important; }
+      body { background:white !important; }
+    }
   </style>
 </head>
 <body>
