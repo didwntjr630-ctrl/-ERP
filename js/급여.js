@@ -80,6 +80,13 @@ async function 급여관리초기화() {
   function _급여실시간갱신() {
     clearTimeout(_급여실시간타이머);
     _급여실시간타이머 = setTimeout(async function() {
+      // 직원 폼이 열려있으면 스킵 (입력 중 재렌더링 방지)
+      var 직원폼 = document.getElementById('직원폼');
+      if (직원폼 && 직원폼.style.display !== 'none') return;
+      // 출근현황 숫자 입력란 포커스 중이면 스킵 (연장·지각·외출 입력 중 방지)
+      var 포커스 = document.activeElement;
+      if (포커스 && 포커스.type === 'number' && 포커스.closest('#출근현황테이블래퍼')) return;
+
       await Promise.all([직원목록불러오기(), 공휴일목록불러오기()]);
       급여탭선택(_급여탭);
     }, 400);
