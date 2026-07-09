@@ -934,6 +934,7 @@ async function 명세서조회() {
     '<span style="font-size:16px;font-weight:700;">실 수령액</span>' +
     '<span style="font-size:22px;font-weight:700;">' + (data.실수령액 || 0).toLocaleString() + '원</span>' +
     '</div>' +
+    '<div style="text-align:center;margin-top:32px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;letter-spacing:0.03em;">직원 여러분의 노고에 깊이 감사드립니다.</div>' +
     '</div>';
 
   document.getElementById('명세서내용').innerHTML = html;
