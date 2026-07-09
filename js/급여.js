@@ -14,12 +14,11 @@ var PAYROLL = {
   정규시간: 8,
   연장배율: 1.5,
   주말배율: 1.5,
-  야간주말배율: 2.0,
-  소득세율: 0.033,
+  주말연장배율: 2.0,
   주휴시간: 8,
   일교통비: 3000,
   수수료율: 0.07,
-  사대보험율: 0.101   // 사업주 4대보험 합산 (국민연금4.5%+건강3.545%+장기요양0.459%+고용0.9%+산재0.7%)
+  사대보험율: 0.101
 };
 
 /* ── 유틸 ────────────────────────────────────────── */
@@ -363,15 +362,6 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
       'style="width:36px;font-size:10px;border:1px solid #d1d5db;border-radius:3px;padding:1px 3px;text-align:center;" ' +
       'onchange="연장시간변경(' + 기록.id + ',this.value)" title="연장근무 시간">' +
       '<span style="font-size:10px;color:#6b7280;">h</span></div>';
-    if (종류 === '주말출근' || 종류 === '공휴일출근') {
-      var 야간h = Number(기록.야간시간) || 0;
-      html += '<div style="display:flex;align-items:center;gap:2px;">' +
-        '<span style="font-size:10px;color:#7e22ce;">야간</span>' +
-        '<input type="number" value="' + 야간h + '" min="0" max="24" step="0.5" ' +
-        'style="width:36px;font-size:10px;border:1px solid #e9d5ff;border-radius:3px;padding:1px 3px;text-align:center;" ' +
-        'onchange="야간시간변경(' + 기록.id + ',this.value)" title="18시 이후 근무시간 (총 근무시간 이내, ×2.0배 적용)">' +
-        '<span style="font-size:10px;color:#7e22ce;">h</span></div>';
-    }
   }
   html += '</div>';
   return html;
@@ -605,7 +595,7 @@ function _급여계산(직원, 기록들, 년, 월) {
   var 주말시간 = 0, 공휴일시간 = 0;
   var 반차시간 = 0, 연차시간 = 0;
   var 결근일수 = 0;
-  var 야간주말시간 = 0;
+  var 주말연장시간 = 0;
   var 교통비일수 = 0;
   var 상세 = [];
 
@@ -623,12 +613,12 @@ function _급여계산(직원, 기록들, 년, 월) {
       연장시간 += 연장;
       교통비일수 += 1;
     } else if (종류 === '주말출근') {
-      주말시간 += 8 + 연장;
-      야간주말시간 += Number(r.야간시간) || 0;
+      주말시간 += 8;
+      주말연장시간 += 연장;
       교통비일수 += 1;
     } else if (종류 === '공휴일출근') {
-      공휴일시간 += 8 + 연장;
-      야간주말시간 += Number(r.야간시간) || 0;
+      공휴일시간 += 8;
+      주말연장시간 += 연장;
       교통비일수 += 1;
     } else if (종류 === '결근') {
       결근일수 += 1;
@@ -647,14 +637,11 @@ function _급여계산(직원, 기록들, 년, 월) {
 
   var 기본급      = (정규시간 + 반차시간 + 연차시간) * 시급;
   var 연장수당    = 연장시간 * 시급 * PAYROLL.연장배율;
-  var 주말주간    = Math.max(0, (주말시간 + 공휴일시간) - 야간주말시간);
-  var 주말수당    = 주말주간 * 시급 * PAYROLL.주말배율;
-  var 야간수당    = 야간주말시간 * 시급 * PAYROLL.야간주말배율;
+  var 주말수당    = (주말시간 + 공휴일시간) * 시급 * PAYROLL.주말배율;
+  var 주말연장수당 = 주말연장시간 * 시급 * PAYROLL.주말연장배율;
   var 교통비      = 교통비일수 * PAYROLL.일교통비;
   var 결근공제    = 결근일수 * 8 * 시급;
-  var 총지급전    = 기본급 + 연장수당 + 주말수당 + 야간수당 + 교통비 + 직급수당 + 근속수당 + 주휴수당 - 결근공제;
-  var 원천징수    = Math.round(총지급전 * PAYROLL.소득세율);
-  var 실수령액    = Math.round(총지급전 - 원천징수);
+  var 실수령액    = Math.round(기본급 + 연장수당 + 주말수당 + 주말연장수당 + 교통비 + 직급수당 + 근속수당 + 주휴수당 - 결근공제);
 
   return {
     직원id: 직원.id, 직원명: 직원.이름, 시급: 시급,
@@ -663,11 +650,11 @@ function _급여계산(직원, 기록들, 년, 월) {
     반차시간: 반차시간, 연차시간: 연차시간,
     결근일수: 결근일수,
     기본급: Math.round(기본급), 연장수당: Math.round(연장수당),
-    주말수당: Math.round(주말수당), 야간수당: Math.round(야간수당),
+    주말수당: Math.round(주말수당), 야간수당: Math.round(주말연장수당),
     교통비: Math.round(교통비),
     직급수당: Math.round(직급수당),
     근속수당: Math.round(근속수당), 주휴수당: Math.round(주휴수당),
-    결근공제: Math.round(결근공제), 소득세: 원천징수,
+    결근공제: Math.round(결근공제), 소득세: 0,
     실수령액: 실수령액,
     상세: 상세
   };
@@ -743,22 +730,19 @@ function _급여결과그리기(결과들) {
       '<td style="text-align:right;">' + r.기본급.toLocaleString() + '</td>' +
       '<td style="text-align:right;">' + r.연장수당.toLocaleString() + '</td>' +
       '<td style="text-align:right;">' + r.주말수당.toLocaleString() +
-        (r.야간수당 ? '<br><small style="color:#7e22ce;font-size:10px;">야간:' + r.야간수당.toLocaleString() + '</small>' : '') + '</td>' +
+        (r.야간수당 ? '<br><small style="color:#7e22ce;font-size:10px;">연장2x:' + r.야간수당.toLocaleString() + '</small>' : '') + '</td>' +
       '<td style="text-align:right;">' + (r.교통비 || 0).toLocaleString() + '</td>' +
       '<td style="text-align:right;">' + 기타수당.toLocaleString() +
         '<br><small style="color:#6b7280;font-size:10px;">직급:' + r.직급수당.toLocaleString() +
         ' 근속:' + r.근속수당.toLocaleString() + ' 주휴:' + r.주휴수당.toLocaleString() + '</small></td>' +
-      '<td style="text-align:right;color:#dc2626;font-size:11px;">-' + r.결근공제.toLocaleString() +
-        '<br>-' + r.소득세.toLocaleString() + '<small style="color:#9ca3af;">(세)</small></td>' +
+      '<td style="text-align:right;color:#dc2626;font-size:11px;">' + (r.결근공제 ? '-' + r.결근공제.toLocaleString() : '-') + '</td>' +
       '<td style="text-align:right;font-weight:700;color:#1a4a7a;">' + r.실수령액.toLocaleString() + '</td>' +
       '<td><button class="소버튼" onclick="_명세서버튼클릭(' + r.직원id + ')">명세서</button></td>' +
     '</tr>';
   }).join('');
 
   // 최종 지출 계산
-  var 총실수령 = 결과들.reduce(function(s, r) { return s + r.실수령액; }, 0);
-  var 총원천징수 = 결과들.reduce(function(s, r) { return s + r.소득세; }, 0);
-  var 총지급액 = 총실수령 + 총원천징수;
+  var 총지급액 = 결과들.reduce(function(s, r) { return s + r.실수령액; }, 0);
   var 수수료 = Math.round(총지급액 * PAYROLL.수수료율);
   var 사대보험 = Math.round(총지급액 * PAYROLL.사대보험율);
   var 최종지출 = 총지급액 + 수수료 + 사대보험;
@@ -853,7 +837,7 @@ async function 명세서조회() {
     '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;">' + (data.연장수당 || 0).toLocaleString() + '원</td></tr>' +
     '<tr><td style="padding:6px;border:1px solid #e5e7eb;">주말/공휴일 수당 (×1.5)</td>' +
     '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;">' + (data.주말수당 || 0).toLocaleString() + '원</td></tr>' +
-    '<tr><td style="padding:6px;border:1px solid #e5e7eb;">야간 수당 (×2.0)</td>' +
+    '<tr><td style="padding:6px;border:1px solid #e5e7eb;">주말/공휴일 연장 (×2.0)</td>' +
     '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;">' + (data.야간수당 || 0).toLocaleString() + '원</td></tr>' +
     '<tr><td style="padding:6px;border:1px solid #e5e7eb;">교통비</td>' +
     '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;">' + (data.교통비 || 0).toLocaleString() + '원</td></tr>' +
@@ -870,15 +854,15 @@ async function 명세서조회() {
     ((data.기본급||0)+(data.연장수당||0)+(data.주말수당||0)+(data.야간수당||0)+(data.교통비||0)+(data.직급수당||0)+(data.근속수당||0)+(data.주휴수당||0)).toLocaleString() + '원</td></tr>' +
     '</tfoot></table>' +
 
+    (data.결근공제 ?
     '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">' +
     '<thead><tr style="background:#374151;color:white;">' +
     '<th style="padding:8px;text-align:left;">공제 항목</th><th style="padding:8px;text-align:right;">금액</th></tr></thead>' +
     '<tbody>' +
     '<tr><td style="padding:6px;border:1px solid #e5e7eb;">결근 공제</td>' +
-    '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;color:#dc2626;">-' + (data.결근공제 || 0).toLocaleString() + '원</td></tr>' +
-    '<tr><td style="padding:6px;border:1px solid #e5e7eb;">소득세 (3.3%)</td>' +
-    '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;color:#dc2626;">-' + (data.소득세 || 0).toLocaleString() + '원</td></tr>' +
-    '</tbody></table>' +
+    '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right;color:#dc2626;">-' + (data.결근공제).toLocaleString() + '원</td></tr>' +
+    '</tbody></table>'
+    : '') +
 
     '<div style="background:#1a4a7a;color:white;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;">' +
     '<span style="font-size:16px;font-weight:700;">실 수령액</span>' +
