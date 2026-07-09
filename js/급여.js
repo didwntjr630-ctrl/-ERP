@@ -1018,7 +1018,7 @@ function _근태표테이블HTML(데이터, 직원들) {
 
   날짜들.forEach(function(날) {
     var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
-    h += '<th ' + (isRed ? TH_RED : TH) + '>' + 월 + '.' + String(날.일).padStart(2,'0') + '</th>';
+    h += '<th ' + (isRed ? TH_RED : TH) + '>' + String(월).padStart(2,'0') + '.' + String(날.일).padStart(2,'0') + '</th>';
   });
   h += '<th rowspan="2" ' + TH + ' style="border:1px solid #888;padding:1px 0;text-align:center;background:#e8edf4;font-weight:700;width:22px;">출근<br>일수</th></tr><tr>';
 
