@@ -489,7 +489,7 @@
       var 다음날짜 = _출고일자다음달(원본.출고일자);
       var { error } = await 수파베이스.from('매출기록').update({ 출고일자: 다음날짜 }).eq('id', id);
       if (error) { 알림표시('이월 실패: ' + error.message, '오류'); return; }
-      원본.출고일자 = 다음날짜;
+      전체데이터 = 전체데이터.filter(function(h) { return h.id !== id; });
       필터적용();
       알림표시(다음날짜 + ' 으로 이월되었습니다.', '성공');
     }
