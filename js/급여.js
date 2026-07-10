@@ -1080,6 +1080,7 @@ function _근태표테이블HTML(데이터, 직원들) {
 
   직원들.forEach(function(직원, idx) {
     var 출근수 = 0;
+    var 날시간목록 = [];
     h += '<tr style="height:16px;">' +
       '<td style="border:1px solid #888;text-align:center;font-size:7.5px;">' + (idx + 1) + '</td>' +
       '<td style="border:1px solid #888;text-align:left;padding-left:2px;font-size:7.5px;">' + 직원.이름 + '</td>';
@@ -1089,30 +1090,36 @@ function _근태표테이블HTML(데이터, 직원들) {
       var isRed = 날.요일 === 0 || 날.요일 === 6 || 공휴일set.has(날.날짜);
       if (!기록) {
         h += '<td style="border:1px solid #888;' + (isRed ? 'background:#fff0f0;' : '') + '"></td>';
+        날시간목록.push({ text: '', isRed: isRed });
         return;
       }
       var 종류 = 기록.근태종류;
       var 표시 = 종류표시[종류];
-      if (!표시) { h += '<td style="border:1px solid #888;"></td>'; return; }
+      if (!표시) { h += '<td style="border:1px solid #888;"></td>'; 날시간목록.push({ text: '', isRed: isRed }); return; }
       if (종류 === '정상출근' || 종류 === '주말출근' || 종류 === '공휴일출근') 출근수++;
 
       var 메인텍스트 = 표시.텍스트;
       var 차감h = 0;
       var 연장h = Number(기록.연장시간) || 0;
+      var 실근무 = 0;
 
       if (종류 === '정상출근') {
         var _조퇴분 = Number(기록.조퇴시간) || 0;
         if (_조퇴분 > 0) {
           메인텍스트 = '조퇴';
-          차감h = 8 - _조퇴실근무h(_조퇴분, Number(기록.지각시간)||0, Number(기록.외출시간)||0);
+          실근무 = _조퇴실근무h(_조퇴분, Number(기록.지각시간)||0, Number(기록.외출시간)||0);
+          차감h = 8 - 실근무;
         } else {
           차감h = (Number(기록.지각시간)||0)/60 + (Number(기록.외출시간)||0)/60;
+          실근무 = Math.max(0, 8 - 차감h);
         }
       } else if (종류 === '반차') {
         차감h = 4;
+        실근무 = 4;
       } else if (종류 === '주말출근' || 종류 === '공휴일출근') {
-        차감h = 0;
+        실근무 = 8 + 연장h;
       }
+      // 연차, 결근은 실근무 = 0 (표시 없음)
 
       var 부가 = '';
       if (차감h > 0.01) {
@@ -1123,10 +1130,20 @@ function _근태표테이블HTML(데이터, 직원들) {
       }
 
       h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;white-space:nowrap;">' + 메인텍스트 + 부가 + '</td>';
+      날시간목록.push({ text: 실근무 > 0 ? (Math.round(실근무 * 10) / 10) + 'h' : '', isRed: isRed });
     });
 
     h += '<td style="border:1px solid #888;text-align:center;font-weight:700;font-size:7.5px;">' + 출근수 + '</td></tr>';
-    h += '<tr style="height:8px;background:#fafafa;"><td colspan="' + (2 + cols + 1) + '" style="border:1px solid #eee;"></td></tr>';
+
+    // 실근무시간 행
+    h += '<tr style="height:11px;background:#f0f4ff;">' +
+      '<td colspan="2" style="border:1px solid #dde;text-align:right;font-size:6px;color:#6b7280;padding-right:2px;font-style:italic;">실근무</td>';
+    날시간목록.forEach(function(d) {
+      h += '<td style="border:1px solid #dde;text-align:center;font-size:6.5px;color:#374151;' + (d.isRed ? 'background:#fff5f5;' : '') + '">' + d.text + '</td>';
+    });
+    h += '<td style="border:1px solid #dde;"></td></tr>';
+
+    h += '<tr style="height:3px;background:#e8edf4;"><td colspan="' + (2 + cols + 1) + '" style="border:none;"></td></tr>';
   });
 
   h += '</tbody></table>' +
