@@ -558,6 +558,20 @@
       document.getElementById('검색_종료일').value = y + '-' + m + '-' + day;
     }
 
+    function 수기항목필터적용() {
+      var 시작 = document.getElementById('검색_시작일').value;
+      var 종료 = document.getElementById('검색_종료일').value;
+      var 시작월 = 시작 ? 시작.slice(0, 7) : '';
+      var 종료월 = 종료 ? 종료.slice(0, 7) : '';
+      var 필터목록 = 수기항목목록.filter(function(h) {
+        if (!h.월) return true;
+        if (시작월 && h.월 < 시작월) return false;
+        if (종료월 && h.월 > 종료월) return false;
+        return true;
+      });
+      수기항목테이블그리기(필터목록);
+    }
+
     function 필터적용() {
       var 시작 = document.getElementById('검색_시작일').value;
       var 종료 = document.getElementById('검색_종료일').value;
@@ -573,6 +587,7 @@
 
       결과 = 결과.sort(function(a, b) { return b.id - a.id; });
       테이블그리기(결과);
+      수기항목필터적용();
     }
 
     function 검색조회() {
@@ -584,6 +599,7 @@
       document.getElementById('검색_품명').value = '';
       document.getElementById('검색_납품처').value = '';
       테이블그리기(전체데이터);
+      수기항목필터적용();
     }
 
     async function 데이터로드() {
@@ -659,7 +675,7 @@
     async function 수기항목로드() {
       var { data } = await 수파베이스.from('수기항목').select('*').order('id');
       수기항목목록 = data || [];
-      수기항목테이블그리기();
+      수기항목필터적용();
     }
 
     async function 수기항목추가() {
@@ -668,7 +684,7 @@
         .select().single();
       if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
       수기항목목록.push(data);
-      수기항목테이블그리기();
+      수기항목필터적용();
       var 행들 = document.querySelectorAll('#수기항목테이블바디 tr');
       var 마지막행 = 행들[행들.length - 1];
       if (마지막행) { var 첫입력 = 마지막행.querySelector('input'); if (첫입력) 첫입력.focus(); }
@@ -678,7 +694,7 @@
       var { error } = await 수파베이스.from('수기항목').delete().eq('id', id);
       if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
       수기항목목록 = 수기항목목록.filter(function(h) { return h.id !== id; });
-      수기항목테이블그리기();
+      수기항목필터적용();
     }
 
     function 수기항목변경(id, field, value) {
@@ -692,14 +708,15 @@
       }, 600);
     }
 
-    function 수기항목테이블그리기() {
+    function 수기항목테이블그리기(표시목록) {
+      var 목록 = 표시목록 !== undefined ? 표시목록 : 수기항목목록;
       var 바디 = document.getElementById('수기항목테이블바디');
-      if (!수기항목목록.length) {
+      if (!목록.length) {
         바디.innerHTML = '<tr><td colspan="4" class="빈목록안내">항목 추가 버튼으로 운송료·클레임 등을 입력하세요.</td></tr>';
         return;
       }
       바디.innerHTML = '';
-      수기항목목록.forEach(function(항목) {
+      목록.forEach(function(항목) {
         var 행 = document.createElement('tr');
         var 색 = 항목.금액 < 0 ? 'color:#e74c3c;' : '';
         행.innerHTML =
