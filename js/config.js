@@ -88,15 +88,26 @@ var APP_CONFIG = {
 };
 
 /* ── 공지 바 자동 주입 ── */
-document.addEventListener('DOMContentLoaded', function() {
-  var 문구 = (APP_CONFIG.공지문구 || '').trim();
+function _공지바삽입(문구) {
+  var 문구 = (문구 || '').trim();
   if (!문구) return;
-  var 메뉴바 = document.querySelector('.메뉴바');
-  if (!메뉴바) return;
+  var 기준 = document.querySelector('.메뉴바') || document.querySelector('.header');
+  if (!기준) return;
+  if (document.querySelector('.공지바')) return; // 중복 방지
   var bar = document.createElement('div');
   bar.className = '공지바';
   var 중복 = '<span>' + 문구 + '</span><span>' + 문구 + '</span>';
-  bar.innerHTML =
-    '<div class="공지트랙래퍼"><div class="공지트랙">' + 중복 + '</div></div>';
-  메뉴바.insertAdjacentElement('afterend', bar);
+  bar.innerHTML = '<div class="공지트랙래퍼"><div class="공지트랙">' + 중복 + '</div></div>';
+  기준.insertAdjacentElement('afterend', bar);
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    if (typeof 수파베이스 !== 'undefined') {
+      var { data } = await 수파베이스.from('설정').select('값').eq('키', '공지문구').maybeSingle();
+      _공지바삽입(data && data.값 ? data.값 : APP_CONFIG.공지문구);
+      return;
+    }
+  } catch(e) {}
+  _공지바삽입(APP_CONFIG.공지문구);
 });
