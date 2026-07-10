@@ -97,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
   bar.className = '공지바';
   var 중복 = '<span>' + 문구 + '</span><span>' + 문구 + '</span>';
   bar.innerHTML =
-    '<div class="공지라벨">📢&nbsp;공지</div>' +
     '<div class="공지트랙래퍼"><div class="공지트랙">' + 중복 + '</div></div>';
   메뉴바.insertAdjacentElement('afterend', bar);
 });
