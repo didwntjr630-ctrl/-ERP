@@ -287,6 +287,56 @@ body {
   background: rgba(249,115,22,0.3);
 }
 
+/* ===== 공지 스크롤 바 ===== */
+.공지바 {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  overflow: hidden;
+  position: sticky;
+  top: 56px;
+  z-index: 490;
+  background: linear-gradient(90deg, #fffbeb, #fef9e7);
+  border-bottom: 1px solid #fcd34d;
+  box-shadow: 0 1px 4px rgba(251,191,36,.18);
+}
+.공지라벨 {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  height: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fde68a;
+  border-right: 1px solid #fcd34d;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.공지트랙래퍼 {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.공지트랙 {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #78350f;
+  font-weight: 500;
+  animation: 공지마퀴 30s linear infinite;
+  will-change: transform;
+}
+.공지트랙 span { display: inline-block; padding-right: 80px; }
+@keyframes 공지마퀴 {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 /* ===== 페이지 내용 영역 ===== */
 .내용영역 {
   max-width: 1150px;
