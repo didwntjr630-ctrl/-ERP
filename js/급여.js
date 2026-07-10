@@ -1120,12 +1120,7 @@ function _근태표테이블HTML(데이터, 직원들) {
         실근무 = 8 + 연장h;
       }
 
-      var 부가인라인 = '';
-      if (차감h > 0.01) {
-        부가인라인 = '<span style="color:#dc2626;font-size:6px;font-weight:400;"> -' + (Math.round(차감h * 10) / 10) + 'h</span>';
-      }
-
-      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;text-align:center;line-height:1.4;vertical-align:middle;">' + 메인텍스트 + 부가인라인 + '</td>';
+      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;text-align:center;line-height:1.4;vertical-align:middle;">' + 메인텍스트 + '</td>';
 
       var 시간text = '';
       if (종류 === '주말출근' || 종류 === '공휴일출근') {
