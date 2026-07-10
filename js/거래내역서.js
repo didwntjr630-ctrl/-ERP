@@ -3,7 +3,14 @@
    =================================================== */
 
 function 거래내역서출력() {
-  var 전체목록 = (전체데이터 || []).slice().sort(function(a, b) {
+  var 시작 = (document.getElementById('검색_시작일') || {}).value || '';
+  var 종료 = (document.getElementById('검색_종료일') || {}).value || '';
+
+  var 전체목록 = (전체데이터 || []).filter(function(h) {
+    if (시작 && (h.출고일자 || '') < 시작) return false;
+    if (종료 && (h.출고일자 || '') > 종료) return false;
+    return true;
+  }).sort(function(a, b) {
     return (a.출고일자 || '').localeCompare(b.출고일자 || '');
   });
   if (!전체목록.length) { 알림표시('출력할 데이터가 없습니다.', '오류'); return; }
