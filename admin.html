@@ -196,6 +196,18 @@
 
   <div class="admin-wrap">
 
+    <!-- 공지 관리 -->
+    <div class="section-block">
+      <div class="section-title">공지 관리</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <textarea id="공지입력" rows="2"
+          style="flex:1;border:1px solid #c5d9e8;border-radius:6px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;"
+          placeholder="전체 화면 상단에 표시될 공지 내용을 입력하세요."></textarea>
+        <button class="버튼 파랑" style="height:60px;padding:0 18px;font-size:13px;" onclick="공지저장()">저장</button>
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:#888;">※ 저장 즉시 전체 페이지 상단 스크롤 공지에 반영됩니다. 빈칸으로 저장하면 공지가 사라집니다.</div>
+    </div>
+
     <!-- 승인 대기 -->
     <div class="section-block">
       <div class="top-actions">
@@ -254,6 +266,21 @@
     관리자체크();
     접속자패널초기화();
     채팅초기화();
+
+    async function 공지로드() {
+      var { data } = await 수파베이스.from('설정').select('값').eq('키', '공지문구').maybeSingle();
+      if (data) document.getElementById('공지입력').value = data.값 || '';
+    }
+
+    async function 공지저장() {
+      var 내용 = document.getElementById('공지입력').value.trim();
+      var { error } = await 수파베이스.from('설정')
+        .upsert({ 키: '공지문구', 값: 내용, 수정일시: new Date().toISOString() }, { onConflict: '키' });
+      if (error) { _알림표시('저장 실패: ' + error.message, '오류'); return; }
+      _알림표시('공지가 저장되었습니다.', '성공');
+    }
+
+    공지로드();
 
     document.getElementById('header-title').innerHTML = APP_CONFIG.시스템명.replace('ERP', '<span style="color:#F97316; font-style:italic;">ERP</span>');
     document.getElementById('header-sub').textContent = APP_CONFIG.부제;
