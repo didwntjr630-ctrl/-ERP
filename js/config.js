@@ -74,6 +74,8 @@ var APP_CONFIG = {
     ]
   },
 
+  공지문구: '안녕하세요! 삼양ERP를 이용해 주셔서 감사합니다. 문의사항은 관리자에게 연락 주세요.',
+
   성적서자동기입: {
     '기아 45mm':               { 도막두께: [3.8,  4.2],  중량: [2.46, 2.49], 이미지폴더: 'kia_45mm'        },
     '기아 61mm':               { 도막두께: [3.3,  4.0],  중량: [4.56, 4.59], 이미지폴더: 'kia_61mm'        },
@@ -84,3 +86,18 @@ var APP_CONFIG = {
     'GN7 F/L':                 { 도막두께: [4.5,  4.8],  중량: [2.46, 2.49], 이미지폴더: 'gn7_fl'          },
   }
 };
+
+/* ── 공지 바 자동 주입 ── */
+document.addEventListener('DOMContentLoaded', function() {
+  var 문구 = (APP_CONFIG.공지문구 || '').trim();
+  if (!문구) return;
+  var 메뉴바 = document.querySelector('.메뉴바');
+  if (!메뉴바) return;
+  var bar = document.createElement('div');
+  bar.className = '공지바';
+  var 중복 = '<span>' + 문구 + '</span><span>' + 문구 + '</span>';
+  bar.innerHTML =
+    '<div class="공지라벨">📢&nbsp;공지</div>' +
+    '<div class="공지트랙래퍼"><div class="공지트랙">' + 중복 + '</div></div>';
+  메뉴바.insertAdjacentElement('afterend', bar);
+});
