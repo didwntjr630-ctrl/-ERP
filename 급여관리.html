@@ -41,6 +41,29 @@
     .주버튼.성공 { background:#16a34a; }
     .주버튼.성공:hover { background:#15803d; }
 
+    /* ── 입체 버튼 ── */
+    .btn-근태출력 {
+      padding:6px 16px; border-radius:7px; font-size:13px; font-weight:700;
+      font-family:inherit; cursor:pointer; letter-spacing:0.03em;
+      color:#fff; border:none; border-bottom:3px solid #0d2035;
+      background:linear-gradient(to bottom,#2560a0,#1a3a5c);
+      box-shadow:0 4px 10px rgba(26,58,92,.4),inset 0 1px 0 rgba(255,255,255,.18);
+      transition:all .1s ease;
+    }
+    .btn-근태출력:hover { background:linear-gradient(to bottom,#2e70b8,#1e4a72); box-shadow:0 6px 14px rgba(26,58,92,.45),inset 0 1px 0 rgba(255,255,255,.2); }
+    .btn-근태출력:active { transform:translateY(2px); border-bottom-width:1px; box-shadow:0 1px 4px rgba(26,58,92,.35); }
+
+    .btn-근태엑셀 {
+      padding:6px 16px; border-radius:7px; font-size:13px; font-weight:700;
+      font-family:inherit; cursor:pointer; letter-spacing:0.03em;
+      color:#fff; border:none; border-bottom:3px solid #0a4f26;
+      background:linear-gradient(to bottom,#1db954,#15803d);
+      box-shadow:0 4px 10px rgba(21,128,61,.4),inset 0 1px 0 rgba(255,255,255,.18);
+      transition:all .1s ease;
+    }
+    .btn-근태엑셀:hover { background:linear-gradient(to bottom,#22d160,#178f44); box-shadow:0 6px 14px rgba(21,128,61,.45),inset 0 1px 0 rgba(255,255,255,.2); }
+    .btn-근태엑셀:active { transform:translateY(2px); border-bottom-width:1px; box-shadow:0 1px 4px rgba(21,128,61,.35); }
+
     /* ── 직원 폼 오버레이 ── */
     .폼오버레이 { display:none; position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.4); z-index:900; align-items:center; justify-content:center; }
     .폼오버레이.열림 { display:flex; }
@@ -163,8 +186,8 @@
         <input type="month" id="출근년월" onchange="출근현황그리기()">
         <button class="소버튼" onclick="출근현황그리기()" style="margin-left:4px;">새로고침</button>
         <select id="근태표소속선택" style="margin-left:12px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;height:32px;"></select>
-        <button class="소버튼" onclick="근태표출력()" style="margin-left:4px;background:#1a3a5c;color:#fff;border-color:#1a3a5c;">근태표 출력</button>
-        <button class="소버튼" onclick="근태표엑셀()" style="margin-left:4px;background:#15803d;color:#fff;border-color:#15803d;">엑셀 다운로드</button>
+        <button class="btn-근태출력" onclick="근태표출력()" style="margin-left:8px;">근태표 출력</button>
+        <button class="btn-근태엑셀" onclick="근태표엑셀()" style="margin-left:6px;">엑셀 다운로드</button>
       </div>
       <div class="근태범례">
         <span style="color:#6b7280;font-weight:600;">범례:</span>
