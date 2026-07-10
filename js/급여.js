@@ -1095,8 +1095,34 @@ function _근태표테이블HTML(데이터, 직원들) {
       var 표시 = 종류표시[종류];
       if (!표시) { h += '<td style="border:1px solid #888;"></td>'; return; }
       if (종류 === '정상출근' || 종류 === '주말출근' || 종류 === '공휴일출근') 출근수++;
-      var 셀텍스트 = (종류 === '정상출근' && Number(기록.조퇴시간) > 0) ? '조퇴' : 표시.텍스트;
-      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;">' + 셀텍스트 + '</td>';
+
+      var 메인텍스트 = 표시.텍스트;
+      var 차감h = 0;
+      var 연장h = Number(기록.연장시간) || 0;
+
+      if (종류 === '정상출근') {
+        var _조퇴분 = Number(기록.조퇴시간) || 0;
+        if (_조퇴분 > 0) {
+          메인텍스트 = '조퇴';
+          차감h = 8 - _조퇴실근무h(_조퇴분, Number(기록.지각시간)||0, Number(기록.외출시간)||0);
+        } else {
+          차감h = (Number(기록.지각시간)||0)/60 + (Number(기록.외출시간)||0)/60;
+        }
+      } else if (종류 === '반차') {
+        차감h = 4;
+      } else if (종류 === '주말출근' || 종류 === '공휴일출근') {
+        차감h = 0;
+      }
+
+      var 부가 = '';
+      if (차감h > 0.01) {
+        부가 += '<span style="color:#dc2626;font-size:6px;font-weight:400;"> -' + (Math.round(차감h * 10) / 10) + 'h</span>';
+      }
+      if (연장h > 0) {
+        부가 += '<span style="color:#1d4ed8;font-size:6px;font-weight:400;"> +' + 연장h + 'h</span>';
+      }
+
+      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;white-space:nowrap;">' + 메인텍스트 + 부가 + '</td>';
     });
 
     h += '<td style="border:1px solid #888;text-align:center;font-weight:700;font-size:7.5px;">' + 출근수 + '</td></tr>';
@@ -1109,6 +1135,8 @@ function _근태표테이블HTML(데이터, 직원들) {
     '<span style="color:#dc2626;">× 결근</span>' +
     '<span style="color:#1d4ed8;">반차</span>' +
     '<span style="color:#1d4ed8;">연차</span>' +
+    '<span style="color:#dc2626;">-Xh 차감(빨강)</span>' +
+    '<span style="color:#1d4ed8;">+Xh 연장(파랑)</span>' +
     '<span style="color:#c2410c;">○ 주말/공휴일출근</span>' +
     '</div>';
   return h;
