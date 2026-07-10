@@ -191,7 +191,7 @@
               <th style="width:120px;">년월</th>
               <th>내용</th>
               <th style="width:150px;">금액 (원, 클레임은 -)</th>
-              <th style="width:50px;">삭제</th>
+              <th style="width:100px;">작업</th>
             </tr>
           </thead>
           <tbody id="수기항목테이블바디">
@@ -708,6 +708,30 @@
       }, 600);
     }
 
+    function _다음월(월str) {
+      if (!월str) return '';
+      var parts = 월str.split('-');
+      var y = parseInt(parts[0]);
+      var m = parseInt(parts[1]);
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+      return y + '-' + String(m).padStart(2, '0');
+    }
+
+    async function 수기항목이월(id) {
+      var 항목 = 수기항목목록.find(function(h) { return h.id === id; });
+      if (!항목) return;
+      var 다음월 = _다음월(항목.월);
+      var { data, error } = await 수파베이스.from('수기항목')
+        .insert({ 월: 다음월, 내용: 항목.내용, 금액: 항목.금액 })
+        .select().single();
+      if (error) { 알림표시('이월 실패: ' + error.message, '오류'); return; }
+      수기항목목록.push(data);
+      수기항목필터적용();
+      var 표시 = 다음월 ? 다음월.replace('-', '년 ') + '월' : '다음달';
+      알림표시(표시 + '로 이월되었습니다.', '성공');
+    }
+
     function 수기항목테이블그리기(표시목록) {
       var 목록 = 표시목록 !== undefined ? 표시목록 : 수기항목목록;
       var 바디 = document.getElementById('수기항목테이블바디');
@@ -729,7 +753,10 @@
           '<td><input type="number" value="' + (항목.금액||0) + '" ' +
             'style="width:130px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;' + 색 + '" ' +
             'oninput="수기항목변경(' + 항목.id + ',\'금액\',this.value);this.style.color=Number(this.value)<0?\'#e74c3c\':\'\'"></td>' +
-          '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="수기항목삭제(' + 항목.id + ')">삭제</button></td>';
+          '<td style="text-align:center; white-space:nowrap;">' +
+            '<button class="버튼 파랑 소형" onclick="수기항목이월(' + 항목.id + ')" title="다음달로 이월">이월</button> ' +
+            '<button class="버튼 빨강 소형" onclick="수기항목삭제(' + 항목.id + ')">삭제</button>' +
+          '</td>';
         바디.appendChild(행);
       });
     }
