@@ -652,38 +652,44 @@
       document.getElementById('합계VAT포함').textContent  = 총VAT.toLocaleString() + ' 원';
     }
 
-    /* ── 수기 항목 관리 ── */
-    var 수기항목키 = 'erp_수기항목';
+    /* ── 수기 항목 관리 (Supabase 실시간 동기화) ── */
     var 수기항목목록 = [];
+    var _수기항목디바운스 = {};
 
-    function 수기항목로드() {
-      try { 수기항목목록 = JSON.parse(localStorage.getItem(수기항목키)) || []; }
-      catch(e) { 수기항목목록 = []; }
+    async function 수기항목로드() {
+      var { data } = await 수파베이스.from('수기항목').select('*').order('id');
+      수기항목목록 = data || [];
       수기항목테이블그리기();
     }
 
-    function 수기항목저장() {
-      localStorage.setItem(수기항목키, JSON.stringify(수기항목목록));
-    }
-
-    function 수기항목추가() {
-      수기항목목록.push({ 월: '', 내용: '', 금액: 0, 비고: '' });
-      수기항목저장();
+    async function 수기항목추가() {
+      var { data, error } = await 수파베이스.from('수기항목')
+        .insert({ 월: '', 내용: '', 금액: 0 })
+        .select().single();
+      if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
+      수기항목목록.push(data);
       수기항목테이블그리기();
       var 행들 = document.querySelectorAll('#수기항목테이블바디 tr');
       var 마지막행 = 행들[행들.length - 1];
       if (마지막행) { var 첫입력 = 마지막행.querySelector('input'); if (첫입력) 첫입력.focus(); }
     }
 
-    function 수기항목삭제(i) {
-      수기항목목록.splice(i, 1);
-      수기항목저장();
+    async function 수기항목삭제(id) {
+      var { error } = await 수파베이스.from('수기항목').delete().eq('id', id);
+      if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
+      수기항목목록 = 수기항목목록.filter(function(h) { return h.id !== id; });
       수기항목테이블그리기();
     }
 
-    function 수기항목변경(i, field, value) {
-      수기항목목록[i][field] = field === '금액' ? (Number(value) || 0) : value;
-      수기항목저장();
+    function 수기항목변경(id, field, value) {
+      var 항목 = 수기항목목록.find(function(h) { return h.id === id; });
+      if (항목) 항목[field] = field === '금액' ? (Number(value) || 0) : value;
+      clearTimeout(_수기항목디바운스[id]);
+      _수기항목디바운스[id] = setTimeout(async function() {
+        var 업데이트 = {};
+        업데이트[field] = field === '금액' ? (Number(value) || 0) : value;
+        await 수파베이스.from('수기항목').update(업데이트).eq('id', id);
+      }, 600);
     }
 
     function 수기항목테이블그리기() {
@@ -693,20 +699,20 @@
         return;
       }
       바디.innerHTML = '';
-      수기항목목록.forEach(function(항목, i) {
+      수기항목목록.forEach(function(항목) {
         var 행 = document.createElement('tr');
         var 색 = 항목.금액 < 0 ? 'color:#e74c3c;' : '';
         행.innerHTML =
-          '<td><input type="month" data-field="월" value="' + (항목.월||'') + '" ' +
+          '<td><input type="month" value="' + (항목.월||'') + '" ' +
             'style="width:110px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
-            'onchange="수기항목변경(' + i + ',\'월\',this.value)"></td>' +
-          '<td><input type="text" data-field="내용" value="' + (항목.내용||'') + '" placeholder="운송료 / 클레임 등" ' +
+            'onchange="수기항목변경(' + 항목.id + ',\'월\',this.value)"></td>' +
+          '<td><input type="text" value="' + (항목.내용||'').replace(/"/g, '&quot;') + '" placeholder="운송료 / 클레임 등" ' +
             'style="width:100%;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
-            'oninput="수기항목변경(' + i + ',\'내용\',this.value)"></td>' +
-          '<td><input type="number" data-field="금액" value="' + (항목.금액||0) + '" ' +
+            'oninput="수기항목변경(' + 항목.id + ',\'내용\',this.value)"></td>' +
+          '<td><input type="number" value="' + (항목.금액||0) + '" ' +
             'style="width:130px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;' + 색 + '" ' +
-            'oninput="수기항목변경(' + i + ',\'금액\',this.value);this.style.color=Number(this.value)<0?\'#e74c3c\':\'\'"></td>' +
-          '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="수기항목삭제(' + i + ')">삭제</button></td>';
+            'oninput="수기항목변경(' + 항목.id + ',\'금액\',this.value);this.style.color=Number(this.value)<0?\'#e74c3c\':\'\'"></td>' +
+          '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="수기항목삭제(' + 항목.id + ')">삭제</button></td>';
         바디.appendChild(행);
       });
     }
@@ -740,6 +746,18 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: '매출기록' }, function() {
         clearTimeout(_매출타이머);
         _매출타이머 = setTimeout(데이터로드, 400);
+      })
+      .subscribe();
+
+    var _수기항목타이머 = null;
+    수파베이스.channel('수기항목실시간')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '수기항목' }, function() {
+        clearTimeout(_수기항목타이머);
+        _수기항목타이머 = setTimeout(function() {
+          var 포커스 = document.activeElement;
+          if (포커스 && 포커스.closest('#수기항목테이블')) return;
+          수기항목로드();
+        }, 400);
       })
       .subscribe();
 

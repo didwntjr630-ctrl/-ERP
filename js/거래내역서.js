@@ -87,9 +87,8 @@ function 거래내역서출력_업체(목록, 수신) {
     });
   });
 
-  // 수기 항목 (운송료·클레임 등)
-  var 수기목록 = [];
-  try { 수기목록 = JSON.parse(localStorage.getItem('erp_수기항목')) || []; } catch(e) {}
+  // 수기 항목 (운송료·클레임 등) — Supabase 메모리 변수 참조
+  var 수기목록 = (typeof 수기항목목록 !== 'undefined') ? 수기항목목록 : [];
   var 수기합계 = 0;
   수기목록.forEach(function(항목) {
     var 금액 = Number(항목.금액) || 0;
