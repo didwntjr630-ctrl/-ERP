@@ -474,13 +474,13 @@
       if (!날짜str) return '';
       var parts = 날짜str.split('-');
       var y = parseInt(parts[0]);
-      var m = parseInt(parts[1]);
-      var d = parseInt(parts[2]);
-      m += 1;
+      var m = parseInt(parts[1]) + 1;
       if (m > 12) { m = 1; y += 1; }
-      var 말일 = new Date(y, m, 0).getDate();
-      d = Math.min(d, 말일);
-      return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var d = new Date(y, m - 1, 1);
+      var 요일 = d.getDay();
+      if (요일 === 6) d.setDate(3);      // 토 → 월요일(+2)
+      else if (요일 === 0) d.setDate(2); // 일 → 월요일(+1)
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
     async function 매출이월(id) {
