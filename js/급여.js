@@ -224,10 +224,11 @@ function _근태표소속드롭다운갱신() {
   var sel = document.getElementById('근태표소속선택');
   if (!sel) return;
   var 소속목록 = [...new Set(_직원목록.map(function(e) { return e.소속 || '미분류'; }))].sort();
-  var 현재값 = sel.value;
-  sel.innerHTML = 소속목록.map(function(s) {
-    return '<option value="' + s + '"' + (s === 현재값 ? ' selected' : '') + '>' + s + '</option>';
-  }).join('');
+  var 현재값 = sel.value || '전체';
+  sel.innerHTML = '<option value="전체"' + ('전체' === 현재값 ? ' selected' : '') + '>전체</option>' +
+    소속목록.map(function(s) {
+      return '<option value="' + s + '"' + (s === 현재값 ? ' selected' : '') + '>' + s + '</option>';
+    }).join('');
 }
 
 async function 출근현황그리기() {
@@ -1031,10 +1032,10 @@ async function _근태표데이터준비() {
 
   var 공휴일set = new Set(_공휴일목록.map(function(h) { return h.날짜; }));
 
-  var 선택소속 = (document.getElementById('근태표소속선택') || {}).value || '';
-  var 직원들 = _직원목록.filter(function(e) {
-    return (e.소속 || '미분류') === 선택소속;
-  });
+  var 선택소속 = (document.getElementById('근태표소속선택') || {}).value || '전체';
+  var 직원들 = 선택소속 === '전체'
+    ? _직원목록.slice()
+    : _직원목록.filter(function(e) { return (e.소속 || '미분류') === 선택소속; });
 
   var 종류표시 = {
     '정상출근':  { 텍스트: '○', 색: '#15803d', 배경: '#dcfce7' },
@@ -1167,14 +1168,30 @@ function _근태표테이블HTML(데이터, 직원들) {
 
 async function 근태표출력() {
   var 데이터 = await _근태표데이터준비();
-  if (!데이터 || 데이터.직원들.length === 0) { 알림('해당 업체 직원이 없습니다.', '오류'); return; }
+  if (!데이터) return;
 
-  var 내용 = _근태표테이블HTML(데이터, 데이터.직원들);
+  var 내용 = '';
+  if (데이터.선택소속 === '전체') {
+    var 소속목록 = [...new Set(_직원목록.map(function(e) { return e.소속 || '미분류'; }))].sort();
+    var 첫번째 = true;
+    소속목록.forEach(function(소속) {
+      var 소속직원 = _직원목록.filter(function(e) { return (e.소속 || '미분류') === 소속; });
+      if (!소속직원.length) return;
+      if (!첫번째) 내용 += '<div style="page-break-before:always;"></div>';
+      첫번째 = false;
+      내용 += _근태표테이블HTML(Object.assign({}, 데이터, { 선택소속: 소속 }), 소속직원);
+    });
+    if (!내용) { 알림('직원이 없습니다.', '오류'); return; }
+  } else {
+    if (!데이터.직원들.length) { 알림('해당 업체 직원이 없습니다.', '오류'); return; }
+    내용 = _근태표테이블HTML(데이터, 데이터.직원들);
+  }
+
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<title>' + 데이터.년 + '년 ' + 데이터.월 + '월 근태표</title>' +
     '<style>' +
     '@page{size:A4 landscape;margin:6mm;}' +
-    '*{box-sizing:border-box;}' +
+    '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
     'body{font-family:"맑은 고딕","Apple SD Gothic Neo",sans-serif;font-size:7.5px;margin:0;padding:0;}' +
     '</style></head><body>' + 내용 + '</body></html>';
 
@@ -1187,9 +1204,23 @@ async function 근태표출력() {
 
 async function 근태표엑셀() {
   var 데이터 = await _근태표데이터준비();
-  if (!데이터 || 데이터.직원들.length === 0) { 알림('해당 업체 직원이 없습니다.', '오류'); return; }
+  if (!데이터) return;
 
-  var 내용 = _근태표테이블HTML(데이터, 데이터.직원들);
+  var 내용 = '';
+  var 파일명소속 = 데이터.선택소속;
+  if (데이터.선택소속 === '전체') {
+    var 소속목록e = [...new Set(_직원목록.map(function(e) { return e.소속 || '미분류'; }))].sort();
+    소속목록e.forEach(function(소속, i) {
+      var 소속직원 = _직원목록.filter(function(e) { return (e.소속 || '미분류') === 소속; });
+      if (!소속직원.length) return;
+      if (i > 0) 내용 += '<tr><td colspan="99" style="height:20px;"></td></tr>';
+      내용 += _근태표테이블HTML(Object.assign({}, 데이터, { 선택소속: 소속 }), 소속직원);
+    });
+    if (!내용) { 알림('직원이 없습니다.', '오류'); return; }
+  } else {
+    if (!데이터.직원들.length) { 알림('해당 업체 직원이 없습니다.', '오류'); return; }
+    내용 = _근태표테이블HTML(데이터, 데이터.직원들);
+  }
   var xls = '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
     'xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
     '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml>' +
@@ -1205,7 +1236,7 @@ async function 근태표엑셀() {
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 데이터.년 + '년_' + String(데이터.월).padStart(2,'0') + '월_근태표_' + 데이터.선택소속 + '.xls';
+  a.download = 데이터.년 + '년_' + String(데이터.월).padStart(2,'0') + '월_근태표_' + 파일명소속 + '.xls';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
