@@ -361,6 +361,12 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
     if (종류 === '정상출근') {
       var 지각분 = Number(기록.지각시간) || 0;
       var 외출분 = Number(기록.외출시간) || 0;
+      var 조퇴분 = Number(기록.조퇴시간) || 0;
+      var 실근무h = 조퇴분 > 0 ? _조퇴실근무h(조퇴분, 지각분, 외출분) : null;
+      // 라벨 동적 반영 (조퇴 있으면 실근무시간 표시)
+      if (실근무h !== null) {
+        html = html.replace('정상 8h', '조퇴 ' + 실근무h.toFixed(1) + 'h');
+      }
       html += '<div style="display:flex;align-items:center;gap:2px;">' +
         '<span style="font-size:10px;color:#ca8a04;">지각</span>' +
         '<input type="number" value="' + 지각분 + '" min="0" max="480" step="1" ' +
@@ -373,6 +379,12 @@ function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
         'style="width:36px;font-size:10px;border:1px solid #6ee7b7;border-radius:3px;padding:1px 3px;text-align:center;" ' +
         'onchange="외출시간변경(' + 기록.id + ',this.value)" title="외출 분">' +
         '<span style="font-size:10px;color:#059669;">분</span></div>';
+      html += '<div style="display:flex;align-items:center;gap:2px;">' +
+        '<span style="font-size:10px;color:#7c3aed;">조퇴</span>' +
+        '<input type="time" value="' + _분to시각문자열(조퇴분) + '" min="08:30" max="17:29" ' +
+        'style="width:60px;font-size:10px;border:1px solid #c4b5fd;border-radius:3px;padding:1px 2px;" ' +
+        'onchange="조퇴시간변경(' + 기록.id + ',this.value)" title="조퇴 시각 (빈칸=정상)">' +
+        '</div>';
     }
     html += '<div style="display:flex;align-items:center;gap:2px;">' +
       '<span style="font-size:10px;color:#6b7280;">연장</span>' +
@@ -409,6 +421,39 @@ async function 연장시간변경(기록id, 시간) {
   for (var key in _근태기록맵) {
     if (_근태기록맵[key].id === 기록id) {
       _근태기록맵[key].연장시간 = 연장;
+      break;
+    }
+  }
+}
+
+/* 조퇴 실근무 계산: 08:30 출근 기준, 12:00~13:00 점심 제외 */
+function _조퇴실근무h(조퇴분, 지각분, 외출분) {
+  var 기준시작 = 510;   // 08:30
+  var 점심시작 = 720;   // 12:00
+  var 점심끝   = 780;   // 13:00
+  var 실제시작 = 기준시작 + (지각분 || 0);
+  var 점심공제 = Math.max(0, Math.min(조퇴분, 점심끝) - Math.max(실제시작, 점심시작));
+  var 실근무분 = Math.max(0, 조퇴분 - 실제시작 - 점심공제);
+  return Math.max(0, 실근무분 / 60 - (외출분 || 0) / 60);
+}
+
+function _분to시각문자열(분) {
+  if (!분) return '';
+  return String(Math.floor(분 / 60)).padStart(2,'0') + ':' + String(분 % 60).padStart(2,'0');
+}
+
+async function 조퇴시간변경(기록id, 시각str) {
+  _마지막로컬변경 = Date.now();
+  var 분 = 0;
+  if (시각str) {
+    var p = 시각str.split(':');
+    분 = parseInt(p[0]) * 60 + parseInt(p[1]);
+  }
+  await 수파베이스.from('근태기록').update({ 조퇴시간: 분 || null }).eq('id', 기록id);
+  for (var key in _근태기록맵) {
+    if (_근태기록맵[key].id === 기록id) {
+      _근태기록맵[key].조퇴시간 = 분 || null;
+      _셀갱신(key.split('_')[0], key.split('_').slice(1).join('_'));
       break;
     }
   }
@@ -629,7 +674,12 @@ function _급여계산(직원, 기록들, 년, 월) {
     var 주말 = 주말인가(r.날짜);
 
     if (종류 === '정상출근') {
-      정규시간 += Math.max(0, 8 - (Number(r.지각시간)||0)/60 - (Number(r.외출시간)||0)/60);
+      var _조퇴분 = Number(r.조퇴시간) || 0;
+      if (_조퇴분 > 0) {
+        정규시간 += _조퇴실근무h(_조퇴분, Number(r.지각시간)||0, Number(r.외출시간)||0);
+      } else {
+        정규시간 += Math.max(0, 8 - (Number(r.지각시간)||0)/60 - (Number(r.외출시간)||0)/60);
+      }
       연장시간 += 연장;
       교통비일수 += 1;
     } else if (종류 === '주말출근') {
@@ -1045,7 +1095,8 @@ function _근태표테이블HTML(데이터, 직원들) {
       var 표시 = 종류표시[종류];
       if (!표시) { h += '<td style="border:1px solid #888;"></td>'; return; }
       if (종류 === '정상출근' || 종류 === '주말출근' || 종류 === '공휴일출근') 출근수++;
-      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;">' + 표시.텍스트 + '</td>';
+      var 셀텍스트 = (종류 === '정상출근' && Number(기록.조퇴시간) > 0) ? '조퇴' : 표시.텍스트;
+      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;">' + 셀텍스트 + '</td>';
     });
 
     h += '<td style="border:1px solid #888;text-align:center;font-weight:700;font-size:7.5px;">' + 출근수 + '</td></tr>';
