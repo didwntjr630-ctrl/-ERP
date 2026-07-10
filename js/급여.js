@@ -1123,9 +1123,12 @@ function _근태표테이블HTML(데이터, 직원들) {
         실근무 = 4;
       } else if (종류 === '주말출근' || 종류 === '공휴일출근') {
         실근무 = 8 + 연장h;
+      } else if (종류 === '연차') {
+        실근무 = 8;
       }
 
-      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 표시.색 + ';font-weight:700;font-size:7px;text-align:center;line-height:1.4;vertical-align:middle;">' + 메인텍스트 + '</td>';
+      var 셀색 = (메인텍스트 === '지각' || 메인텍스트 === '외출' || 메인텍스트 === '지각/외출' || 메인텍스트 === '조퇴') ? '#dc2626' : 표시.색;
+      h += '<td style="border:1px solid #888;background:' + 표시.배경 + ';color:' + 셀색 + ';font-weight:700;font-size:7px;text-align:center;line-height:1.4;vertical-align:middle;">' + 메인텍스트 + '</td>';
 
       var 시간text = '';
       if (종류 === '주말출근' || 종류 === '공휴일출근') {
