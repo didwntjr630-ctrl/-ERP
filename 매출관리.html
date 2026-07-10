@@ -735,6 +735,21 @@
       }, 600);
     }
 
+    function _수기금액포맷(v) {
+      var n = Number(String(v).replace(/,/g, ''));
+      return (!v && v !== 0) || isNaN(n) || n === 0 ? '' : n.toLocaleString('ko-KR');
+    }
+    function _수기금액입력(el, id) {
+      var raw = el.value.replace(/,/g, '');
+      el.style.color = Number(raw) < 0 ? '#e74c3c' : '';
+      수기항목변경(id, '금액', raw);
+    }
+    function _수기금액블러(el) {
+      var n = Number(el.value.replace(/,/g, ''));
+      el.value = (isNaN(n) || n === 0) ? '' : n.toLocaleString('ko-KR');
+      el.style.color = n < 0 ? '#e74c3c' : '';
+    }
+
     function 수기항목테이블그리기(표시목록) {
       var 목록 = 표시목록 !== undefined ? 표시목록 : 수기항목목록;
       var 바디 = document.getElementById('수기항목테이블바디');
@@ -746,6 +761,7 @@
       목록.forEach(function(항목) {
         var 행 = document.createElement('tr');
         var 색 = 항목.금액 < 0 ? 'color:#e74c3c;' : '';
+        var 금액표시 = _수기금액포맷(항목.금액);
         행.innerHTML =
           '<td><input type="month" value="' + (항목.월||'') + '" ' +
             'style="width:110px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
@@ -753,9 +769,9 @@
           '<td><input type="text" value="' + (항목.내용||'').replace(/"/g, '&quot;') + '" placeholder="운송료 / 클레임 등" ' +
             'style="width:100%;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
             'oninput="수기항목변경(' + 항목.id + ',\'내용\',this.value)"></td>' +
-          '<td><input type="number" value="' + (항목.금액||0) + '" ' +
+          '<td><input type="text" inputmode="numeric" value="' + 금액표시 + '" ' +
             'style="width:130px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;' + 색 + '" ' +
-            'oninput="수기항목변경(' + 항목.id + ',\'금액\',this.value);this.style.color=Number(this.value)<0?\'#e74c3c\':\'\'"></td>' +
+            'oninput="_수기금액입력(this,' + 항목.id + ')" onblur="_수기금액블러(this)"></td>' +
           '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="수기항목삭제(' + 항목.id + ')">삭제</button></td>';
         바디.appendChild(행);
       });
