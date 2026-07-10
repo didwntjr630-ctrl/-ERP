@@ -1095,7 +1095,9 @@ async function 근태표엑셀() {
     '<x:Name>' + 데이터.월 + '월 근태표</x:Name>' +
     '<x:WorksheetOptions><x:FitToPage/><x:FitWidth>1</x:FitWidth></x:WorksheetOptions>' +
     '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>' +
-    '</xml><![endif]--></head><body>' + 내용 + '</body></html>';
+    '</xml><![endif]-->' +
+    '<style>th,td{mso-number-format:"\\@";}</style>' +
+    '</head><body>' + 내용 + '</body></html>';
 
   var blob = new Blob(['﻿' + xls], { type: 'application/vnd.ms-excel;charset=utf-8' });
   var url = URL.createObjectURL(blob);
