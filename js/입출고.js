@@ -211,7 +211,7 @@ function 출하검사폼전환(공정) {
 function 공정별출발도착옵션갱신(공정) {
   if (공정 === '출하검사') {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.출하검사옵션.출발공정);
-    도착공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.출하검사옵션.도착공정);
+    도착공정목록 = APP_CONFIG.출하검사옵션.도착공정.slice();
   } else {
     출발공정목록 = [APP_CONFIG.외부공정.입고].concat(APP_CONFIG.공정목록);
     도착공정목록 = APP_CONFIG.공정목록.concat([APP_CONFIG.외부공정.출하]);
