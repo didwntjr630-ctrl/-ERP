@@ -449,6 +449,16 @@ async function 저장하기() {
 
 /* 다음 공정에 미처리(완료여부=false) 기록 자동 생성 */
 async function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자) {
+  // 같은 lot + 공정의 미처리 레코드가 이미 있으면 중복 생성 방지
+  var { data: 기존 } = await 수파베이스
+    .from('입출고기록')
+    .select('id')
+    .eq('lot번호', lot)
+    .eq('공정', 도착공정)
+    .eq('완료여부', false)
+    .limit(1);
+  if (기존 && 기존.length > 0) return;
+
   var 자동 = {
     품명:       품목.품명,
     품번:       품목.품번,
