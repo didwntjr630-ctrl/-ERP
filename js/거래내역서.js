@@ -211,7 +211,8 @@ function 거래내역서출력_업체(목록, 수신) {
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = '거래내역서_' + new Date().toISOString().slice(0, 10) + '.xls';
+  var 파일업체 = (수신 && 수신 !== '전체') ? 수신 + '_' : '';
+  a.download = 파일업체 + '거래내역서_' + new Date().toISOString().slice(0, 10) + '.xls';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
