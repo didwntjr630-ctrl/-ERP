@@ -68,6 +68,13 @@ function 잠금_UI표시(작업자명) {
   }
   var 폼 = document.getElementById('폼카드');
   if (폼) 폼.classList.add('작업잠금중');
+  var 저장btn = document.getElementById('저장버튼');
+  if (저장btn) {
+    저장btn.disabled = true;
+    저장btn.style.opacity = '0.45';
+    저장btn.style.cursor = 'not-allowed';
+    저장btn.title = 작업자명 + '님 작업 중';
+  }
 }
 
 function 잠금_UI해제() {
@@ -76,6 +83,13 @@ function 잠금_UI해제() {
   if (배너) 배너.style.display = 'none';
   var 폼 = document.getElementById('폼카드');
   if (폼) 폼.classList.remove('작업잠금중');
+  var 저장btn = document.getElementById('저장버튼');
+  if (저장btn) {
+    저장btn.disabled = false;
+    저장btn.style.opacity = '';
+    저장btn.style.cursor = '';
+    저장btn.title = '';
+  }
 }
 
 async function 작업시작알림() {
