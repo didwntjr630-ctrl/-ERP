@@ -433,6 +433,17 @@
       document.getElementById('갱신시각').textContent = '갱신: ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     }
 
+    /* ── 화·목 요일 카운터 ── */
+    function 화목개수(년, 월, 까지날) {
+      var 마지막 = 까지날 || new Date(년, 월, 0).getDate();
+      var cnt = 0;
+      for (var d = 1; d <= 마지막; d++) {
+        var 요일 = new Date(년, 월 - 1, d).getDay();
+        if (요일 === 2 || 요일 === 4) cnt++;
+      }
+      return cnt;
+    }
+
     /* ── 핵심 분석 ── */
     function 분석갱신() {
       var 기준키 = 월키(_기준년, _기준월);
@@ -468,14 +479,21 @@
       var 기준매출 = 월별합계[기준키] || 0;
       var 지난달매출 = 월별합계[지난달키] || 0;
       var 기준건수 = 월별건수[기준키] || 0;
+      var 기준달기록 = 전체데이터.filter(function(r) { return (r.출고일자 || '').startsWith(기준키); });
 
       /* ── KPI: 이번달 총 매출 ── */
       document.getElementById('kv_이번달').textContent = 만원표시(기준매출);
       document.getElementById('ks_이번달').textContent = '공급가액 기준 (' + 원표시(기준매출) + ')';
 
-      /* ── KPI: 전월 대비 ── */
+      /* ── KPI: 전월 대비 — 진행 중인 달은 '-' 표시 ── */
       var 전월카드 = document.getElementById('kpi_전월');
-      if (지난달매출 > 0) {
+      if (이번달여부) {
+        document.getElementById('kv_전월').textContent = '-';
+        document.getElementById('kv_전월').className = 'kpi값';
+        document.getElementById('ks_전월').textContent = '월 마감 후 확인 가능';
+        document.getElementById('ks_전월').className = 'kpi서브';
+        전월카드.className = 'kpi카드 중립';
+      } else if (지난달매출 > 0) {
         var 증감율 = ((기준매출 - 지난달매출) / 지난달매출) * 100;
         var 증감액 = 기준매출 - 지난달매출;
         var 상승여부 = 증감율 >= 0;
@@ -485,38 +503,47 @@
         document.getElementById('ks_전월').className = 'kpi서브 ' + (상승여부 ? '상승' : '하락');
         전월카드.className = 'kpi카드 ' + (상승여부 ? '강조' : '경고');
       } else {
-        document.getElementById('kv_전월').textContent = '비교 불가';
+        document.getElementById('kv_전월').textContent = '-';
         document.getElementById('kv_전월').className = 'kpi값';
         document.getElementById('ks_전월').textContent = '전월 데이터 없음';
+        document.getElementById('ks_전월').className = 'kpi서브';
         전월카드.className = 'kpi카드 중립';
       }
 
-      /* ── KPI: 예측 매출 ── */
+      /* ── KPI: 예측 매출 — 화·목 납품 기반 ── */
       var 기준달마지막 = new Date(_기준년, _기준월, 0).getDate();
       var 예측매출 = 0;
       var 예측서브 = '';
       if (이번달여부) {
         var 오늘날 = 오늘.getDate();
-        var 일평균 = 오늘날 > 0 ? 기준매출 / 오늘날 : 0;
-        예측매출 = Math.round(일평균 * 기준달마지막);
+        // 이번달 전체 화·목 수
+        var 전체화목 = 화목개수(_기준년, _기준월, 기준달마지막);
+        // 오늘까지의 화·목 수 (경과 납품 기회)
+        var 경과화목 = 화목개수(_기준년, _기준월, 오늘날);
+        // 실제 납품이 있었던 날짜 수 (중복 제거)
+        var 납품날짜셋 = {};
+        기준달기록.forEach(function(r) { if (r.출고일자) 납품날짜셋[r.출고일자] = true; });
+        var 실납품일수 = Object.keys(납품날짜셋).length;
+        // 납품일 평균 (실제 납품이 없었던 화·목도 있을 수 있으므로 실납품일수 기준)
+        var 회당평균 = 실납품일수 > 0 ? 기준매출 / 실납품일수 : 0;
+        // 잔여 화·목 수
+        var 잔여화목 = 전체화목 - 경과화목;
+        예측매출 = Math.round(기준매출 + 회당평균 * 잔여화목);
         var 예측증감 = 지난달매출 > 0 ? ((예측매출 - 지난달매출) / 지난달매출 * 100) : null;
-        if (예측증감 !== null) {
-          예측서브 = '전월 대비 ' + (예측증감 >= 0 ? '▲ +' : '▼ ') + 예측증감.toFixed(1) + '% 예상';
-          document.getElementById('ks_예측').className = 'kpi서브 ' + (예측증감 >= 0 ? '상승' : '하락');
-          document.getElementById('kpi_예측').className = 'kpi카드 ' + (예측증감 >= 0 ? '강조' : '경고');
-        } else {
-          예측서브 = '경과일(' + 오늘날 + '일) 기반 추산';
-        }
+        var 예측방향 = 예측증감 !== null ? ('전월 대비 ' + (예측증감 >= 0 ? '▲ +' : '▼ ') + Math.abs(예측증감).toFixed(1) + '% 예상') : '';
+        예측서브 = '잔여 화·목 ' + 잔여화목 + '회 기준' + (예측방향 ? ' · ' + 예측방향 : '');
+        document.getElementById('ks_예측').className = 예측증감 !== null ? ('kpi서브 ' + (예측증감 >= 0 ? '상승' : '하락')) : 'kpi서브';
+        document.getElementById('kpi_예측').className = 예측증감 !== null ? ('kpi카드 ' + (예측증감 >= 0 ? '강조' : '경고')) : 'kpi카드';
       } else {
         예측매출 = 기준매출;
         예측서브 = '완료된 달 (실적 = 예측)';
         document.getElementById('kpi_예측').className = 'kpi카드 중립';
+        document.getElementById('ks_예측').className = 'kpi서브';
       }
       document.getElementById('kv_예측').textContent = 만원표시(예측매출);
       document.getElementById('ks_예측').textContent = 예측서브;
 
       /* ── KPI: 납품 건수 ── */
-      var 기준달기록 = 전체데이터.filter(function(r) { return (r.출고일자 || '').startsWith(기준키); });
       document.getElementById('kv_건수').textContent = 기준건수 + '건';
       document.getElementById('ks_건수').textContent = '총 수량 ' + 기준달기록.reduce(function(s, r) { return s + (Number(r.출고수량) || 0); }, 0).toLocaleString() + ' EA';
 
