@@ -218,6 +218,22 @@ function 공정별출발도착옵션갱신(공정) {
   }
 }
 
+/* 코드 입력 시 공정명으로 자동 변환 (예: "2000" → "(주)보은금속") */
+function 공정코드변환(구분) {
+  var 필드 = document.getElementById(구분 + '공정');
+  var 입력 = (필드.value || '').trim();
+  if (!입력) return;
+  var 목록 = 구분 === '출발' ? 출발공정목록 : 도착공정목록;
+  var 매칭 = 목록.find(function(p) {
+    return APP_CONFIG.공정코드[p] === 입력;
+  });
+  if (매칭) {
+    필드.value = 매칭;
+    잔량미리보기();
+    폼임시저장();
+  }
+}
+
 function 공정팝업열기(구분) {
   var 목록 = 구분 === '출발' ? 출발공정목록 : 도착공정목록;
   var 데이터 = 목록.map(function(p) {
@@ -1183,11 +1199,18 @@ function 폼엔터핸들러(event, 현재id) {
     저장하기();
     return;
   }
+  // 현재 필드가 출발/도착공정이면 코드 변환 먼저 처리
+  if (현재id === '출발공정') 공정코드변환('출발');
+  else if (현재id === '도착공정') 공정코드변환('도착');
+
   var 다음el = document.getElementById(다음id);
   if (!다음el) return;
   다음el.focus();
-  if (다음id === '출발공정') 공정팝업열기('출발');
-  else if (다음id === '도착공정') 공정팝업열기('도착');
+  // 코드로 이미 값이 입력된 경우 팝업 열지 않음
+  var 출발값 = document.getElementById('출발공정').value;
+  var 도착값 = document.getElementById('도착공정').value;
+  if (다음id === '출발공정' && !출발값) 공정팝업열기('출발');
+  else if (다음id === '도착공정' && !도착값) 공정팝업열기('도착');
   else if (다음id === '담당자입력') 담당자조회팝업열기();
 }
 

@@ -136,9 +136,10 @@
       <!-- 2행: 출발공정 + 입고수량 → 도착공정 + 출고수량 + 불량수량 -->
       <div class="폼행 공정흐름행">
         <div class="입력그룹">
-          <label for="출발공정">출발 공정 <span style="color:#888; font-weight:normal;">(더블클릭 선택)</span></label>
-          <input type="text" id="출발공정" readonly placeholder="더블클릭하여 선택"
-                 ondblclick="공정팝업열기('출발')" style="cursor:pointer; background:#f9fbff;"
+          <label for="출발공정">출발 공정 <span style="color:#888; font-weight:normal;">(코드/이름 입력 또는 더블클릭)</span></label>
+          <input type="text" id="출발공정" placeholder="코드 입력 또는 더블클릭 선택"
+                 ondblclick="공정팝업열기('출발')"
+                 onblur="공정코드변환('출발')"
                  onkeydown="폼엔터핸들러(event,'출발공정')">
         </div>
 
@@ -154,9 +155,10 @@
         <div class="공정화살표">→</div>
 
         <div class="입력그룹">
-          <label for="도착공정">도착 공정 <span style="color:#888; font-weight:normal;">(더블클릭 선택)</span></label>
-          <input type="text" id="도착공정" readonly placeholder="더블클릭하여 선택"
-                 ondblclick="공정팝업열기('도착')" style="cursor:pointer; background:#f9fbff;"
+          <label for="도착공정">도착 공정 <span style="color:#888; font-weight:normal;">(코드/이름 입력 또는 더블클릭)</span></label>
+          <input type="text" id="도착공정" placeholder="코드 입력 또는 더블클릭 선택"
+                 ondblclick="공정팝업열기('도착')"
+                 onblur="공정코드변환('도착')"
                  onkeydown="폼엔터핸들러(event,'도착공정')">
         </div>
 
