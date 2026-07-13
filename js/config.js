@@ -101,11 +101,32 @@ function _공지바삽입(문구) {
   기준.insertAdjacentElement('afterend', bar);
 }
 
+function _공지바갱신(문구) {
+  var bar = document.querySelector('.공지바');
+  if (!문구 || !문구.trim()) {
+    if (bar) bar.style.display = 'none';
+    return;
+  }
+  if (!bar) { _공지바삽입(문구); return; }
+  bar.style.display = '';
+  var 중복 = '<span>' + 문구 + '</span><span>' + 문구 + '</span>';
+  bar.innerHTML = '<div class="공지트랙래퍼"><div class="공지트랙">' + 중복 + '</div></div>';
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
   try {
     if (typeof 수파베이스 !== 'undefined') {
       var { data } = await 수파베이스.from('설정').select('값').eq('키', '공지문구').maybeSingle();
       _공지바삽입(data && data.값 ? data.값 : APP_CONFIG.공지문구);
+
+      수파베이스.channel('공지실시간')
+        .on('postgres_changes', { event: '*', schema: 'public', table: '설정' }, function(payload) {
+          if ((payload.new && payload.new.키 === '공지문구') || (payload.old && payload.old.키 === '공지문구')) {
+            var 새문구 = payload.new ? (payload.new.값 || '') : '';
+            _공지바갱신(새문구);
+          }
+        })
+        .subscribe();
       return;
     }
   } catch(e) {}

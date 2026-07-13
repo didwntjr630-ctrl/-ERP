@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 손익현황</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .페이지헤더행 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .페이지헤더행 h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a3a5c;
+      letter-spacing: -0.2px;
+    }
+    .페이지헤더행 .기준일 {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .기준월선택 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #374151;
+    }
+    .기준월선택 input[type="month"] {
+      border: 1px solid #c0cfe0;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      height: 28px;
+      color: #1a3a5c;
+    }
+    .기준월선택 button {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+      border: 1px solid #c0cfe0;
+      background: #f8fafc;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #374151;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .기준월선택 button:hover { background: #e8f0fa; }
+    .기준월선택 button.활성 { background: #2a6496; color: #fff; border-color: #2a6496; }
+
+    /* KPI 타일 */
+    .kpi그리드 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .kpi카드 {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      border-left: 3px solid #2a6496;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 96px;
+    }
+    .kpi카드.강조 { border-left-color: #16a34a; }
+    .kpi카드.경고 { border-left-color: #dc2626; }
+    .kpi카드.중립 { border-left-color: #6b7280; }
+    .kpi라벨 {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .kpi값 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a3a5c;
+      letter-spacing: -0.5px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+    .kpi값.상승 { color: #16a34a; }
+    .kpi값.하락 { color: #dc2626; }
+    .kpi서브 {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    .kpi서브.상승 { color: #16a34a; }
+    .kpi서브.하락 { color: #dc2626; }
+
+    /* 차트 영역 */
+    .차트그리드2 {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .차트카드 {
+      background: #fff;
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .차트제목행 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .차트제목 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a3a5c;
+    }
+    .차트부제 {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    .차트래퍼 { position: relative; }
+    .로딩오버레이 {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.8);
+      font-size: 12px; color: #6b7280;
+      border-radius: 8px;
+    }
+
+    /* 예측 배지 */
+    .예측배지 {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #eff6ff;
+      color: #2a6496;
+    }
+    .예측배지.증가 { background: #f0fdf4; color: #16a34a; }
+    .예측배지.감소 { background: #fef2f2; color: #dc2626; }
+
+    /* 범례 */
+    .차트범례 {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .범례항목 { display: flex; align-items: center; gap: 5px; }
+    .범례점 { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    /* 납품처별 요약 테이블 */
+    .요약테이블 { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+    .요약테이블 th {
+      text-align: left; padding: 6px 8px;
+      background: #f8fafc; border-bottom: 1px solid #e5e7eb;
+      font-weight: 600; color: #374151; font-size: 11px;
+    }
+    .요약테이블 td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+    .요약테이블 tr:last-child td { border-bottom: none; }
+    .요약테이블 td.수치 { text-align: right; font-variant-numeric: tabular-nums; }
+    .요약테이블 tr:hover td { background: #f8fafc; }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="비활성">매입 관리</a>
+      <a class="비활성" href="매출관리.html">매출 관리</a>
+      <a class="비활성">거래처 관리</a>
+      <a class="비활성">인사 관리</a>
+      <a class="활성" href="손익현황.html">손익 현황</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+    <div id="알림박스" class="알림" style="position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:9999;min-width:260px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);font-size:14px;font-weight:600;"></div>
+
+    <!-- 페이지 헤더 -->
+    <div class="페이지헤더행">
+      <h2>손익 현황</h2>
+      <div class="기준월선택">
+        <span>기준 월</span>
+        <input type="month" id="기준월입력">
+        <button onclick="기준월변경()" class="활성">조회</button>
+        <button onclick="이번달로()" id="이번달버튼">이번달</button>
+        <span class="기준일" id="갱신시각"></span>
+      </div>
+    </div>
+
+    <!-- KPI 타일 -->
+    <div class="kpi그리드">
+      <div class="kpi카드" id="kpi_이번달">
+        <div class="kpi라벨">이번달 총 매출</div>
+        <div class="kpi값" id="kv_이번달">--</div>
+        <div class="kpi서브" id="ks_이번달">데이터 로딩 중...</div>
+      </div>
+      <div class="kpi카드 중립" id="kpi_전월">
+        <div class="kpi라벨">전월 대비</div>
+        <div class="kpi값" id="kv_전월">--</div>
+        <div class="kpi서브" id="ks_전월">--</div>
+      </div>
+      <div class="kpi카드" id="kpi_예측">
+        <div class="kpi라벨">월말 예측 매출</div>
+        <div class="kpi값" id="kv_예측">--</div>
+        <div class="kpi서브" id="ks_예측">경과일 기반 추산</div>
+      </div>
+      <div class="kpi카드 중립">
+        <div class="kpi라벨">이번달 납품 건수</div>
+        <div class="kpi값" id="kv_건수">--</div>
+        <div class="kpi서브" id="ks_건수">--</div>
+      </div>
+    </div>
+
+    <!-- 차트 1행: 월별 추이 + 품목별 -->
+    <div class="차트그리드2">
+      <div class="차트카드">
+        <div class="차트제목행">
+          <div>
+            <div class="차트제목">월별 매출 추이</div>
+            <div class="차트부제">최근 6개월 공급가액 합계</div>
+          </div>
+          <div class="차트범례">
+            <div class="범례항목">
+              <div class="범례점" style="background:#2a6496;"></div><span>기준월</span>
+            </div>
+            <div class="범례항목">
+              <div class="범례점" style="background:#93b9d8;"></div><span>이전 달</span>
+            </div>
+          </div>
+        </div>
+        <div class="차트래퍼" style="height:260px;">
+          <canvas id="월별차트"></canvas>
+          <div class="로딩오버레이" id="월별로딩">불러오는 중...</div>
+        </div>
+      </div>
+      <div class="차트카드">
+        <div class="차트제목행">
+          <div>
+            <div class="차트제목">품목별 매출 비중</div>
+            <div class="차트부제" id="품목차트부제">기준월 기준</div>
+          </div>
+        </div>
+        <div class="차트래퍼" style="height:260px;">
+          <canvas id="품목차트"></canvas>
+          <div class="로딩오버레이" id="품목로딩">불러오는 중...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차트 2행: 일별 실적 + 예측 -->
+    <div class="차트카드" style="margin-bottom:14px;">
+      <div class="차트제목행">
+        <div>
+          <div class="차트제목">일별 매출 실적 및 예측</div>
+          <div class="차트부제">기준월 일별 공급가액 — 잔여일은 일평균 기반 추산</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="차트범례">
+            <div class="범례항목"><div class="범례점" style="background:#2a6496;"></div><span>실적</span></div>
+            <div class="범례항목"><div class="범례점" style="background:#bfdbfe; border:1px solid #93c5fd;"></div><span>예측</span></div>
+          </div>
+          <span class="예측배지" id="예측배지">예측 준비 중</span>
+        </div>
+      </div>
+      <div class="차트래퍼" style="height:220px;">
+        <canvas id="일별차트"></canvas>
+        <div class="로딩오버레이" id="일별로딩">불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- 납품처별 / 품목별 요약 테이블 -->
+    <div class="차트그리드2" style="margin-bottom:14px;">
+      <div class="차트카드">
+        <div class="차트제목행">
+          <div class="차트제목">품목별 상세 실적</div>
+          <div class="차트부제" id="품목테이블부제">기준월</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="요약테이블" id="품목테이블">
+            <thead><tr><th>품명</th><th style="text-align:right;">수량 (EA)</th><th style="text-align:right;">공급가액</th><th style="text-align:right;">VAT포함</th></tr></thead>
+            <tbody id="품목테이블바디"><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="차트카드">
+        <div class="차트제목행">
+          <div class="차트제목">6개월 누적 요약</div>
+          <div class="차트부제">최근 6개월 합산 실적</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="요약테이블" id="누적테이블">
+            <thead><tr><th>월</th><th style="text-align:right;">건수</th><th style="text-align:right;">공급가액</th><th style="text-align:right;">전월대비</th></tr></thead>
+            <tbody id="누적테이블바디"><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /내용영역 -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+
+    /* ── 상태 ── */
+    var 전체데이터 = [];   // 매출기록 전체
+    var 수기데이터 = [];   // 수기항목
+    var _월별차트 = null, _품목차트 = null, _일별차트 = null;
+    var _기준년 = 0, _기준월 = 0;
+
+    /* ── 초기 기준월 = 이번달 ── */
+    (function() {
+      var 오늘 = new Date();
+      _기준년 = 오늘.getFullYear();
+      _기준월 = 오늘.getMonth() + 1;
+      document.getElementById('기준월입력').value = _기준년 + '-' + String(_기준월).padStart(2, '0');
+    })();
+
+    function 이번달로() {
+      var 오늘 = new Date();
+      _기준년 = 오늘.getFullYear();
+      _기준월 = 오늘.getMonth() + 1;
+      document.getElementById('기준월입력').value = _기준년 + '-' + String(_기준월).padStart(2, '0');
+      분석갱신();
+    }
+
+    function 기준월변경() {
+      var v = document.getElementById('기준월입력').value;
+      if (!v) return;
+      var parts = v.split('-');
+      _기준년 = parseInt(parts[0]);
+      _기준월 = parseInt(parts[1]);
+      분석갱신();
+    }
+
+    /* ── 유틸 ── */
+    function 공급가액(품명, 수량) {
+      var p = 품목목록.find(function(p) { return p.품명 === 품명; });
+      return (p ? (p.단가 || 0) : 0) * (Number(수량) || 0);
+    }
+
+    function 월키(년, 월) {
+      return 년 + '-' + String(월).padStart(2, '0');
+    }
+
+    function 이전N월키배열(년, 월, n) {
+      var 결과 = [];
+      for (var i = n - 1; i >= 0; i--) {
+        var d = new Date(년, 월 - 1 - i, 1);
+        결과.push(월키(d.getFullYear(), d.getMonth() + 1));
+      }
+      return 결과;
+    }
+
+    function 월라벨(키) {
+      return parseInt(키.split('-')[1]) + '월';
+    }
+
+    function 만원표시(v) {
+      if (v === 0) return '0원';
+      if (v >= 100000000) return (v / 100000000).toFixed(1) + '억원';
+      if (v >= 10000) return Math.round(v / 10000).toLocaleString() + '만원';
+      return v.toLocaleString() + '원';
+    }
+
+    function 원표시(v) {
+      return (v || 0).toLocaleString('ko-KR') + '원';
+    }
+
+    function 로딩숨김(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    /* ── 데이터 로드 ── */
+    async function 데이터로드() {
+      var res1 = 수파베이스.from('매출기록').select('*');
+      var res2 = 수파베이스.from('수기항목').select('*');
+      var [r1, r2] = await Promise.all([res1, res2]);
+      전체데이터 = r1.data || [];
+      수기데이터 = r2.data || [];
+      분석갱신();
+      document.getElementById('갱신시각').textContent = '갱신: ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* ── 핵심 분석 ── */
+    function 분석갱신() {
+      var 기준키 = 월키(_기준년, _기준월);
+      var 오늘 = new Date();
+      var 오늘키 = 월키(오늘.getFullYear(), 오늘.getMonth() + 1);
+      var 이번달여부 = 기준키 === 오늘키;
+
+      // 지난달 키
+      var 지난달d = new Date(_기준년, _기준월 - 2, 1);
+      var 지난달키 = 월키(지난달d.getFullYear(), 지난달d.getMonth() + 1);
+
+      // 최근 6개월 키 배열
+      var 최근월키배열 = 이전N월키배열(_기준년, _기준월, 6);
+
+      /* ── 월별 합계 계산 (매출기록 + 수기항목) ── */
+      var 월별합계 = {};
+      var 월별건수 = {};
+
+      전체데이터.forEach(function(r) {
+        var k = (r.출고일자 || '').slice(0, 7);
+        if (!k) return;
+        if (!월별합계[k]) { 월별합계[k] = 0; 월별건수[k] = 0; }
+        월별합계[k] += 공급가액(r.품명, r.출고수량);
+        월별건수[k]++;
+      });
+      수기데이터.forEach(function(r) {
+        var k = (r.월 || '').slice(0, 7);
+        if (!k) return;
+        if (!월별합계[k]) { 월별합계[k] = 0; 월별건수[k] = 0; }
+        월별합계[k] += (Number(r.금액) || 0);
+      });
+
+      var 기준매출 = 월별합계[기준키] || 0;
+      var 지난달매출 = 월별합계[지난달키] || 0;
+      var 기준건수 = 월별건수[기준키] || 0;
+
+      /* ── KPI: 이번달 총 매출 ── */
+      document.getElementById('kv_이번달').textContent = 만원표시(기준매출);
+      document.getElementById('ks_이번달').textContent = '공급가액 기준 (' + 원표시(기준매출) + ')';
+
+      /* ── KPI: 전월 대비 ── */
+      var 전월카드 = document.getElementById('kpi_전월');
+      if (지난달매출 > 0) {
+        var 증감율 = ((기준매출 - 지난달매출) / 지난달매출) * 100;
+        var 증감액 = 기준매출 - 지난달매출;
+        var 상승여부 = 증감율 >= 0;
+        document.getElementById('kv_전월').textContent = (상승여부 ? '▲ +' : '▼ ') + 증감율.toFixed(1) + '%';
+        document.getElementById('kv_전월').className = 'kpi값 ' + (상승여부 ? '상승' : '하락');
+        document.getElementById('ks_전월').textContent = (증감액 >= 0 ? '+' : '') + 원표시(증감액);
+        document.getElementById('ks_전월').className = 'kpi서브 ' + (상승여부 ? '상승' : '하락');
+        전월카드.className = 'kpi카드 ' + (상승여부 ? '강조' : '경고');
+      } else {
+        document.getElementById('kv_전월').textContent = '비교 불가';
+        document.getElementById('kv_전월').className = 'kpi값';
+        document.getElementById('ks_전월').textContent = '전월 데이터 없음';
+        전월카드.className = 'kpi카드 중립';
+      }
+
+      /* ── KPI: 예측 매출 ── */
+      var 기준달마지막 = new Date(_기준년, _기준월, 0).getDate();
+      var 예측매출 = 0;
+      var 예측서브 = '';
+      if (이번달여부) {
+        var 오늘날 = 오늘.getDate();
+        var 일평균 = 오늘날 > 0 ? 기준매출 / 오늘날 : 0;
+        예측매출 = Math.round(일평균 * 기준달마지막);
+        var 예측증감 = 지난달매출 > 0 ? ((예측매출 - 지난달매출) / 지난달매출 * 100) : null;
+        if (예측증감 !== null) {
+          예측서브 = '전월 대비 ' + (예측증감 >= 0 ? '▲ +' : '▼ ') + 예측증감.toFixed(1) + '% 예상';
+          document.getElementById('ks_예측').className = 'kpi서브 ' + (예측증감 >= 0 ? '상승' : '하락');
+          document.getElementById('kpi_예측').className = 'kpi카드 ' + (예측증감 >= 0 ? '강조' : '경고');
+        } else {
+          예측서브 = '경과일(' + 오늘날 + '일) 기반 추산';
+        }
+      } else {
+        예측매출 = 기준매출;
+        예측서브 = '완료된 달 (실적 = 예측)';
+        document.getElementById('kpi_예측').className = 'kpi카드 중립';
+      }
+      document.getElementById('kv_예측').textContent = 만원표시(예측매출);
+      document.getElementById('ks_예측').textContent = 예측서브;
+
+      /* ── KPI: 납품 건수 ── */
+      var 기준달기록 = 전체데이터.filter(function(r) { return (r.출고일자 || '').startsWith(기준키); });
+      document.getElementById('kv_건수').textContent = 기준건수 + '건';
+      document.getElementById('ks_건수').textContent = '총 수량 ' + 기준달기록.reduce(function(s, r) { return s + (Number(r.출고수량) || 0); }, 0).toLocaleString() + ' EA';
+
+      /* ── 차트 그리기 ── */
+      월별차트그리기(최근월키배열, 월별합계, 기준키);
+      품목차트그리기(기준키);
+      일별차트그리기(기준키, 기준달마지막, 이번달여부 ? 오늘.getDate() : 기준달마지막);
+      품목테이블그리기(기준키);
+      누적테이블그리기(최근월키배열, 월별합계, 월별건수);
+    }
+
+    /* ── 월별 막대 차트 ── */
+    function 월별차트그리기(키배열, 월별합계, 기준키) {
+      var 라벨 = 키배열.map(월라벨);
+      var 값 = 키배열.map(function(k) { return 월별합계[k] || 0; });
+      var 색 = 키배열.map(function(k) { return k === 기준키 ? '#2a6496' : '#93b9d8'; });
+
+      if (_월별차트) _월별차트.destroy();
+      로딩숨김('월별로딩');
+      _월별차트 = new Chart(document.getElementById('월별차트'), {
+        type: 'bar',
+        data: {
+          labels: 라벨,
+          datasets: [{
+            label: '공급가액',
+            data: 값,
+            backgroundColor: 색,
+            borderRadius: 4,
+            borderSkipped: false,
+            barPercentage: 0.6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return '  ' + 원표시(ctx.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(v) {
+                  if (v === 0) return '0';
+                  if (v >= 10000000) return (v / 10000000).toFixed(0) + '천만';
+                  if (v >= 1000000) return (v / 1000000).toFixed(0) + '백만';
+                  return (v / 10000).toFixed(0) + '만';
+                },
+                font: { size: 11 },
+                color: '#6b7280',
+                maxTicksLimit: 5,
+              },
+              grid: { color: '#f3f4f6' },
+              border: { display: false },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 12 }, color: '#374151' },
+              border: { display: false },
+            }
+          }
+        }
+      });
+    }
+
+    /* ── 품목별 도넛 차트 ── */
+    function 품목차트그리기(기준키) {
+      var 품목합계 = {};
+      전체데이터.filter(function(r) {
+        return (r.출고일자 || '').startsWith(기준키);
+      }).forEach(function(r) {
+        var g = 공급가액(r.품명, r.출고수량);
+        if (!품목합계[r.품명]) 품목합계[r.품명] = 0;
+        품목합계[r.품명] += g;
+      });
+
+      var 항목들 = Object.keys(품목합계).sort(function(a, b) { return 품목합계[b] - 품목합계[a]; });
+      var 색배열 = ['#1e4a7a', '#2a6496', '#3b7ec0', '#6fa8d4', '#93c5fd', '#c7ddf4'];
+
+      var 라벨 = 항목들.slice(0, 5);
+      var 값 = 라벨.map(function(k) { return 품목합계[k]; });
+      if (항목들.length > 5) {
+        라벨.push('기타');
+        값.push(항목들.slice(5).reduce(function(s, k) { return s + 품목합계[k]; }, 0));
+      }
+
+      document.getElementById('품목차트부제').textContent = 기준키.replace('-', '년 ').replace(/^(\d+)년 0?(\d+)$/, '$1년 $2월') + ' 기준';
+
+      if (_품목차트) _품목차트.destroy();
+      로딩숨김('품목로딩');
+
+      if (값.length === 0) {
+        var ctx = document.getElementById('품목차트').getContext('2d');
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.font = '13px Malgun Gothic';
+        ctx.fillStyle = '#9ca3af';
+        ctx.textAlign = 'center';
+        ctx.fillText('해당 월 데이터 없음', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        return;
+      }
+
+      _품목차트 = new Chart(document.getElementById('품목차트'), {
+        type: 'doughnut',
+        data: {
+          labels: 라벨,
+          datasets: [{
+            data: 값,
+            backgroundColor: 색배열.slice(0, 라벨.length),
+            borderWidth: 2,
+            borderColor: '#fff',
+            hoverOffset: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '58%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 10, family: '맑은 고딕' },
+                padding: 10,
+                boxWidth: 12,
+                boxHeight: 12,
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                  var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                  return '  ' + 원표시(ctx.parsed) + ' (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* ── 일별 실적 + 예측 차트 ── */
+    function 일별차트그리기(기준키, 마지막날, 기준오늘날) {
+      var 라벨 = [], 실적값 = [], 예측값 = [];
+      var 오늘 = new Date();
+
+      for (var d = 1; d <= 마지막날; d++) {
+        var 날짜str = 기준키 + '-' + String(d).padStart(2, '0');
+        라벨.push(d + '일');
+
+        var 당일 = 전체데이터.filter(function(r) { return r.출고일자 === 날짜str; })
+          .reduce(function(s, r) { return s + 공급가액(r.품명, r.출고수량); }, 0);
+        수기데이터.filter(function(r) { return (r.월 || '') === 기준키; }).forEach(function(r) {
+          // 수기항목은 월 전체에 분산 표시 — 마지막날에만 합산
+          if (d === 기준오늘날) 당일 += (Number(r.금액) || 0);
+        });
+
+        if (d <= 기준오늘날) {
+          실적값.push(당일);
+          예측값.push(null);
+        } else {
+          // 잔여일 예측: 실적일평균 사용
+          실적값.push(null);
+          var 실적합 = 실적값.filter(function(v) { return v !== null; }).reduce(function(a, b) { return a + b; }, 0);
+          var 실적일수 = 실적값.filter(function(v) { return v !== null && v > 0; }).length;
+          var 일평균 = 실적일수 > 0 ? 실적합 / 실적일수 : 0;
+          예측값.push(Math.round(일평균));
+        }
+      }
+
+      // 예측 배지
+      var 실적합계 = 실적값.reduce(function(s, v) { return s + (v || 0); }, 0);
+      var 예측합계 = 예측값.reduce(function(s, v) { return s + (v || 0); }, 0);
+      var 배지 = document.getElementById('예측배지');
+      if (기준오늘날 >= 마지막날) {
+        배지.textContent = '완료된 달';
+        배지.className = '예측배지';
+      } else {
+        var 잔여예측 = 예측합계;
+        배지.textContent = '잔여 예측 ' + 만원표시(잔여예측);
+        배지.className = '예측배지 ' + (잔여예측 > 0 ? '증가' : '');
+      }
+
+      if (_일별차트) _일별차트.destroy();
+      로딩숨김('일별로딩');
+      _일별차트 = new Chart(document.getElementById('일별차트'), {
+        type: 'bar',
+        data: {
+          labels: 라벨,
+          datasets: [
+            {
+              label: '실적',
+              data: 실적값,
+              backgroundColor: '#2a6496',
+              borderRadius: 3,
+              borderSkipped: false,
+              barPercentage: 0.7,
+            },
+            {
+              label: '예측',
+              data: 예측값,
+              backgroundColor: 'rgba(191, 219, 254, 0.7)',
+              borderColor: '#93c5fd',
+              borderWidth: 1,
+              borderRadius: 3,
+              borderSkipped: false,
+              barPercentage: 0.7,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  var v = ctx.parsed.y;
+                  if (v === null || v === undefined) return null;
+                  return (ctx.dataset.label === '예측' ? '  예측: ' : '  실적: ') + 원표시(v);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(v) {
+                  if (v === 0) return '0';
+                  if (v >= 1000000) return (v / 1000000).toFixed(0) + '백만';
+                  return (v / 10000).toFixed(0) + '만';
+                },
+                font: { size: 10 },
+                color: '#6b7280',
+                maxTicksLimit: 4,
+              },
+              grid: { color: '#f3f4f6' },
+              border: { display: false },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 9 }, color: '#9ca3af', maxRotation: 0 },
+              border: { display: false },
+            }
+          }
+        }
+      });
+    }
+
+    /* ── 품목별 상세 테이블 ── */
+    function 품목테이블그리기(기준키) {
+      var 품목합계 = {};
+      var 품목수량 = {};
+      전체데이터.filter(function(r) {
+        return (r.출고일자 || '').startsWith(기준키);
+      }).forEach(function(r) {
+        var g = 공급가액(r.품명, r.출고수량);
+        if (!품목합계[r.품명]) { 품목합계[r.품명] = 0; 품목수량[r.품명] = 0; }
+        품목합계[r.품명] += g;
+        품목수량[r.품명] += (Number(r.출고수량) || 0);
+      });
+
+      var 항목들 = Object.keys(품목합계).sort(function(a, b) { return 품목합계[b] - 품목합계[a]; });
+      var 바디 = document.getElementById('품목테이블바디');
+      document.getElementById('품목테이블부제').textContent = 기준키.replace('-', '년 ').replace(/(\d+)년 0?(\d+)/, '$1년 $2월') + ' 기준';
+
+      if (항목들.length === 0) {
+        바디.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:16px;">해당 월 데이터 없음</td></tr>';
+        return;
+      }
+      var 합계수량 = 0, 합계공급 = 0;
+      var html = '';
+      항목들.forEach(function(품명) {
+        var 수량 = 품목수량[품명];
+        var 공급 = 품목합계[품명];
+        var vat = Math.round(공급 * 1.1);
+        합계수량 += 수량;
+        합계공급 += 공급;
+        html += '<tr>' +
+          '<td>' + 품명 + '</td>' +
+          '<td class="수치">' + 수량.toLocaleString() + '</td>' +
+          '<td class="수치">' + 원표시(공급) + '</td>' +
+          '<td class="수치">' + 원표시(vat) + '</td>' +
+          '</tr>';
+      });
+      html += '<tr style="font-weight:700;background:#f8fafc;">' +
+        '<td>합계</td>' +
+        '<td class="수치">' + 합계수량.toLocaleString() + '</td>' +
+        '<td class="수치">' + 원표시(합계공급) + '</td>' +
+        '<td class="수치">' + 원표시(Math.round(합계공급 * 1.1)) + '</td>' +
+        '</tr>';
+      바디.innerHTML = html;
+    }
+
+    /* ── 6개월 누적 요약 테이블 ── */
+    function 누적테이블그리기(키배열, 월별합계, 월별건수) {
+      var html = '';
+      for (var i = 0; i < 키배열.length; i++) {
+        var k = 키배열[i];
+        var 금액 = 월별합계[k] || 0;
+        var 건수 = 월별건수[k] || 0;
+        var 이전k = i > 0 ? 키배열[i - 1] : null;
+        var 이전금액 = 이전k ? (월별합계[이전k] || 0) : null;
+        var 증감html = '';
+        if (이전금액 !== null && 이전금액 > 0) {
+          var 율 = ((금액 - 이전금액) / 이전금액 * 100);
+          var 색 = 율 >= 0 ? '#16a34a' : '#dc2626';
+          증감html = '<span style="color:' + 색 + ';font-weight:600;">' + (율 >= 0 ? '▲+' : '▼') + 율.toFixed(1) + '%</span>';
+        } else if (i === 0) {
+          증감html = '<span style="color:#9ca3af;">—</span>';
+        } else {
+          증감html = '<span style="color:#9ca3af;">비교불가</span>';
+        }
+        var 강조 = k === (월키(_기준년, _기준월)) ? 'style="background:#eff6ff;"' : '';
+        html += '<tr ' + 강조 + '>' +
+          '<td>' + 월라벨(k) + '</td>' +
+          '<td class="수치">' + 건수 + '건</td>' +
+          '<td class="수치">' + 만원표시(금액) + '</td>' +
+          '<td class="수치">' + 증감html + '</td>' +
+          '</tr>';
+      }
+      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">데이터 없음</td></tr>';
+    }
+
+    /* ── 실시간 갱신 ── */
+    수파베이스.channel('손익실시간')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '매출기록' }, function() {
+        데이터로드();
+      })
+      .subscribe();
+
+    /* ── 시작 ── */
+    데이터로드();
+  </script>
+</body>
+</html>
