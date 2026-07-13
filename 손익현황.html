@@ -652,6 +652,21 @@
         return;
       }
 
+      var _도넛그림자 = {
+        id: 'donutShadow',
+        beforeDatasetsDraw: function(chart) {
+          var ctx = chart.ctx;
+          ctx.save();
+          ctx.shadowColor = 'rgba(0,0,0,0.22)';
+          ctx.shadowBlur = 12;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 5;
+        },
+        afterDatasetsDraw: function(chart) {
+          chart.ctx.restore();
+        }
+      };
+
       _품목차트 = new Chart(document.getElementById('품목차트'), {
         type: 'doughnut',
         data: {
@@ -659,15 +674,15 @@
           datasets: [{
             data: 값,
             backgroundColor: 색배열.slice(0, 라벨.length),
-            borderWidth: 2,
+            borderWidth: 3,
             borderColor: '#fff',
-            hoverOffset: 6,
+            hoverOffset: 10,
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '58%',
+          cutout: '60%',
           plugins: {
             legend: {
               position: 'bottom',
@@ -688,7 +703,8 @@
               }
             }
           }
-        }
+        },
+        plugins: [_도넛그림자]
       });
     }
 
