@@ -87,8 +87,18 @@ function 거래내역서출력_업체(목록, 수신) {
     });
   });
 
-  // 수기 항목 (운송료·클레임 등) — Supabase 메모리 변수 참조
-  var 수기목록 = (typeof 수기항목목록 !== 'undefined') ? 수기항목목록 : [];
+  // 수기 항목 (운송료·클레임 등) — 조회 기간의 월과 일치하는 것만 포함
+  var 전체수기 = (typeof 수기항목목록 !== 'undefined') ? 수기항목목록 : [];
+  // 목록의 출고일자에서 사용된 월(YYYY-MM) 집합 추출
+  var 기간월Set = {};
+  목록.forEach(function(h) {
+    var 월키 = (h.출고일자 || '').slice(0, 7);
+    if (월키) 기간월Set[월키] = true;
+  });
+  var 수기목록 = 전체수기.filter(function(항목) {
+    var 항목월 = (항목.월 || '').slice(0, 7);
+    return 항목월 && 기간월Set[항목월];
+  });
   var 수기합계 = 0;
   수기목록.forEach(function(항목) {
     var 금액 = Number(항목.금액) || 0;
