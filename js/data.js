@@ -72,16 +72,23 @@ async function 데이터불러오기() {
   return data || [];
 }
 
-/* 새 항목 저장 */
+/* 새 항목 저장 (출고번호 중복 시 최대 3회 재시도) */
 async function 데이터저장(새항목) {
-  새항목.출고번호 = await 출고번호생성();
-  var { data, error } = await 수파베이스
-    .from(테이블명)
-    .insert(새항목)
-    .select()
-    .single();
-  if (error) { console.error('데이터저장 오류:', error); 알림표시('저장 실패: ' + error.message, '오류'); return null; }
-  return data;
+  for (var 시도 = 0; 시도 < 3; 시도++) {
+    새항목.출고번호 = await 출고번호생성();
+    var { data, error } = await 수파베이스
+      .from(테이블명)
+      .insert(새항목)
+      .select()
+      .single();
+    if (!error) return data;
+    if (error.code === '23505') continue; // 출고번호 중복 → 재시도
+    console.error('데이터저장 오류:', error);
+    알림표시('저장 실패: ' + error.message, '오류');
+    return null;
+  }
+  알림표시('출고번호 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', '오류');
+  return null;
 }
 
 /* 특정 항목 수정 — 실제 수정된 행이 있으면 true, 0건이면 false */
