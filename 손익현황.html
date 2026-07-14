@@ -57,48 +57,100 @@
     /* KPI 타일 */
     .kpi그리드 {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .kpi그리드2 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 14px;
       margin-bottom: 16px;
     }
     .kpi카드 {
       background: #fff;
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 16px 18px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-      border-left: 3px solid #2a6496;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      border: 1px solid #e8eef5;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      min-height: 96px;
+      gap: 10px;
+      min-height: 116px;
+      position: relative;
+      overflow: hidden;
     }
-    .kpi카드.강조 { border-left-color: #16a34a; }
-    .kpi카드.경고 { border-left-color: #dc2626; }
-    .kpi카드.중립 { border-left-color: #6b7280; }
+    .kpi카드::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: #2a6496;
+      border-radius: 12px 12px 0 0;
+    }
+    .kpi카드.강조::before { background: #16a34a; }
+    .kpi카드.경고::before { background: #dc2626; }
+    .kpi카드.중립::before { background: #6b7280; }
+    .kpi카드.주황::before { background: #ea7c1a; }
+    .kpi카드.히어로 {
+      background: linear-gradient(155deg, #0d2b47 0%, #123a63 50%, #1a4a7a 100%);
+      border-color: rgba(57,135,229,0.35);
+      box-shadow: 0 4px 20px rgba(13,43,71,0.35), 0 0 0 1px rgba(57,135,229,0.18);
+    }
+    .kpi카드.히어로::before { display: none; }
+    .kpi아이콘 {
+      width: 32px; height: 32px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .kpi아이콘 svg { width: 17px; height: 17px; }
+    .kpi아이콘.파랑  { background: rgba(42,100,150,0.12); color: #2a6496; }
+    .kpi아이콘.회색  { background: rgba(107,114,128,0.12); color: #6b7280; }
+    .kpi아이콘.노랑  { background: rgba(234,124,26,0.12); color: #ea7c1a; }
+    .kpi아이콘.초록  { background: rgba(22,163,74,0.12);  color: #16a34a; }
+    .kpi아이콘.빨강  { background: rgba(220,38,38,0.12);  color: #dc2626; }
+    .kpi아이콘.남색  { background: rgba(255,255,255,0.15); color: #eaf3ff; }
     .kpi라벨 {
       font-size: 11px;
       font-weight: 600;
       color: #6b7280;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
     }
+    .kpi카드.히어로 .kpi라벨 { color: #9db9dd; }
     .kpi값 {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 700;
       color: #1a3a5c;
       letter-spacing: -0.5px;
       font-variant-numeric: tabular-nums;
-      line-height: 1.2;
+      line-height: 1.15;
+    }
+    .kpi카드.히어로 .kpi값 {
+      background: linear-gradient(120deg, #ffffff, #cfe6ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-size: 23px;
     }
     .kpi값.상승 { color: #16a34a; }
     .kpi값.하락 { color: #dc2626; }
     .kpi서브 {
       font-size: 11px;
       color: #9ca3af;
-      margin-top: 2px;
+      margin-top: -4px;
     }
+    .kpi카드.히어로 .kpi서브 { color: #9db9dd; }
     .kpi서브.상승 { color: #16a34a; }
     .kpi서브.하락 { color: #dc2626; }
+    .kpi델타 {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+      width: fit-content; margin-top: -2px;
+    }
+    .kpi델타.상승 { color: #16a34a; background: rgba(22,163,74,0.10); }
+    .kpi델타.하락 { color: #dc2626; background: rgba(220,38,38,0.10); }
+    .kpi델타.중립 { color: #6b7280; background: rgba(107,114,128,0.08); }
 
     /* 차트 영역 */
     .차트그리드2 {
@@ -226,37 +278,81 @@
       </div>
     </div>
 
-    <!-- KPI 타일 -->
+    <!-- KPI 타일 1행 -->
     <div class="kpi그리드">
       <div class="kpi카드" id="kpi_이번달">
-        <div class="kpi라벨">이번달 총 매출</div>
-        <div class="kpi값" id="kv_이번달">--</div>
+        <div class="kpi아이콘 파랑">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">이번달 총 매출</div>
+          <div class="kpi값" id="kv_이번달">--</div>
+        </div>
         <div class="kpi서브" id="ks_이번달">데이터 로딩 중...</div>
       </div>
       <div class="kpi카드 중립" id="kpi_전월">
-        <div class="kpi라벨">전월 대비</div>
-        <div class="kpi값" id="kv_전월">--</div>
+        <div class="kpi아이콘 회색">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">전월 대비</div>
+          <div class="kpi값" id="kv_전월">--</div>
+        </div>
         <div class="kpi서브" id="ks_전월">--</div>
       </div>
-      <div class="kpi카드" id="kpi_예측">
-        <div class="kpi라벨">월말 예측 매출</div>
-        <div class="kpi값" id="kv_예측">--</div>
+      <div class="kpi카드 주황" id="kpi_예측">
+        <div class="kpi아이콘 노랑">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">월말 예측 매출</div>
+          <div class="kpi값" id="kv_예측">--</div>
+        </div>
         <div class="kpi서브" id="ks_예측">경과일 기반 추산</div>
       </div>
       <div class="kpi카드 중립">
-        <div class="kpi라벨">이번달 납품 건수</div>
-        <div class="kpi값" id="kv_건수">--</div>
+        <div class="kpi아이콘 회색">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 8l9-5 9 5"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">이번달 납품 건수</div>
+          <div class="kpi값" id="kv_건수">--</div>
+        </div>
         <div class="kpi서브" id="ks_건수">--</div>
       </div>
+    </div>
+
+    <!-- KPI 타일 2행 -->
+    <div class="kpi그리드2">
       <div class="kpi카드 경고" id="kpi_비용">
-        <div class="kpi라벨">이번달 비용 합계</div>
-        <div class="kpi값" id="kv_비용">--</div>
-        <div class="kpi서브" id="ks_비용">매입·지출 기준</div>
+        <div class="kpi아이콘 빨강">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">이번달 비용 합계</div>
+          <div class="kpi값" id="kv_비용">--</div>
+        </div>
+        <div class="kpi서브" id="ks_비용">매입지출 기준</div>
       </div>
-      <div class="kpi카드" id="kpi_순이익">
-        <div class="kpi라벨">이번달 순이익</div>
-        <div class="kpi값" id="kv_순이익">--</div>
-        <div class="kpi서브" id="ks_순이익">매출 - 비용</div>
+      <div class="kpi카드 강조" id="kpi_급여">
+        <div class="kpi아이콘 초록">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">이번달 급여 합계</div>
+          <div class="kpi값" id="kv_급여">--</div>
+        </div>
+        <div class="kpi서브" id="ks_급여">직원 실수령액 합계</div>
+      </div>
+      <div class="kpi카드 히어로" id="kpi_순이익">
+        <div class="kpi아이콘 남색">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l2.6 6.6L22 9.2l-5.3 4.5L18.2 21 12 17l-6.2 4 1.5-7.3L2 9.2l7.4-.6L12 2z"/></svg>
+        </div>
+        <div>
+          <div class="kpi라벨">이번달 순이익</div>
+          <div class="kpi값" id="kv_순이익">--</div>
+        </div>
+        <div class="kpi서브" id="ks_순이익">매출 − 비용 − 급여</div>
       </div>
     </div>
 
@@ -366,6 +462,7 @@
     var 전체데이터 = [];   // 매출기록 전체
     var 수기데이터 = [];   // 수기항목
     var 매입지출데이터 = []; // 매입지출
+    var 급여데이터 = [];    // 급여결과
     var _월별차트 = null, _품목차트 = null, _일별차트 = null;
     var _기준년 = 0, _기준월 = 0;
 
@@ -449,10 +546,12 @@
       var res1 = 수파베이스.from('매출기록').select('*');
       var res2 = 수파베이스.from('수기항목').select('*');
       var res3 = 수파베이스.from('매입지출').select('*');
-      var [r1, r2, r3] = await Promise.all([res1, res2, res3]);
+      var res4 = 수파베이스.from('급여결과').select('년월, 실수령액');
+      var [r1, r2, r3, r4] = await Promise.all([res1, res2, res3, res4]);
       전체데이터 = r1.data || [];
       수기데이터 = r2.data || [];
       매입지출데이터 = r3.data || [];
+      급여데이터 = r4.data || [];
       분석갱신();
       document.getElementById('갱신시각').textContent = '갱신: ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     }
@@ -573,18 +672,22 @@
 
       /* ── KPI: 이번달 비용 합계 ── */
       var 기준비용 = 매입지출데이터.reduce(function(s, h) {
-        return (h.월 || '').startsWith(기준키) ? s + (Number(h.금액) || 0) : s;
+        return (h.월 || '').slice(0, 7) === 기준키 ? s + (Number(h.금액) || 0) : s;
       }, 0);
       document.getElementById('kv_비용').textContent = 만원표시(기준비용);
-      document.getElementById('ks_비용').textContent = '매입·지출 기준 (' + 원표시(기준비용) + ')';
+      document.getElementById('ks_비용').textContent = '매입지출 기준 (' + 원표시(기준비용) + ')';
+
+      /* ── KPI: 이번달 급여 합계 ── */
+      var 기준급여 = 급여데이터.reduce(function(s, h) {
+        return (h.년월 || '') === 기준키 ? s + (Number(h.실수령액) || 0) : s;
+      }, 0);
+      document.getElementById('kv_급여').textContent = 만원표시(기준급여);
+      document.getElementById('ks_급여').textContent = '직원 실수령액 합계 (' + 원표시(기준급여) + ')';
 
       /* ── KPI: 순이익 ── */
-      var 순이익 = 기준매출 - 기준비용;
-      var 순이익카드 = document.getElementById('kpi_순이익');
+      var 순이익 = 기준매출 - 기준비용 - 기준급여;
       document.getElementById('kv_순이익').textContent = 만원표시(순이익);
-      document.getElementById('kv_순이익').className = 'kpi값 ' + (순이익 >= 0 ? '상승' : '하락');
-      document.getElementById('ks_순이익').textContent = '매출 - 비용 (' + 원표시(순이익) + ')';
-      순이익카드.className = 'kpi카드 ' + (순이익 >= 0 ? '강조' : '경고');
+      document.getElementById('ks_순이익').textContent = '매출 − 비용 − 급여 (' + 원표시(순이익) + ')';
 
       /* ── 차트 그리기 ── */
       월별차트그리기(최근월키배열, 월별합계, 기준키);
