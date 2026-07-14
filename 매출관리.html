@@ -188,6 +188,7 @@
         <table id="수기항목테이블">
           <thead>
             <tr>
+              <th style="width:130px;">납품처</th>
               <th style="width:120px;">년월</th>
               <th>내용</th>
               <th style="width:150px;">금액 (원, 클레임은 -)</th>
@@ -195,7 +196,7 @@
             </tr>
           </thead>
           <tbody id="수기항목테이블바디">
-            <tr><td colspan="4" class="빈목록안내">항목 추가 버튼으로 운송료·클레임 등을 입력하세요.</td></tr>
+            <tr><td colspan="5" class="빈목록안내">항목 추가 버튼으로 운송료·클레임 등을 입력하세요.</td></tr>
           </tbody>
         </table>
       </div>
@@ -585,9 +586,11 @@
     function 수기항목필터적용() {
       var 시작 = document.getElementById('검색_시작일').value;
       var 종료 = document.getElementById('검색_종료일').value;
+      var 납품처 = document.getElementById('검색_납품처').value.trim();
       var 시작월 = 시작 ? 시작.slice(0, 7) : '';
       var 종료월 = 종료 ? 종료.slice(0, 7) : '';
       var 필터목록 = 수기항목목록.filter(function(h) {
+        if (납품처 && (h.납품처 || '') !== 납품처) return false;
         if (!h.월) return true;
         if (시작월 && h.월 < 시작월) return false;
         if (종료월 && h.월 > 종료월) return false;
@@ -706,8 +709,9 @@
     }
 
     async function 수기항목추가() {
+      var 현재납품처 = document.getElementById('검색_납품처').value.trim();
       var { data, error } = await 수파베이스.from('수기항목')
-        .insert({ 월: '', 내용: '', 금액: 0 })
+        .insert({ 월: '', 내용: '', 금액: 0, 납품처: 현재납품처 })
         .select().single();
       if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
       수기항목목록.push(data);
@@ -754,15 +758,25 @@
       var 목록 = 표시목록 !== undefined ? 표시목록 : 수기항목목록;
       var 바디 = document.getElementById('수기항목테이블바디');
       if (!목록.length) {
-        바디.innerHTML = '<tr><td colspan="4" class="빈목록안내">항목 추가 버튼으로 운송료·클레임 등을 입력하세요.</td></tr>';
+        바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">항목 추가 버튼으로 운송료·클레임 등을 입력하세요.</td></tr>';
         return;
       }
+      var 납품처옵션 = '<option value="">전체</option>' +
+        APP_CONFIG.납품처목록.map(function(p) {
+          return '<option value="' + p.업체명 + '">' + p.업체명 + '</option>';
+        }).join('');
       바디.innerHTML = '';
       목록.forEach(function(항목) {
         var 행 = document.createElement('tr');
         var 색 = 항목.금액 < 0 ? 'color:#e74c3c;' : '';
         var 금액표시 = _수기금액포맷(항목.금액);
+        var 선택옵션 = 납품처옵션.replace(
+          'value="' + (항목.납품처||'') + '"',
+          'value="' + (항목.납품처||'') + '" selected'
+        );
         행.innerHTML =
+          '<td><select style="width:120px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'onchange="수기항목변경(' + 항목.id + ',\'납품처\',this.value)">' + 선택옵션 + '</select></td>' +
           '<td><input type="month" value="' + (항목.월||'') + '" ' +
             'style="width:110px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
             'onchange="수기항목변경(' + 항목.id + ',\'월\',this.value)"></td>' +
