@@ -136,6 +136,7 @@
         <table id="매입지출테이블">
           <thead>
             <tr>
+              <th style="width:150px;">업체</th>
               <th style="width:140px;">카테고리</th>
               <th style="width:120px;">년월</th>
               <th>내용</th>
@@ -144,7 +145,7 @@
             </tr>
           </thead>
           <tbody id="매입지출테이블바디">
-            <tr><td colspan="5" class="빈목록안내">항목 추가 버튼으로 매입·지출을 입력하세요.</td></tr>
+            <tr><td colspan="6" class="빈목록안내">항목 추가 버튼으로 매입·지출을 입력하세요.</td></tr>
           </tbody>
         </table>
       </div>
@@ -253,7 +254,7 @@
     function 테이블그리기(목록) {
       var 바디 = document.getElementById('매입지출테이블바디');
       if (!목록.length) {
-        바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">해당 조건의 항목이 없습니다.</td></tr>';
+        바디.innerHTML = '<tr><td colspan="6" class="빈목록안내">해당 조건의 항목이 없습니다.</td></tr>';
         return;
       }
 
@@ -274,6 +275,9 @@
         );
 
         행.innerHTML =
+          '<td><input type="text" value="' + (항목.업체 || '').replace(/"/g, '&quot;') + '" placeholder="업체명 입력" ' +
+            'style="width:138px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'oninput="항목변경(' + 항목.id + ',\'업체\',this.value)"></td>' +
           '<td><select style="width:128px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
             'onchange="항목변경(' + 항목.id + ',\'카테고리\',this.value)">' + 카테고리sel + '</select></td>' +
           '<td><input type="month" value="' + (항목.월 || '') + '" ' +
@@ -295,7 +299,7 @@
       var 현재월 = document.getElementById('검색_시작월').value || '';
       var 현재카테고리 = document.getElementById('검색_카테고리').value || '';
       var { data, error } = await 수파베이스.from('매입지출')
-        .insert({ 월: 현재월, 카테고리: 현재카테고리, 내용: '', 금액: 0 })
+        .insert({ 업체: '', 월: 현재월, 카테고리: 현재카테고리, 내용: '', 금액: 0 })
         .select().single();
       if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
       전체목록.unshift(data);
