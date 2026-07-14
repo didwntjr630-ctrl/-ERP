@@ -422,8 +422,19 @@
       if (el) el.style.display = 'none';
     }
 
+    /* 매출관리에서 수정한 단가(localStorage)를 품목목록에 반영 */
+    function 저장된단가적용() {
+      var 저장 = localStorage.getItem('erp_단가');
+      if (!저장) return;
+      var 맵 = JSON.parse(저장);
+      품목목록.forEach(function(p) {
+        if (맵[p.품번] !== undefined) p.단가 = 맵[p.품번];
+      });
+    }
+
     /* ── 데이터 로드 ── */
     async function 데이터로드() {
+      저장된단가적용();
       var res1 = 수파베이스.from('매출기록').select('*');
       var res2 = 수파베이스.from('수기항목').select('*');
       var [r1, r2] = await Promise.all([res1, res2]);
