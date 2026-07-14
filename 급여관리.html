@@ -186,8 +186,8 @@
     <div class="섹션박스">
       <div class="급여폼행">
         <label>년월</label>
-        <input type="month" id="출근년월" onchange="출근현황그리기()">
-        <button class="소버튼" onclick="출근현황그리기()" style="margin-left:4px;">새로고침</button>
+        <input type="month" id="출근년월">
+        <button class="소버튼" onclick="출근현황그리기()" style="margin-left:4px;">조회</button>
         <select id="근태표소속선택" style="margin-left:12px;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;height:32px;"></select>
         <button class="btn-근태출력" onclick="근태표출력()" style="margin-left:8px;">근태표 출력</button>
         <button class="btn-근태엑셀" onclick="근태표엑셀()" style="margin-left:6px;">엑셀 다운로드</button>
@@ -224,7 +224,8 @@
       <h4>공휴일 목록</h4>
       <div class="급여폼행">
         <label>년도</label>
-        <input type="number" id="공휴일년도" value="2026" style="width:90px;" onchange="공휴일목록그리기()">
+        <input type="number" id="공휴일년도" value="2026" style="width:90px;">
+        <button class="소버튼" onclick="공휴일목록그리기()" style="margin-left:4px;">조회</button>
       </div>
       <div class="테이블래퍼">
         <table class="테이블감싸기">
@@ -252,8 +253,9 @@
     <div class="섹션박스">
       <div class="급여폼행">
         <label>년월</label>
-        <input type="month" id="급여계산년월" onchange="급여결과불러오기()">
-        <button class="주버튼" onclick="급여계산실행()">급여 계산 실행</button>
+        <input type="month" id="급여계산년월">
+        <button class="소버튼" onclick="급여결과불러오기()" style="margin-left:4px;">조회</button>
+        <button class="주버튼" onclick="급여계산실행()" style="margin-left:6px;">급여 계산 실행</button>
       </div>
       <div class="테이블래퍼">
         <table class="테이블감싸기">

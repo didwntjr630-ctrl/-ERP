@@ -94,14 +94,14 @@
         <div>
           <label>조회 기간</label><br>
           <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <input type="month" id="검색_시작월" onchange="필터적용()">
+            <input type="month" id="검색_시작월">
             <span>~</span>
-            <input type="month" id="검색_종료월" onchange="필터적용()">
+            <input type="month" id="검색_종료월">
           </div>
         </div>
         <div>
           <label>카테고리</label><br>
-          <select id="검색_카테고리" style="margin-top:4px; min-width:130px;" onchange="필터적용()">
+          <select id="검색_카테고리" style="margin-top:4px; min-width:130px;">
             <option value="">전체</option>
           </select>
         </div>
@@ -130,12 +130,16 @@
           매입·지출 항목
           <span style="font-size:12px; color:#888; font-weight:normal;">(원자재·외주비·운영비 등)</span>
         </div>
-        <button class="버튼 파랑" style="height:30px; padding:0 14px; font-size:13px;" onclick="항목추가()">+ 항목 추가</button>
+        <div style="display:flex; gap:8px;">
+          <button class="버튼 파랑" style="height:30px; padding:0 14px; font-size:13px;" onclick="항목추가()">+ 항목 추가</button>
+          <button id="저장버튼" class="버튼 초록" style="height:30px; padding:0 18px; font-size:13px;" onclick="저장하기()">저장</button>
+        </div>
       </div>
       <div class="테이블감싸기">
         <table id="매입지출테이블">
           <thead>
             <tr>
+              <th style="width:150px;">업체</th>
               <th style="width:140px;">카테고리</th>
               <th style="width:120px;">년월</th>
               <th>내용</th>
@@ -144,7 +148,7 @@
             </tr>
           </thead>
           <tbody id="매입지출테이블바디">
-            <tr><td colspan="5" class="빈목록안내">항목 추가 버튼으로 매입·지출을 입력하세요.</td></tr>
+            <tr><td colspan="6" class="빈목록안내">항목 추가 버튼으로 매입·지출을 입력하세요.</td></tr>
           </tbody>
         </table>
       </div>
@@ -167,7 +171,7 @@
     document.getElementById('부제').textContent = APP_CONFIG.부제;
 
     var 전체목록 = [];
-    var _디바운스 = {};
+    var 변경셋 = new Set();
 
     /* 카테고리 셀렉트 초기화 */
     function 카테고리셀렉트채우기() {
@@ -203,8 +207,9 @@
 
       var 결과 = 전체목록.filter(function(h) {
         if (카테고리 && h.카테고리 !== 카테고리) return false;
-        if (시작 && (h.월 || '') < 시작) return false;
-        if (종료 && (h.월 || '') > 종료) return false;
+        var 월키 = (h.월 || '').slice(0, 7);
+        if (시작 && 월키 < 시작) return false;
+        if (종료 && 월키 > 종료) return false;
         return true;
       });
 
@@ -253,7 +258,7 @@
     function 테이블그리기(목록) {
       var 바디 = document.getElementById('매입지출테이블바디');
       if (!목록.length) {
-        바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">해당 조건의 항목이 없습니다.</td></tr>';
+        바디.innerHTML = '<tr><td colspan="6" class="빈목록안내">해당 조건의 항목이 없습니다.</td></tr>';
         return;
       }
 
@@ -274,10 +279,13 @@
         );
 
         행.innerHTML =
+          '<td><input type="text" value="' + (항목.업체 || '').replace(/"/g, '&quot;') + '" placeholder="업체명 입력" ' +
+            'style="width:138px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'oninput="항목변경(' + 항목.id + ',\'업체\',this.value)"></td>' +
           '<td><select style="width:128px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
             'onchange="항목변경(' + 항목.id + ',\'카테고리\',this.value)">' + 카테고리sel + '</select></td>' +
-          '<td><input type="month" value="' + (항목.월 || '') + '" ' +
-            'style="width:110px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+          '<td><input type="date" value="' + (항목.월 || '') + '" ' +
+            'style="width:130px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
             'onchange="항목변경(' + 항목.id + ',\'월\',this.value)"></td>' +
           '<td><input type="text" value="' + (항목.내용 || '').replace(/"/g, '&quot;') + '" placeholder="내용 입력" ' +
             'style="width:100%;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
@@ -290,18 +298,35 @@
       });
     }
 
+    /* 저장 버튼 상태 */
+    function _저장버튼갱신() {
+      var btn = document.getElementById('저장버튼');
+      if (!btn) return;
+      if (변경셋.size > 0) {
+        btn.textContent = '저장 (' + 변경셋.size + '건)';
+        btn.style.background = '#e67e22';
+        btn.style.borderColor = '#e67e22';
+      } else {
+        btn.textContent = '저장';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }
+    }
+
     /* CRUD */
     async function 항목추가() {
       var 현재월 = document.getElementById('검색_시작월').value || '';
       var 현재카테고리 = document.getElementById('검색_카테고리').value || '';
       var { data, error } = await 수파베이스.from('매입지출')
-        .insert({ 월: 현재월, 카테고리: 현재카테고리, 내용: '', 금액: 0 })
+        .insert({ 업체: '', 월: 현재월, 카테고리: 현재카테고리, 내용: '', 금액: 0 })
         .select().single();
       if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
       전체목록.unshift(data);
       필터적용();
-      var 첫입력 = document.querySelector('#매입지출테이블바디tr input');
-      if (첫입력) 첫입력.focus();
+      setTimeout(function() {
+        var 첫입력 = document.querySelector('#매입지출테이블바디 tr:first-child input');
+        if (첫입력) 첫입력.focus();
+      }, 50);
     }
 
     async function 항목삭제(id) {
@@ -309,6 +334,8 @@
         var { error } = await 수파베이스.from('매입지출').delete().eq('id', id);
         if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
         전체목록 = 전체목록.filter(function(h) { return h.id !== id; });
+        변경셋.delete(id);
+        _저장버튼갱신();
         필터적용();
         알림표시('삭제되었습니다.', '성공');
       });
@@ -316,14 +343,32 @@
 
     function 항목변경(id, field, value) {
       var 항목 = 전체목록.find(function(h) { return h.id === id; });
-      if (항목) 항목[field] = field === '금액' ? (Number(value) || 0) : value;
-      clearTimeout(_디바운스[id]);
-      _디바운스[id] = setTimeout(async function() {
-        var 업데이트 = {};
-        업데이트[field] = field === '금액' ? (Number(value) || 0) : value;
-        await 수파베이스.from('매입지출').update(업데이트).eq('id', id);
-        필터적용();
-      }, 600);
+      if (!항목) return;
+      항목[field] = field === '금액' ? (Number(String(value).replace(/,/g, '')) || 0) : value;
+      변경셋.add(id);
+      _저장버튼갱신();
+    }
+
+    async function 저장하기() {
+      if (변경셋.size === 0) { 알림표시('변경사항이 없습니다.', '안내'); return; }
+      var ids = Array.from(변경셋);
+      var 성공 = 0, 실패 = 0;
+      for (var i = 0; i < ids.length; i++) {
+        var 항목 = 전체목록.find(function(h) { return h.id === ids[i]; });
+        if (!항목) continue;
+        var { error } = await 수파베이스.from('매입지출').update({
+          업체: 항목.업체 || '',
+          월: 항목.월 || '',
+          카테고리: 항목.카테고리 || '',
+          내용: 항목.내용 || '',
+          금액: Number(항목.금액) || 0
+        }).eq('id', 항목.id);
+        if (error) 실패++; else 성공++;
+      }
+      변경셋.clear();
+      _저장버튼갱신();
+      if (실패 > 0) 알림표시(성공 + '건 저장, ' + 실패 + '건 실패', '오류');
+      else 알림표시(성공 + '건 저장 완료', '성공');
     }
 
     /* 금액 포맷 유틸 */
