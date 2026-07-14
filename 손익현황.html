@@ -57,7 +57,7 @@
     /* KPI 타일 */
     .kpi그리드 {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 14px;
       margin-bottom: 16px;
     }
@@ -199,7 +199,7 @@
       <span class="회사명_부제" id="부제"></span>
     </a>
     <nav>
-      <a class="비활성">매입 관리</a>
+      <a class="비활성" href="매입지출관리.html">매입·지출 관리</a>
       <a class="비활성" href="매출관리.html">매출 관리</a>
       <a class="비활성">거래처 관리</a>
       <a class="비활성">인사 관리</a>
@@ -247,6 +247,16 @@
         <div class="kpi라벨">이번달 납품 건수</div>
         <div class="kpi값" id="kv_건수">--</div>
         <div class="kpi서브" id="ks_건수">--</div>
+      </div>
+      <div class="kpi카드 경고" id="kpi_비용">
+        <div class="kpi라벨">이번달 비용 합계</div>
+        <div class="kpi값" id="kv_비용">--</div>
+        <div class="kpi서브" id="ks_비용">매입·지출 기준</div>
+      </div>
+      <div class="kpi카드" id="kpi_순이익">
+        <div class="kpi라벨">이번달 순이익</div>
+        <div class="kpi값" id="kv_순이익">--</div>
+        <div class="kpi서브" id="ks_순이익">매출 - 비용</div>
       </div>
     </div>
 
@@ -355,6 +365,7 @@
     /* ── 상태 ── */
     var 전체데이터 = [];   // 매출기록 전체
     var 수기데이터 = [];   // 수기항목
+    var 매입지출데이터 = []; // 매입지출
     var _월별차트 = null, _품목차트 = null, _일별차트 = null;
     var _기준년 = 0, _기준월 = 0;
 
@@ -437,9 +448,11 @@
       저장된단가적용();
       var res1 = 수파베이스.from('매출기록').select('*');
       var res2 = 수파베이스.from('수기항목').select('*');
-      var [r1, r2] = await Promise.all([res1, res2]);
+      var res3 = 수파베이스.from('매입지출').select('*');
+      var [r1, r2, r3] = await Promise.all([res1, res2, res3]);
       전체데이터 = r1.data || [];
       수기데이터 = r2.data || [];
+      매입지출데이터 = r3.data || [];
       분석갱신();
       document.getElementById('갱신시각').textContent = '갱신: ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     }
@@ -557,6 +570,21 @@
       /* ── KPI: 납품 건수 ── */
       document.getElementById('kv_건수').textContent = 기준건수 + '건';
       document.getElementById('ks_건수').textContent = '총 수량 ' + 기준달기록.reduce(function(s, r) { return s + (Number(r.출고수량) || 0); }, 0).toLocaleString() + ' EA';
+
+      /* ── KPI: 이번달 비용 합계 ── */
+      var 기준비용 = 매입지출데이터.reduce(function(s, h) {
+        return (h.월 || '').startsWith(기준키) ? s + (Number(h.금액) || 0) : s;
+      }, 0);
+      document.getElementById('kv_비용').textContent = 만원표시(기준비용);
+      document.getElementById('ks_비용').textContent = '매입·지출 기준 (' + 원표시(기준비용) + ')';
+
+      /* ── KPI: 순이익 ── */
+      var 순이익 = 기준매출 - 기준비용;
+      var 순이익카드 = document.getElementById('kpi_순이익');
+      document.getElementById('kv_순이익').textContent = 만원표시(순이익);
+      document.getElementById('kv_순이익').className = 'kpi값 ' + (순이익 >= 0 ? '상승' : '하락');
+      document.getElementById('ks_순이익').textContent = '매출 - 비용 (' + 원표시(순이익) + ')';
+      순이익카드.className = 'kpi카드 ' + (순이익 >= 0 ? '강조' : '경고');
 
       /* ── 차트 그리기 ── */
       월별차트그리기(최근월키배열, 월별합계, 기준키);
