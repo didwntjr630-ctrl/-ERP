@@ -181,6 +181,22 @@
       color: #9ca3af;
     }
     .차트래퍼 { position: relative; }
+
+    /* ── 월별 손익 추이 다크 카드 ── */
+    #월별손익카드 {
+      background: linear-gradient(160deg, #1c2030 0%, #131722 100%);
+      border: 1px solid #2a2e39;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    #월별손익카드 .차트제목 {
+      color: #d1d4dc;
+      font-size: 14px;
+      letter-spacing: -0.2px;
+    }
+    #월별손익카드 .차트부제 { color: #565a6e; }
+    #월별손익카드 .차트범례 span { color: #787b86; }
+    #월별손익카드 .차트범례 svg line { stroke-opacity: 0.75; }
+
     .로딩오버레이 {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
@@ -358,7 +374,7 @@
 
     <!-- 차트 1행: 월별 추이 + 품목별 -->
     <div class="차트그리드2">
-      <div class="차트카드">
+      <div class="차트카드" id="월별손익카드">
         <div class="차트제목행">
           <div>
             <div class="차트제목">월별 손익 추이</div>
@@ -760,6 +776,14 @@
       /* 커스텀 캔들 플러그인 */
       var tvPlugin = {
         id: 'tvPlugin',
+        beforeDraw: function(chart) {
+          /* 다크 배경 fill */
+          var c = chart.ctx;
+          c.save();
+          c.fillStyle = '#131722';
+          c.fillRect(0, 0, chart.width, chart.height);
+          c.restore();
+        },
         afterDatasetsDraw: function(chart) {
           var c  = chart.ctx;
           var xs = chart.scales.x;
@@ -778,7 +802,7 @@
           /* ① 제로선 */
           var y0 = ys.getPixelForValue(0);
           c.beginPath();
-          c.strokeStyle = 'rgba(120,123,134,0.3)';
+          c.strokeStyle = 'rgba(255,255,255,0.15)';
           c.lineWidth = 1;
           c.setLineDash([]);
           c.moveTo(xs.left, y0);
@@ -787,7 +811,7 @@
 
           /* ② 순이익 점선 추세선 (캔들 아래 레이어) */
           c.setLineDash([5, 4]);
-          c.strokeStyle = 'rgba(41,98,255,0.55)';
+          c.strokeStyle = 'rgba(100,141,255,0.75)';
           c.lineWidth = 1.5;
           var first = true;
           for (var i = 0; i < n; i++) {
@@ -808,7 +832,7 @@
             var isBase   = (키배열[j] === 기준키);
             var isProfit = (순이익 >= 0);
             var color    = isProfit ? TV_G : TV_R;
-            var fill     = isProfit ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.12)';
+            var fill     = isProfit ? 'rgba(8,153,129,0.20)' : 'rgba(242,54,69,0.20)';
 
             var xj  = md.data[j].x;
             var yMs = ys.getPixelForValue(매출);
@@ -819,7 +843,7 @@
 
             /* ── Wick (0 → 매출 전체 범위) ── */
             c.beginPath();
-            c.strokeStyle = isProfit ? 'rgba(8,153,129,0.38)' : 'rgba(242,54,69,0.38)';
+            c.strokeStyle = isProfit ? 'rgba(8,153,129,0.55)' : 'rgba(242,54,69,0.55)';
             c.lineWidth   = 1.5;
             c.moveTo(xj, yZr);
             c.lineTo(xj, yMs);
@@ -976,7 +1000,7 @@
               min: yMin,
               max: yMax,
               grid: {
-                color: 'rgba(42,46,57,0.06)',
+                color: 'rgba(255,255,255,0.05)',
                 lineWidth: 1,
                 drawTicks: false,
               },
@@ -991,7 +1015,7 @@
                   return (v / 10000).toFixed(0) + '만';
                 },
                 font: { size: 11 },
-                color: '#9598a1',
+                color: '#565a6e',
                 maxTicksLimit: 6,
                 padding: 10,
               }
@@ -999,7 +1023,7 @@
             x: {
               grid: { display: false },
               border: { display: false },
-              ticks: { font: { size: 12 }, color: '#787b86', padding: 10 }
+              ticks: { font: { size: 12 }, color: '#565a6e', padding: 10 }
             }
           }
         }
