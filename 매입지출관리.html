@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 매입·지출 관리</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .필터행 {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .필터행 label { font-size: 12px; color: #2a6496; font-weight: bold; }
+    .필터행 input, .필터행 select {
+      border: 1px solid #c0cfe0;
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-size: 13px;
+      font-family: inherit;
+      height: 30px;
+    }
+    .비용합계 {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      background: #fef3f2;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      padding: 10px 20px;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+    .합계항목 { display: flex; flex-direction: column; gap: 2px; }
+    .합계항목 .합계라벨 { font-size: 11px; color: #666; }
+    .합계항목 .합계값 { font-size: 18px; font-weight: bold; color: #b91c1c; }
+    .합계항목 .합계값.소계 { font-size: 14px; color: #7f1d1d; }
+    .구분선 { width: 1px; background: #fca5a5; align-self: stretch; margin: 4px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="활성">매입·지출 관리</a>
+      <a class="비활성" href="매출관리.html">매출 관리</a>
+      <a class="비활성" href="급여관리.html">급여 관리</a>
+      <a class="비활성" href="손익현황.html">손익 현황</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+    <div id="알림박스" class="알림" style="position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:9999; min-width:260px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:14px; font-weight:600;"></div>
+    <div id="확인모달_오버레이" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; min-width:280px; max-width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div id="확인모달_메시지" style="margin-bottom:20px; font-size:14px; line-height:1.6; white-space:pre-line;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="버튼 회색" onclick="확인모달닫기()">취소</button>
+          <button class="버튼 파랑" id="확인모달_확인버튼">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 조회 필터 카드 -->
+    <div class="카드 검색카드">
+      <div class="검색카드제목">매입·지출 조회</div>
+      <div class="필터행">
+        <div>
+          <label>조회 기간</label><br>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            <input type="month" id="검색_시작월" onchange="필터적용()">
+            <span>~</span>
+            <input type="month" id="검색_종료월" onchange="필터적용()">
+          </div>
+        </div>
+        <div>
+          <label>카테고리</label><br>
+          <select id="검색_카테고리" style="margin-top:4px; min-width:130px;" onchange="필터적용()">
+            <option value="">전체</option>
+          </select>
+        </div>
+        <div style="align-self:flex-end;">
+          <button class="버튼 파랑" onclick="필터적용()">조회</button>
+          <button class="버튼 회색" onclick="전체초기화()" style="margin-left:6px;">전체보기</button>
+        </div>
+      </div>
+      <div id="검색결과안내" class="검색결과안내"></div>
+    </div>
+
+    <!-- 합계 요약 -->
+    <div class="비용합계" id="비용합계카드" style="display:none;">
+      <div class="합계항목">
+        <div class="합계라벨">조회 기간 합계</div>
+        <div class="합계값" id="합계_총액">0 원</div>
+      </div>
+      <div class="구분선"></div>
+      <div id="카테고리별소계" style="display:flex; gap:20px; flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- 매입·지출 목록 카드 -->
+    <div class="카드">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <div class="페이지제목" style="font-size:15px; margin-bottom:0;">
+          매입·지출 항목
+          <span style="font-size:12px; color:#888; font-weight:normal;">(원자재·외주비·운영비 등)</span>
+        </div>
+        <button class="버튼 파랑" style="height:30px; padding:0 14px; font-size:13px;" onclick="항목추가()">+ 항목 추가</button>
+      </div>
+      <div class="테이블감싸기">
+        <table id="매입지출테이블">
+          <thead>
+            <tr>
+              <th style="width:140px;">카테고리</th>
+              <th style="width:120px;">년월</th>
+              <th>내용</th>
+              <th style="width:160px;">금액 (원)</th>
+              <th style="width:50px;">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="매입지출테이블바디">
+            <tr><td colspan="5" class="빈목록안내">항목 추가 버튼으로 매입·지출을 입력하세요.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /내용영역 -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+
+    var 전체목록 = [];
+    var _디바운스 = {};
+
+    /* 카테고리 셀렉트 초기화 */
+    function 카테고리셀렉트채우기() {
+      var sel = document.getElementById('검색_카테고리');
+      APP_CONFIG.매입지출카테고리.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
+      });
+    }
+
+    /* 이번달 기본값 */
+    function 날짜기본값() {
+      var d = new Date();
+      var ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      document.getElementById('검색_시작월').value = ym;
+      document.getElementById('검색_종료월').value = ym;
+    }
+
+    /* 데이터 로드 */
+    async function 데이터로드() {
+      var { data, error } = await 수파베이스
+        .from('매입지출').select('*').order('id', { ascending: false });
+      전체목록 = error ? [] : (data || []);
+      필터적용();
+    }
+
+    /* 필터 적용 */
+    function 필터적용() {
+      var 시작 = document.getElementById('검색_시작월').value;
+      var 종료 = document.getElementById('검색_종료월').value;
+      var 카테고리 = document.getElementById('검색_카테고리').value;
+
+      var 결과 = 전체목록.filter(function(h) {
+        if (카테고리 && h.카테고리 !== 카테고리) return false;
+        if (시작 && (h.월 || '') < 시작) return false;
+        if (종료 && (h.월 || '') > 종료) return false;
+        return true;
+      });
+
+      테이블그리기(결과);
+      합계갱신(결과);
+      document.getElementById('검색결과안내').innerHTML =
+        '검색 결과: <span class="결과강조">' + 결과.length + '건</span>';
+    }
+
+    function 전체초기화() {
+      날짜기본값();
+      document.getElementById('검색_카테고리').value = '';
+      필터적용();
+    }
+
+    /* 합계 요약 */
+    function 합계갱신(목록) {
+      var 카드 = document.getElementById('비용합계카드');
+      if (!목록.length) { 카드.style.display = 'none'; return; }
+      카드.style.display = 'flex';
+
+      var 총액 = 0;
+      var 카테고리합 = {};
+      목록.forEach(function(h) {
+        var 금액 = Number(h.금액) || 0;
+        총액 += 금액;
+        var cat = h.카테고리 || '미분류';
+        카테고리합[cat] = (카테고리합[cat] || 0) + 금액;
+      });
+
+      document.getElementById('합계_총액').textContent = 총액.toLocaleString() + ' 원';
+
+      var 소계div = document.getElementById('카테고리별소계');
+      소계div.innerHTML = '';
+      Object.keys(카테고리합).forEach(function(cat) {
+        var div = document.createElement('div');
+        div.className = '합계항목';
+        div.innerHTML =
+          '<div class="합계라벨">' + cat + '</div>' +
+          '<div class="합계값 소계">' + 카테고리합[cat].toLocaleString() + ' 원</div>';
+        소계div.appendChild(div);
+      });
+    }
+
+    /* 테이블 렌더링 */
+    function 테이블그리기(목록) {
+      var 바디 = document.getElementById('매입지출테이블바디');
+      if (!목록.length) {
+        바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">해당 조건의 항목이 없습니다.</td></tr>';
+        return;
+      }
+
+      var 카테고리옵션 = '<option value="">-선택-</option>' +
+        APP_CONFIG.매입지출카테고리.map(function(c) {
+          return '<option value="' + c + '">' + c + '</option>';
+        }).join('');
+
+      바디.innerHTML = '';
+      목록.forEach(function(항목) {
+        var 행 = document.createElement('tr');
+        var 색 = Number(항목.금액) < 0 ? 'color:#e74c3c;' : '';
+        var 금액표시 = _금액포맷(항목.금액);
+
+        var 카테고리sel = 카테고리옵션.replace(
+          'value="' + (항목.카테고리 || '') + '"',
+          'value="' + (항목.카테고리 || '') + '" selected'
+        );
+
+        행.innerHTML =
+          '<td><select style="width:128px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'onchange="항목변경(' + 항목.id + ',\'카테고리\',this.value)">' + 카테고리sel + '</select></td>' +
+          '<td><input type="month" value="' + (항목.월 || '') + '" ' +
+            'style="width:110px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'onchange="항목변경(' + 항목.id + ',\'월\',this.value)"></td>' +
+          '<td><input type="text" value="' + (항목.내용 || '').replace(/"/g, '&quot;') + '" placeholder="내용 입력" ' +
+            'style="width:100%;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'oninput="항목변경(' + 항목.id + ',\'내용\',this.value)"></td>' +
+          '<td><input type="text" inputmode="numeric" value="' + 금액표시 + '" ' +
+            'style="width:140px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;' + 색 + '" ' +
+            'oninput="_금액입력(this,' + 항목.id + ')" onblur="_금액블러(this)"></td>' +
+          '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="항목삭제(' + 항목.id + ')">삭제</button></td>';
+        바디.appendChild(행);
+      });
+    }
+
+    /* CRUD */
+    async function 항목추가() {
+      var 현재월 = document.getElementById('검색_시작월').value || '';
+      var 현재카테고리 = document.getElementById('검색_카테고리').value || '';
+      var { data, error } = await 수파베이스.from('매입지출')
+        .insert({ 월: 현재월, 카테고리: 현재카테고리, 내용: '', 금액: 0 })
+        .select().single();
+      if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
+      전체목록.unshift(data);
+      필터적용();
+      var 첫입력 = document.querySelector('#매입지출테이블바디tr input');
+      if (첫입력) 첫입력.focus();
+    }
+
+    async function 항목삭제(id) {
+      확인모달표시('이 항목을 삭제하시겠습니까?', async function() {
+        var { error } = await 수파베이스.from('매입지출').delete().eq('id', id);
+        if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
+        전체목록 = 전체목록.filter(function(h) { return h.id !== id; });
+        필터적용();
+        알림표시('삭제되었습니다.', '성공');
+      });
+    }
+
+    function 항목변경(id, field, value) {
+      var 항목 = 전체목록.find(function(h) { return h.id === id; });
+      if (항목) 항목[field] = field === '금액' ? (Number(value) || 0) : value;
+      clearTimeout(_디바운스[id]);
+      _디바운스[id] = setTimeout(async function() {
+        var 업데이트 = {};
+        업데이트[field] = field === '금액' ? (Number(value) || 0) : value;
+        await 수파베이스.from('매입지출').update(업데이트).eq('id', id);
+        필터적용();
+      }, 600);
+    }
+
+    /* 금액 포맷 유틸 */
+    function _금액포맷(v) {
+      var n = Number(String(v).replace(/,/g, ''));
+      return (!v && v !== 0) || isNaN(n) || n === 0 ? '' : n.toLocaleString('ko-KR');
+    }
+    function _금액입력(el, id) {
+      var raw = el.value.replace(/,/g, '');
+      el.style.color = Number(raw) < 0 ? '#e74c3c' : '';
+      항목변경(id, '금액', raw);
+    }
+    function _금액블러(el) {
+      var n = Number(el.value.replace(/,/g, ''));
+      el.value = (isNaN(n) || n === 0) ? '' : n.toLocaleString('ko-KR');
+      el.style.color = n < 0 ? '#e74c3c' : '';
+    }
+
+    /* 알림 / 확인모달 */
+    function 알림표시(메시지, 종류) {
+      var el = document.getElementById('알림박스');
+      el.textContent = 메시지;
+      el.className = '알림 ' + 종류;
+      el.style.display = 'block';
+      setTimeout(function() { el.style.display = 'none'; }, 3500);
+    }
+    function 확인모달표시(메시지, 콜백) {
+      document.getElementById('확인모달_메시지').textContent = 메시지;
+      var 버튼 = document.getElementById('확인모달_확인버튼');
+      버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+      document.getElementById('확인모달_오버레이').style.display = 'flex';
+    }
+    function 확인모달닫기() {
+      document.getElementById('확인모달_오버레이').style.display = 'none';
+    }
+
+    /* 실시간 구독 */
+    수파베이스.channel('매입지출실시간')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '매입지출' }, function() {
+        데이터로드();
+      })
+      .subscribe();
+
+    /* 시작 */
+    카테고리셀렉트채우기();
+    날짜기본값();
+    데이터로드();
+  </script>
+</body>
+</html>
