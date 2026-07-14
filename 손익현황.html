@@ -361,8 +361,8 @@
       <div class="차트카드">
         <div class="차트제목행">
           <div>
-            <div class="차트제목">월별 매출 추이</div>
-            <div class="차트부제">최근 6개월 공급가액 합계</div>
+            <div class="차트제목">월별 손익 추이</div>
+            <div class="차트부제">최근 6개월 매출 · 비용+급여 · 순이익</div>
           </div>
           <div class="차트범례">
             <div class="범례항목">
@@ -434,8 +434,8 @@
         </div>
         <div style="overflow-x:auto;">
           <table class="요약테이블" id="누적테이블">
-            <thead><tr><th>월</th><th style="text-align:right;">건수</th><th style="text-align:right;">공급가액</th><th style="text-align:right;">전월대비</th></tr></thead>
-            <tbody id="누적테이블바디"><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
+            <thead><tr><th>월</th><th style="text-align:right;">매출</th><th style="text-align:right;">비용+급여</th><th style="text-align:right;">순이익</th><th style="text-align:right;">전월대비</th></tr></thead>
+            <tbody id="누적테이블바디"><tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -689,19 +689,36 @@
       document.getElementById('kv_순이익').textContent = 만원표시(순이익);
       document.getElementById('ks_순이익').textContent = '매출 − 비용 − 급여 (' + 원표시(순이익) + ')';
 
+      /* ── 월별 비용·급여·순이익 계산 ── */
+      var 월별총비용 = {};
+      var 월별순이익맵 = {};
+      최근월키배열.forEach(function(k) {
+        var 비용 = 매입지출데이터.reduce(function(s, h) {
+          return (h.월 || '').slice(0, 7) === k ? s + (Number(h.금액) || 0) : s;
+        }, 0);
+        var 급여 = 급여데이터.reduce(function(s, h) {
+          return (h.년월 || '') === k ? s + (Number(h.실수령액) || 0) : s;
+        }, 0);
+        월별총비용[k] = 비용 + 급여;
+        월별순이익맵[k] = (월별합계[k] || 0) - 월별총비용[k];
+      });
+
       /* ── 차트 그리기 ── */
-      월별차트그리기(최근월키배열, 월별합계, 기준키);
+      월별차트그리기(최근월키배열, 월별합계, 기준키, 월별총비용, 월별순이익맵);
       품목차트그리기(기준키);
       일별차트그리기(기준키, 기준달마지막, 이번달여부 ? 오늘.getDate() : 기준달마지막);
       품목테이블그리기(기준키);
-      누적테이블그리기(최근월키배열, 월별합계, 월별건수);
+      누적테이블그리기(최근월키배열, 월별합계, 월별건수, 월별총비용, 월별순이익맵);
     }
 
-    /* ── 월별 막대 차트 ── */
-    function 월별차트그리기(키배열, 월별합계, 기준키) {
+    /* ── 월별 손익 콤보 차트 (막대: 매출·비용+급여 / 선: 순이익) ── */
+    function 월별차트그리기(키배열, 월별합계, 기준키, 월별총비용, 월별순이익맵) {
       var 라벨 = 키배열.map(월라벨);
-      var 값 = 키배열.map(function(k) { return 월별합계[k] || 0; });
-      var 색 = 키배열.map(function(k) { return k === 기준키 ? '#2a6496' : '#93b9d8'; });
+      var 매출값 = 키배열.map(function(k) { return 월별합계[k] || 0; });
+      var 비용값 = 키배열.map(function(k) { return (월별총비용 && 월별총비용[k]) || 0; });
+      var 순이익값 = 키배열.map(function(k) { return (월별순이익맵 && 월별순이익맵[k]) || 0; });
+      var 매출색 = 키배열.map(function(k) { return k === 기준키 ? '#2a6496' : '#93b9d8'; });
+      var 비용색 = 키배열.map(function(k) { return k === 기준키 ? '#dc2626' : '#fca5a5'; });
 
       if (_월별차트) _월별차트.destroy();
       로딩숨김('월별로딩');
@@ -709,41 +726,74 @@
         type: 'bar',
         data: {
           labels: 라벨,
-          datasets: [{
-            label: '공급가액',
-            data: 값,
-            backgroundColor: 색,
-            borderRadius: 4,
-            borderSkipped: false,
-            barPercentage: 0.6,
-          }]
+          datasets: [
+            {
+              label: '매출',
+              type: 'bar',
+              data: 매출값,
+              backgroundColor: 매출색,
+              borderRadius: 4,
+              borderSkipped: false,
+              barPercentage: 0.35,
+              order: 2,
+            },
+            {
+              label: '비용+급여',
+              type: 'bar',
+              data: 비용값,
+              backgroundColor: 비용색,
+              borderRadius: 4,
+              borderSkipped: false,
+              barPercentage: 0.35,
+              order: 2,
+            },
+            {
+              label: '순이익',
+              type: 'line',
+              data: 순이익값,
+              borderColor: '#16a34a',
+              backgroundColor: 'rgba(22,163,74,0.08)',
+              borderWidth: 2,
+              pointRadius: 4,
+              pointBackgroundColor: '#16a34a',
+              tension: 0.3,
+              fill: false,
+              order: 1,
+              yAxisID: 'y',
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
+            legend: {
+              display: true,
+              position: 'top',
+              align: 'end',
+              labels: { font: { size: 11 }, color: '#6b7280', boxWidth: 12, padding: 12 }
+            },
             tooltip: {
               callbacks: {
                 label: function(ctx) {
-                  return '  ' + 원표시(ctx.parsed.y);
+                  return '  ' + ctx.dataset.label + ': ' + 원표시(ctx.parsed.y);
                 }
               }
             }
           },
           scales: {
             y: {
-              beginAtZero: true,
+              beginAtZero: false,
               ticks: {
                 callback: function(v) {
                   if (v === 0) return '0';
-                  if (v >= 10000000) return (v / 10000000).toFixed(0) + '천만';
-                  if (v >= 1000000) return (v / 1000000).toFixed(0) + '백만';
+                  if (Math.abs(v) >= 10000000) return (v / 10000000).toFixed(0) + '천만';
+                  if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(0) + '백만';
                   return (v / 10000).toFixed(0) + '만';
                 },
                 font: { size: 11 },
                 color: '#6b7280',
-                maxTicksLimit: 5,
+                maxTicksLimit: 6,
               },
               grid: { color: '#f3f4f6' },
               border: { display: false },
@@ -1006,12 +1056,13 @@
     }
 
     /* ── 6개월 누적 요약 테이블 ── */
-    function 누적테이블그리기(키배열, 월별합계, 월별건수) {
+    function 누적테이블그리기(키배열, 월별합계, 월별건수, 월별총비용, 월별순이익맵) {
       var html = '';
       for (var i = 0; i < 키배열.length; i++) {
         var k = 키배열[i];
         var 금액 = 월별합계[k] || 0;
-        var 건수 = 월별건수[k] || 0;
+        var 비용 = (월별총비용 && 월별총비용[k]) || 0;
+        var 순이익 = (월별순이익맵 && 월별순이익맵[k]) || 0;
         var 이전k = i > 0 ? 키배열[i - 1] : null;
         var 이전금액 = 이전k ? (월별합계[이전k] || 0) : null;
         var 증감html = '';
@@ -1024,15 +1075,17 @@
         } else {
           증감html = '<span style="color:#9ca3af;">비교불가</span>';
         }
+        var 순이익색 = 순이익 >= 0 ? '#16a34a' : '#dc2626';
         var 강조 = k === (월키(_기준년, _기준월)) ? 'style="background:#eff6ff;"' : '';
         html += '<tr ' + 강조 + '>' +
           '<td>' + 월라벨(k) + '</td>' +
-          '<td class="수치">' + 건수 + '건</td>' +
           '<td class="수치">' + 만원표시(금액) + '</td>' +
+          '<td class="수치" style="color:#dc2626;">' + (비용 > 0 ? 만원표시(비용) : '—') + '</td>' +
+          '<td class="수치" style="color:' + 순이익색 + ';font-weight:600;">' + 만원표시(순이익) + '</td>' +
           '<td class="수치">' + 증감html + '</td>' +
           '</tr>';
       }
-      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">데이터 없음</td></tr>';
+      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">데이터 없음</td></tr>';
     }
 
     /* ── 실시간 갱신 ── */
