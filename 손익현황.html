@@ -364,16 +364,19 @@
             <div class="차트제목">월별 손익 추이</div>
             <div class="차트부제">최근 6개월 매출 · 비용+급여 · 순이익</div>
           </div>
-          <div class="차트범례">
+          <div class="차트범례" style="gap:14px;">
             <div class="범례항목">
-              <div class="범례점" style="background:#2a6496;"></div><span>기준월</span>
+              <svg width="14" height="12" style="margin-right:4px;"><rect x="1" y="1" width="12" height="10" rx="2" fill="rgba(8,153,129,0.15)" stroke="#089981" stroke-width="1.5"/></svg><span>매출·순이익(흑자)</span>
             </div>
             <div class="범례항목">
-              <div class="범례점" style="background:#93b9d8;"></div><span>이전 달</span>
+              <svg width="14" height="12" style="margin-right:4px;"><rect x="1" y="1" width="12" height="10" rx="2" fill="rgba(242,54,69,0.15)" stroke="#f23645" stroke-width="1.5"/></svg><span>손실</span>
+            </div>
+            <div class="범례항목">
+              <svg width="22" height="12" style="margin-right:4px;"><line x1="0" y1="6" x2="22" y2="6" stroke="#2962ff" stroke-width="1.5" stroke-dasharray="4,3"/><circle cx="11" cy="6" r="3" fill="#2962ff"/></svg><span>순이익선</span>
             </div>
           </div>
         </div>
-        <div class="차트래퍼" style="height:260px;">
+        <div class="차트래퍼" style="height:320px;">
           <canvas id="월별차트"></canvas>
           <div class="로딩오버레이" id="월별로딩">불러오는 중...</div>
         </div>
@@ -711,97 +714,292 @@
       누적테이블그리기(최근월키배열, 월별합계, 월별건수, 월별총비용, 월별순이익맵);
     }
 
-    /* ── 월별 손익 콤보 차트 (막대: 매출·비용+급여 / 선: 순이익) ── */
+    /* ── TradingView 스타일 캔들 차트 ── */
     function 월별차트그리기(키배열, 월별합계, 기준키, 월별총비용, 월별순이익맵) {
+      var n = 키배열.length;
       var 라벨 = 키배열.map(월라벨);
-      var 매출값 = 키배열.map(function(k) { return 월별합계[k] || 0; });
-      var 비용값 = 키배열.map(function(k) { return (월별총비용 && 월별총비용[k]) || 0; });
-      var 순이익값 = 키배열.map(function(k) { return (월별순이익맵 && 월별순이익맵[k]) || 0; });
-      var 매출색 = 키배열.map(function(k) { return k === 기준키 ? '#2a6496' : '#93b9d8'; });
-      var 비용색 = 키배열.map(function(k) { return k === 기준키 ? '#dc2626' : '#fca5a5'; });
+      var 매출arr = 키배열.map(function(k){ return 월별합계[k] || 0; });
+      var 비용arr = 키배열.map(function(k){ return (월별총비용 && 월별총비용[k]) || 0; });
+      var 순이익arr = 키배열.map(function(k){ return (월별순이익맵 && 월별순이익맵[k]) || 0; });
+
+      /* y축 범위 계산 */
+      var 최대값 = Math.max.apply(null, 매출arr.map(function(v,i){ return Math.max(v, 비용arr[i]); }).concat([0]));
+      var 최소값 = Math.min.apply(null, 순이익arr.concat([0]));
+      var 범위   = (최대값 - 최소값) || 5000000;
+      var yMax   = 최대값 + 범위 * 0.18;
+      var yMin   = 최소값 - 범위 * 0.12;
 
       if (_월별차트) _월별차트.destroy();
+      var oldTip = document.getElementById('tv툴팁');
+      if (oldTip) oldTip.remove();
       로딩숨김('월별로딩');
+
+      var TV_G = '#089981', TV_R = '#f23645', TV_B = '#2962ff';
+
+      /* rounded-rect polyfill */
+      function rr(c, x, y, w, h, r) {
+        if (h < 2) h = 2;
+        r = Math.min(r, w / 2, h / 2);
+        c.beginPath();
+        c.moveTo(x + r, y);
+        c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+        c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r);
+        c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y);
+        c.closePath();
+      }
+
+      /* 툴팁 행 생성 */
+      function tipRow(label, val, color, bold) {
+        return '<div style="display:flex;justify-content:space-between;gap:22px;margin-bottom:4px;">' +
+          '<span style="color:#9598a1;">' + label + '</span>' +
+          '<span style="color:' + color + ';font-weight:' + (bold ? '700' : '500') + ';">' + val + '</span>' +
+          '</div>';
+      }
+
+      /* 커스텀 캔들 플러그인 */
+      var tvPlugin = {
+        id: 'tvPlugin',
+        afterDatasetsDraw: function(chart) {
+          var c  = chart.ctx;
+          var xs = chart.scales.x;
+          var ys = chart.scales.y;
+          var md = chart.getDatasetMeta(0);
+          if (!md || !md.data || !md.data.length) return;
+
+          /* 캔들 너비 = 카테고리 간격의 40% */
+          var bw = 32;
+          if (n > 1 && md.data[1]) {
+            bw = Math.min(46, Math.max(18, Math.abs(md.data[1].x - md.data[0].x) * 0.40));
+          }
+
+          c.save();
+
+          /* ① 제로선 */
+          var y0 = ys.getPixelForValue(0);
+          c.beginPath();
+          c.strokeStyle = 'rgba(120,123,134,0.3)';
+          c.lineWidth = 1;
+          c.setLineDash([]);
+          c.moveTo(xs.left, y0);
+          c.lineTo(xs.right, y0);
+          c.stroke();
+
+          /* ② 순이익 점선 추세선 (캔들 아래 레이어) */
+          c.setLineDash([5, 4]);
+          c.strokeStyle = 'rgba(41,98,255,0.55)';
+          c.lineWidth = 1.5;
+          var first = true;
+          for (var i = 0; i < n; i++) {
+            if (매출arr[i] === 0 && 순이익arr[i] === 0) continue;
+            var xi = md.data[i].x;
+            var yi = ys.getPixelForValue(순이익arr[i]);
+            if (first) { c.beginPath(); c.moveTo(xi, yi); first = false; }
+            else c.lineTo(xi, yi);
+          }
+          c.stroke();
+          c.setLineDash([]);
+
+          /* ③ 각 월 캔들 */
+          for (var j = 0; j < n; j++) {
+            var 매출 = 매출arr[j], 비용 = 비용arr[j], 순이익 = 순이익arr[j];
+            if (매출 === 0 && 비용 === 0) continue;
+
+            var isBase   = (키배열[j] === 기준키);
+            var isProfit = (순이익 >= 0);
+            var color    = isProfit ? TV_G : TV_R;
+            var fill     = isProfit ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.12)';
+
+            var xj  = md.data[j].x;
+            var yMs = ys.getPixelForValue(매출);
+            var yBy = ys.getPixelForValue(비용);
+            var yZr = ys.getPixelForValue(0);
+            var ySi = ys.getPixelForValue(순이익);
+            var cw  = isBase ? bw * 1.12 : bw;
+
+            /* ── Wick (0 → 매출 전체 범위) ── */
+            c.beginPath();
+            c.strokeStyle = isProfit ? 'rgba(8,153,129,0.38)' : 'rgba(242,54,69,0.38)';
+            c.lineWidth   = 1.5;
+            c.moveTo(xj, yZr);
+            c.lineTo(xj, yMs);
+            c.stroke();
+
+            /* ── Body (비용 → 매출) ── */
+            var bt = Math.min(yMs, yBy);
+            var bh = Math.max(3, Math.abs(yMs - yBy));
+
+            /* 기준월 글로우 */
+            if (isBase) { c.shadowColor = color; c.shadowBlur = 12; }
+
+            /* fill */
+            c.fillStyle = fill;
+            rr(c, xj - cw / 2, bt, cw, bh, 4);
+            c.fill();
+
+            /* border */
+            c.strokeStyle = color;
+            c.lineWidth = isBase ? 2.5 : 1.8;
+            rr(c, xj - cw / 2, bt, cw, bh, 4);
+            c.stroke();
+
+            c.shadowBlur = 0; c.shadowColor = 'transparent';
+
+            /* ── 순이익 수평 틱 (오른쪽) ── */
+            c.beginPath();
+            c.strokeStyle = color;
+            c.lineWidth = 2;
+            c.moveTo(xj - 2, ySi);
+            c.lineTo(xj + cw / 2 + 9, ySi);
+            c.stroke();
+
+            /* ── 순이익 닷 (트렌드선과 일치) ── */
+            c.beginPath();
+            c.fillStyle = isBase ? TV_B : TV_B;
+            c.strokeStyle = '#fff';
+            c.lineWidth = 1.5;
+            c.arc(xj, ySi, isBase ? 4.5 : 3.5, 0, Math.PI * 2);
+            c.fill();
+            c.stroke();
+
+            /* ── 기준월 상단 삼각 마커 ── */
+            if (isBase) {
+              var tipY = yMs - 14;
+              c.beginPath();
+              c.fillStyle = color;
+              c.moveTo(xj, tipY + 8);
+              c.lineTo(xj - 5, tipY);
+              c.lineTo(xj + 5, tipY);
+              c.closePath();
+              c.fill();
+            }
+
+            /* ── 매출 상단 값 라벨 ── */
+            var labelVal = 만원표시(매출);
+            c.font = (isBase ? 'bold ' : '') + '10px -apple-system, sans-serif';
+            c.fillStyle = color;
+            c.textAlign = 'center';
+            c.textBaseline = 'bottom';
+            c.fillText(labelVal, xj, yMs - (isBase ? 20 : 6));
+          }
+
+          c.restore();
+        }
+      };
+
       _월별차트 = new Chart(document.getElementById('월별차트'), {
         type: 'bar',
+        plugins: [tvPlugin],
         data: {
           labels: 라벨,
           datasets: [
             {
-              label: '매출',
-              type: 'bar',
-              data: 매출값,
-              backgroundColor: 매출색,
-              borderRadius: 4,
-              borderSkipped: false,
-              barPercentage: 0.35,
-              order: 2,
+              /* 축 최대값 설정용 히든 데이터셋 */
+              label: '__hi',
+              data: 매출arr.map(function(v, i){ return Math.max(v, 비용arr[i]); }),
+              backgroundColor: 'rgba(0,0,0,0)',
+              borderColor: 'rgba(0,0,0,0)',
+              borderWidth: 0,
+              barPercentage: 0.001,
+              categoryPercentage: 0.001,
             },
             {
-              label: '비용+급여',
-              type: 'bar',
-              data: 비용값,
-              backgroundColor: 비용색,
-              borderRadius: 4,
-              borderSkipped: false,
-              barPercentage: 0.35,
-              order: 2,
-            },
-            {
-              label: '순이익',
+              /* 축 최솟값 설정용 히든 데이터셋 */
+              label: '__lo',
               type: 'line',
-              data: 순이익값,
-              borderColor: '#16a34a',
-              backgroundColor: 'rgba(22,163,74,0.08)',
-              borderWidth: 2,
-              pointRadius: 4,
-              pointBackgroundColor: '#16a34a',
-              tension: 0.3,
-              fill: false,
-              order: 1,
-              yAxisID: 'y',
+              data: 순이익arr,
+              borderColor: 'rgba(0,0,0,0)',
+              backgroundColor: 'rgba(0,0,0,0)',
+              pointRadius: 0,
+              borderWidth: 0,
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 750, easing: 'easeInOutCubic' },
+          interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              align: 'end',
-              labels: { font: { size: 11 }, color: '#6b7280', boxWidth: 12, padding: 12 }
-            },
+            legend: { display: false },
             tooltip: {
-              callbacks: {
-                label: function(ctx) {
-                  return '  ' + ctx.dataset.label + ': ' + 원표시(ctx.parsed.y);
+              enabled: false,
+              external: function(context) {
+                var tip = document.getElementById('tv툴팁');
+                if (!tip) {
+                  tip = document.createElement('div');
+                  tip.id = 'tv툴팁';
+                  tip.style.cssText = [
+                    'position:fixed', 'pointer-events:none',
+                    'background:#1e222d', 'color:#d1d4dc',
+                    'border:1px solid #2a2e39', 'border-radius:8px',
+                    'padding:13px 16px', 'font-size:12px',
+                    'min-width:190px', 'box-shadow:0 8px 28px rgba(0,0,0,0.45)',
+                    'z-index:9999', 'opacity:0', 'transition:opacity 0.1s',
+                    'line-height:1.5', 'font-family:inherit',
+                  ].join(';');
+                  document.body.appendChild(tip);
                 }
+
+                var tt = context.tooltip;
+                if (tt.opacity === 0) { tip.style.opacity = '0'; return; }
+
+                var idx = (tt.dataPoints && tt.dataPoints[0]) ? tt.dataPoints[0].dataIndex : 0;
+                if (idx < 0 || idx >= n) return;
+
+                var m = 매출arr[idx], b = 비용arr[idx], s = 순이익arr[idx];
+                var sc = s >= 0 ? TV_G : TV_R;
+                var 이익률 = m > 0 ? (s / m * 100).toFixed(1) : '—';
+
+                tip.innerHTML =
+                  '<div style="color:#787b86;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:11px;">' + 라벨[idx] + '</div>' +
+                  tipRow('매출', 원표시(m), TV_B, false) +
+                  tipRow('비용+급여', 원표시(b), TV_R, false) +
+                  '<div style="border-top:1px solid #2a2e39;margin:9px 0 7px;"></div>' +
+                  tipRow('순이익', (s >= 0 ? '+' : '') + 원표시(s), sc, true) +
+                  '<div style="text-align:right;margin-top:4px;"><span style="font-size:10px;color:#787b86;">이익률 ' + 이익률 + '%</span></div>';
+
+                tip.style.opacity = '1';
+
+                var rect = context.chart.canvas.getBoundingClientRect();
+                var lx = rect.left + tt.caretX + 18;
+                var ly = rect.top  + tt.caretY - 90;
+                if (lx + 210 > window.innerWidth) lx = rect.left + tt.caretX - 218;
+                if (ly < 4) ly = 4;
+                tip.style.left = lx + 'px';
+                tip.style.top  = ly + 'px';
               }
             }
           },
           scales: {
             y: {
-              beginAtZero: false,
+              min: yMin,
+              max: yMax,
+              grid: {
+                color: 'rgba(42,46,57,0.06)',
+                lineWidth: 1,
+                drawTicks: false,
+              },
+              border: { display: false },
               ticks: {
                 callback: function(v) {
                   if (v === 0) return '0';
-                  if (Math.abs(v) >= 10000000) return (v / 10000000).toFixed(0) + '천만';
-                  if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(0) + '백만';
+                  var a = Math.abs(v);
+                  if (a >= 100000000) return (v / 100000000).toFixed(1) + '억';
+                  if (a >= 10000000)  return (v / 10000000).toFixed(0) + '천만';
+                  if (a >= 1000000)   return (v / 1000000).toFixed(0) + '백만';
                   return (v / 10000).toFixed(0) + '만';
                 },
                 font: { size: 11 },
-                color: '#6b7280',
+                color: '#9598a1',
                 maxTicksLimit: 6,
-              },
-              grid: { color: '#f3f4f6' },
-              border: { display: false },
+                padding: 10,
+              }
             },
             x: {
               grid: { display: false },
-              ticks: { font: { size: 12 }, color: '#374151' },
               border: { display: false },
+              ticks: { font: { size: 12 }, color: '#787b86', padding: 10 }
             }
           }
         }
