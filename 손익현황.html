@@ -7,241 +7,211 @@
   <meta name="theme-color" content="#1a3a5c">
   <link rel="stylesheet" href="css/style.css">
   <style>
-    .페이지헤더행 {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 18px;
-    }
-    .페이지헤더행 h2 {
-      font-size: 17px;
-      font-weight: 700;
-      color: #1a3a5c;
-      letter-spacing: -0.2px;
-    }
-    .페이지헤더행 .기준일 {
-      font-size: 12px;
-      color: #6b7280;
-    }
-    .기준월선택 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: #374151;
-    }
-    .기준월선택 input[type="month"] {
-      border: 1px solid #c0cfe0;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 12px;
-      font-family: inherit;
-      height: 28px;
-      color: #1a3a5c;
-    }
-    .기준월선택 button {
-      height: 28px;
-      padding: 0 10px;
-      font-size: 12px;
-      border: 1px solid #c0cfe0;
-      background: #f8fafc;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #374151;
-      font-family: inherit;
-      transition: background 0.15s;
-    }
-    .기준월선택 button:hover { background: #e8f0fa; }
-    .기준월선택 button.활성 { background: #2a6496; color: #fff; border-color: #2a6496; }
+    /* ════════════════════════════════
+       손익현황 — 전체 다크 테마
+    ════════════════════════════════ */
+    body { background: #0d1117; }
+    .내용영역 { background: transparent; }
 
-    /* KPI 타일 */
-    .kpi그리드 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 10px;
+    /* 메뉴바 다크 오버라이드 */
+    .메뉴바 {
+      background: rgba(13,17,23,0.92) !important;
+      border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
     }
-    .kpi그리드2 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 16px;
+    .메뉴바 .회사명_메인 { color: #d1d4dc !important; }
+    .메뉴바 .회사명_부제 { color: #565a6e !important; }
+    .메뉴바 nav a { color: #787b86 !important; }
+    .메뉴바 nav a.활성 {
+      color: #d1d4dc !important;
+      background: rgba(255,255,255,0.09) !important;
     }
+    .메뉴바 nav a:hover { background: rgba(255,255,255,0.06) !important; color: #c4c7d0 !important; }
+    .메뉴바 nav a.비활성 { color: #565a6e !important; }
+    .메뉴바 .사용자명 { color: #787b86 !important; }
+    .메뉴바 .우측정보 button {
+      background: rgba(255,255,255,0.07) !important;
+      border-color: rgba(255,255,255,0.12) !important;
+      color: #9598a1 !important;
+    }
+
+    /* 페이지 헤더 */
+    .페이지헤더행 {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 18px;
+    }
+    .페이지헤더행 h2 { font-size: 17px; font-weight: 700; color: #d1d4dc; letter-spacing: -0.2px; }
+    .페이지헤더행 .기준일 { font-size: 12px; color: #565a6e; }
+
+    .기준월선택 { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9598a1; }
+    .기준월선택 input[type="month"] {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; padding: 4px 8px;
+      font-size: 12px; font-family: inherit; height: 28px;
+      color: #d1d4dc; background: rgba(255,255,255,0.06);
+    }
+    .기준월선택 input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+    .기준월선택 button {
+      height: 28px; padding: 0 12px; font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px; cursor: pointer; color: #9598a1;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .기준월선택 button:hover { background: rgba(255,255,255,0.11); color: #d1d4dc; }
+    .기준월선택 button.활성 {
+      background: rgba(41,98,255,0.8);
+      color: #fff; border-color: rgba(41,98,255,0.6);
+      box-shadow: 0 0 12px rgba(41,98,255,0.3);
+    }
+
+    /* ── KPI 그리드 ── */
+    .kpi그리드 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 10px; }
+    .kpi그리드2 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 16px; }
+
+    /* KPI 카드 — 글래스모피즘 */
     .kpi카드 {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px 18px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-      border: 1px solid #e8eef5;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-height: 116px;
-      position: relative;
-      overflow: hidden;
+      background: linear-gradient(145deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.018) 100%);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 18px 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      display: flex; flex-direction: column; gap: 10px;
+      min-height: 116px; position: relative; overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .kpi카드:hover {
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.09);
+      transform: translateY(-1px);
     }
     .kpi카드::before {
       content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: #2a6496;
-      border-radius: 12px 12px 0 0;
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #2962ff 0%, rgba(41,98,255,0.15) 100%);
+      border-radius: 14px 14px 0 0;
     }
-    .kpi카드.강조::before { background: #16a34a; }
-    .kpi카드.경고::before { background: #dc2626; }
-    .kpi카드.중립::before { background: #6b7280; }
-    .kpi카드.주황::before { background: #ea7c1a; }
+    .kpi카드.강조::before { background: linear-gradient(90deg, #089981, rgba(8,153,129,0.15)); }
+    .kpi카드.경고::before { background: linear-gradient(90deg, #f23645, rgba(242,54,69,0.15)); }
+    .kpi카드.중립::before { background: linear-gradient(90deg, #565a6e, rgba(86,90,110,0.15)); }
+    .kpi카드.주황::before { background: linear-gradient(90deg, #f7931a, rgba(247,147,26,0.15)); }
+
+    /* 히어로 카드 */
     .kpi카드.히어로 {
-      background: linear-gradient(155deg, #0d2b47 0%, #123a63 50%, #1a4a7a 100%);
-      border-color: rgba(57,135,229,0.35);
-      box-shadow: 0 4px 20px rgba(13,43,71,0.35), 0 0 0 1px rgba(57,135,229,0.18);
+      background: linear-gradient(145deg, #1b2550 0%, #101830 55%, #090e1e 100%);
+      border: 1px solid rgba(41,98,255,0.28);
+      box-shadow: 0 0 0 1px rgba(41,98,255,0.10),
+                  0 12px 40px rgba(41,98,255,0.18),
+                  0 8px 32px rgba(0,0,0,0.55);
     }
-    .kpi카드.히어로::before { display: none; }
+    .kpi카드.히어로:hover {
+      box-shadow: 0 0 0 1px rgba(41,98,255,0.18),
+                  0 16px 50px rgba(41,98,255,0.25),
+                  0 10px 40px rgba(0,0,0,0.6);
+    }
+    .kpi카드.히어로::before {
+      background: linear-gradient(90deg, #2962ff 0%, #648aff 50%, rgba(41,98,255,0.1) 100%);
+      height: 2px;
+    }
+
+    /* KPI 아이콘 */
     .kpi아이콘 {
-      width: 32px; height: 32px; border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .kpi아이콘 svg { width: 17px; height: 17px; }
-    .kpi아이콘.파랑  { background: rgba(42,100,150,0.12); color: #2a6496; }
-    .kpi아이콘.회색  { background: rgba(107,114,128,0.12); color: #6b7280; }
-    .kpi아이콘.노랑  { background: rgba(234,124,26,0.12); color: #ea7c1a; }
-    .kpi아이콘.초록  { background: rgba(22,163,74,0.12);  color: #16a34a; }
-    .kpi아이콘.빨강  { background: rgba(220,38,38,0.12);  color: #dc2626; }
-    .kpi아이콘.남색  { background: rgba(255,255,255,0.15); color: #eaf3ff; }
-    .kpi라벨 {
-      font-size: 11px;
-      font-weight: 600;
-      color: #6b7280;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .kpi카드.히어로 .kpi라벨 { color: #9db9dd; }
+    .kpi아이콘 svg { width: 18px; height: 18px; }
+    .kpi아이콘.파랑 { background: rgba(41,98,255,0.18);  color: #648aff; }
+    .kpi아이콘.회색 { background: rgba(120,123,134,0.18); color: #9598a1; }
+    .kpi아이콘.노랑 { background: rgba(247,147,26,0.18);  color: #f7a84a; }
+    .kpi아이콘.초록 { background: rgba(8,153,129,0.18);   color: #0ec6aa; }
+    .kpi아이콘.빨강 { background: rgba(242,54,69,0.18);   color: #ff6070; }
+    .kpi아이콘.남색 { background: rgba(100,138,255,0.22); color: #a8c0ff; }
+
+    /* KPI 텍스트 */
+    .kpi라벨 { font-size: 11px; font-weight: 600; color: #787b86; letter-spacing: 0.04em; text-transform: uppercase; }
+    .kpi카드.히어로 .kpi라벨 { color: #7a97c4; }
     .kpi값 {
-      font-size: 21px;
-      font-weight: 700;
-      color: #1a3a5c;
-      letter-spacing: -0.5px;
-      font-variant-numeric: tabular-nums;
-      line-height: 1.15;
+      font-size: 22px; font-weight: 700; color: #c4c7d0;
+      letter-spacing: -0.5px; font-variant-numeric: tabular-nums; line-height: 1.15;
     }
     .kpi카드.히어로 .kpi값 {
-      background: linear-gradient(120deg, #ffffff, #cfe6ff);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      font-size: 23px;
+      background: linear-gradient(120deg, #ffffff 30%, #93c4ff 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 24px;
     }
-    .kpi값.상승 { color: #16a34a; }
-    .kpi값.하락 { color: #dc2626; }
-    .kpi서브 {
-      font-size: 11px;
-      color: #9ca3af;
-      margin-top: -4px;
-    }
-    .kpi카드.히어로 .kpi서브 { color: #9db9dd; }
-    .kpi서브.상승 { color: #16a34a; }
-    .kpi서브.하락 { color: #dc2626; }
+    .kpi값.상승 { color: #0ec6aa; }
+    .kpi값.하락 { color: #ff6070; }
+    .kpi서브 { font-size: 11px; color: #565a6e; margin-top: -4px; }
+    .kpi카드.히어로 .kpi서브 { color: #7a97c4; }
+    .kpi서브.상승 { color: #0ec6aa; }
+    .kpi서브.하락 { color: #ff6070; }
     .kpi델타 {
       display: inline-flex; align-items: center; gap: 3px;
       font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
       width: fit-content; margin-top: -2px;
     }
-    .kpi델타.상승 { color: #16a34a; background: rgba(22,163,74,0.10); }
-    .kpi델타.하락 { color: #dc2626; background: rgba(220,38,38,0.10); }
-    .kpi델타.중립 { color: #6b7280; background: rgba(107,114,128,0.08); }
+    .kpi델타.상승 { color: #0ec6aa; background: rgba(8,153,129,0.15); }
+    .kpi델타.하락 { color: #ff6070; background: rgba(242,54,69,0.15); }
+    .kpi델타.중립 { color: #787b86; background: rgba(120,123,134,0.12); }
 
-    /* 차트 영역 */
-    .차트그리드2 {
-      display: grid;
-      grid-template-columns: 3fr 2fr;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
+    /* ── 차트 그리드 ── */
+    .차트그리드2 { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; margin-bottom: 14px; }
+
+    /* 차트 카드 — 글래스모피즘 */
     .차트카드 {
-      background: #fff;
-      border-radius: 8px;
-      padding: 18px 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.018) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 20px 22px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.05);
     }
-    .차트제목행 {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
-    }
-    .차트제목 {
-      font-size: 13px;
-      font-weight: 700;
-      color: #1a3a5c;
-    }
-    .차트부제 {
-      font-size: 11px;
-      color: #9ca3af;
-    }
+    .차트제목행 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .차트제목 { font-size: 13px; font-weight: 700; color: #c4c7d0; letter-spacing: -0.1px; }
+    .차트부제 { font-size: 11px; color: #565a6e; margin-top: 2px; }
     .차트래퍼 { position: relative; }
 
-    /* ── 월별 손익 추이 다크 카드 ── */
+    /* 월별 손익 카드 (유지) */
     #월별손익카드 {
       background: linear-gradient(160deg, #1c2030 0%, #131722 100%);
       border: 1px solid #2a2e39;
       box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
     }
-    #월별손익카드 .차트제목 {
-      color: #d1d4dc;
-      font-size: 14px;
-      letter-spacing: -0.2px;
-    }
+    #월별손익카드 .차트제목 { color: #d1d4dc; font-size: 14px; letter-spacing: -0.2px; }
     #월별손익카드 .차트부제 { color: #565a6e; }
     #월별손익카드 .차트범례 span { color: #787b86; }
-    #월별손익카드 .차트범례 svg line { stroke-opacity: 0.75; }
 
+    /* 로딩 오버레이 */
     .로딩오버레이 {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,0.8);
-      font-size: 12px; color: #6b7280;
-      border-radius: 8px;
+      background: rgba(10,13,20,0.75); font-size: 12px; color: #565a6e; border-radius: 10px;
     }
 
     /* 예측 배지 */
     .예측배지 {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 12px;
-      background: #eff6ff;
-      color: #2a6496;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+      background: rgba(41,98,255,0.15); color: #648aff;
+      border: 1px solid rgba(41,98,255,0.25);
     }
-    .예측배지.증가 { background: #f0fdf4; color: #16a34a; }
-    .예측배지.감소 { background: #fef2f2; color: #dc2626; }
+    .예측배지.증가 { background: rgba(8,153,129,0.15); color: #0ec6aa; border-color: rgba(8,153,129,0.25); }
+    .예측배지.감소 { background: rgba(242,54,69,0.15); color: #ff6070; border-color: rgba(242,54,69,0.25); }
 
     /* 범례 */
-    .차트범례 {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      font-size: 11px;
-      color: #6b7280;
-    }
+    .차트범례 { display: flex; gap: 14px; align-items: center; font-size: 11px; color: #787b86; }
     .범례항목 { display: flex; align-items: center; gap: 5px; }
     .범례점 { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
-    /* 납품처별 요약 테이블 */
+    /* 테이블 — 다크 */
     .요약테이블 { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
     .요약테이블 th {
-      text-align: left; padding: 6px 8px;
-      background: #f8fafc; border-bottom: 1px solid #e5e7eb;
-      font-weight: 600; color: #374151; font-size: 11px;
+      text-align: left; padding: 8px 10px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-weight: 600; color: #787b86; font-size: 11px; letter-spacing: 0.02em;
     }
-    .요약테이블 td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+    .요약테이블 td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #c4c7d0; }
     .요약테이블 tr:last-child td { border-bottom: none; }
     .요약테이블 td.수치 { text-align: right; font-variant-numeric: tabular-nums; }
-    .요약테이블 tr:hover td { background: #f8fafc; }
+    .요약테이블 tr:hover td { background: rgba(255,255,255,0.03); }
   </style>
 </head>
 <body>
@@ -1042,7 +1012,7 @@
       });
 
       var 항목들 = Object.keys(품목합계).sort(function(a, b) { return 품목합계[b] - 품목합계[a]; });
-      var 색배열 = ['#2563eb', '#0d9488', '#d97706', '#9333ea', '#dc2626', '#6b7280'];
+      var 색배열 = ['#2962ff', '#089981', '#f7931a', '#9333ea', '#f23645', '#565a6e'];
 
       var 라벨 = 항목들.slice(0, 5);
       var 값 = 라벨.map(function(k) { return 품목합계[k]; });
@@ -1057,27 +1027,37 @@
       로딩숨김('품목로딩');
 
       if (값.length === 0) {
-        var ctx = document.getElementById('품목차트').getContext('2d');
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.font = '13px Malgun Gothic';
-        ctx.fillStyle = '#9ca3af';
-        ctx.textAlign = 'center';
-        ctx.fillText('해당 월 데이터 없음', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        var ctx2 = document.getElementById('품목차트').getContext('2d');
+        ctx2.clearRect(0, 0, ctx2.canvas.width, ctx2.canvas.height);
+        ctx2.font = '13px sans-serif'; ctx2.fillStyle = '#565a6e';
+        ctx2.textAlign = 'center';
+        ctx2.fillText('해당 월 데이터 없음', ctx2.canvas.width / 2, ctx2.canvas.height / 2);
         return;
       }
 
-      var _도넛그림자 = {
-        id: 'donutShadow',
-        beforeDatasetsDraw: function(chart) {
-          var ctx = chart.ctx;
-          ctx.save();
-          ctx.shadowColor = 'rgba(0,0,0,0.22)';
-          ctx.shadowBlur = 12;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 5;
+      var 총합 = 값.reduce(function(a, b) { return a + b; }, 0);
+
+      /* 중앙 텍스트 + 다크 배경 플러그인 */
+      var _도넛중앙 = {
+        id: 'donutCenter',
+        beforeDraw: function(chart) {
+          var c = chart.ctx;
+          c.save();
+          c.fillStyle = 'transparent';
+          c.fillRect(0, 0, chart.width, chart.height);
+          c.restore();
         },
         afterDatasetsDraw: function(chart) {
-          chart.ctx.restore();
+          var c = chart.ctx;
+          var cx = (chart.chartArea.left + chart.chartArea.right) / 2;
+          var cy = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+          c.save();
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillStyle = '#565a6e'; c.font = '10px sans-serif';
+          c.fillText('총매출(만원)', cx, cy - 14);
+          c.fillStyle = '#d1d4dc'; c.font = 'bold 16px sans-serif';
+          c.fillText(만원표시(총합), cx, cy + 4);
+          c.restore();
         }
       };
 
@@ -1089,36 +1069,47 @@
             data: 값,
             backgroundColor: 색배열.slice(0, 라벨.length),
             borderWidth: 3,
-            borderColor: '#fff',
+            borderColor: 'rgba(13,17,23,0.8)',
             hoverOffset: 10,
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '60%',
+          cutout: '62%',
           plugins: {
             legend: {
-              position: 'bottom',
+              position: 'right',
               labels: {
-                font: { size: 10, family: '맑은 고딕' },
-                padding: 10,
-                boxWidth: 12,
-                boxHeight: 12,
+                font: { size: 11 }, color: '#787b86',
+                padding: 12, boxWidth: 10, boxHeight: 10,
+                generateLabels: function(chart) {
+                  var ds = chart.data.datasets[0];
+                  return chart.data.labels.map(function(lbl, i) {
+                    var pct = 총합 > 0 ? Math.round(ds.data[i] / 총합 * 100) : 0;
+                    return {
+                      text: lbl + '  ' + pct + '%',
+                      fillStyle: ds.backgroundColor[i],
+                      strokeStyle: ds.backgroundColor[i],
+                      hidden: false, index: i,
+                    };
+                  });
+                }
               }
             },
             tooltip: {
+              backgroundColor: '#1e222d', borderColor: '#2a2e39', borderWidth: 1,
+              titleColor: '#787b86', bodyColor: '#d1d4dc', padding: 10,
               callbacks: {
                 label: function(ctx) {
-                  var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-                  var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                  var pct = 총합 > 0 ? ((ctx.parsed / 총합) * 100).toFixed(1) : 0;
                   return '  ' + 원표시(ctx.parsed) + ' (' + pct + '%)';
                 }
               }
             }
           }
         },
-        plugins: [_도넛그림자]
+        plugins: [_도넛중앙]
       });
     }
 
@@ -1166,37 +1157,75 @@
 
       if (_일별차트) _일별차트.destroy();
       로딩숨김('일별로딩');
+
+      /* 오늘 세로선 플러그인 */
+      var 오늘선플러그인 = {
+        id: '오늘선',
+        afterDatasetsDraw: function(chart) {
+          var idx = 기준오늘날 - 1;
+          if (idx < 0 || idx >= 라벨.length) return;
+          var c = chart.ctx, xs = chart.scales.x, ys = chart.scales.y;
+          var xPos = xs.getPixelForValue(idx);
+          c.save();
+          c.beginPath();
+          c.strokeStyle = 'rgba(255,255,255,0.25)';
+          c.lineWidth = 1; c.setLineDash([4, 4]);
+          c.moveTo(xPos, ys.top); c.lineTo(xPos, ys.bottom); c.stroke();
+          c.setLineDash([]);
+          c.fillStyle = 'rgba(255,255,255,0.55)';
+          c.font = 'bold 10px sans-serif'; c.textAlign = 'center';
+          c.fillText('오늘', xPos, ys.top - 4);
+          c.restore();
+        }
+      };
+
       _일별차트 = new Chart(document.getElementById('일별차트'), {
         type: 'bar',
+        plugins: [오늘선플러그인],
         data: {
           labels: 라벨,
           datasets: [
             {
               label: '실적',
               data: 실적값,
-              backgroundColor: '#2a6496',
-              borderRadius: 3,
+              backgroundColor: function(ctx) {
+                var chart = ctx.chart, ca = chart.chartArea;
+                if (!ca) return 'rgba(41,98,255,0.85)';
+                var g = chart.ctx.createLinearGradient(0, ca.top, 0, ca.bottom);
+                g.addColorStop(0, 'rgba(41,98,255,0.92)');
+                g.addColorStop(1, 'rgba(41,98,255,0.20)');
+                return g;
+              },
+              borderRadius: { topLeft: 5, topRight: 5 },
               borderSkipped: false,
-              barPercentage: 0.7,
+              barPercentage: 0.65,
             },
             {
               label: '예측',
               data: 예측값,
-              backgroundColor: 'rgba(191, 219, 254, 0.7)',
-              borderColor: '#93c5fd',
+              backgroundColor: 'rgba(41,98,255,0.14)',
+              borderColor: 'rgba(41,98,255,0.35)',
               borderWidth: 1,
-              borderRadius: 3,
+              borderRadius: { topLeft: 5, topRight: 5 },
               borderSkipped: false,
-              barPercentage: 0.7,
+              barPercentage: 0.65,
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 600, easing: 'easeInOutCubic' },
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: '#1e222d',
+              borderColor: '#2a2e39',
+              borderWidth: 1,
+              titleColor: '#787b86',
+              bodyColor: '#d1d4dc',
+              padding: 10,
+              displayColors: false,
               callbacks: {
                 label: function(ctx) {
                   var v = ctx.parsed.y;
@@ -1215,16 +1244,14 @@
                   if (v >= 1000000) return (v / 1000000).toFixed(0) + '백만';
                   return (v / 10000).toFixed(0) + '만';
                 },
-                font: { size: 10 },
-                color: '#6b7280',
-                maxTicksLimit: 4,
+                font: { size: 10 }, color: '#565a6e', maxTicksLimit: 4,
               },
-              grid: { color: '#f3f4f6' },
+              grid: { color: 'rgba(255,255,255,0.05)', drawTicks: false },
               border: { display: false },
             },
             x: {
               grid: { display: false },
-              ticks: { font: { size: 9 }, color: '#9ca3af', maxRotation: 0 },
+              ticks: { font: { size: 9 }, color: '#565a6e', maxRotation: 0 },
               border: { display: false },
             }
           }
@@ -1268,7 +1295,7 @@
           '<td class="수치">' + 원표시(vat) + '</td>' +
           '</tr>';
       });
-      html += '<tr style="font-weight:700;background:#f8fafc;">' +
+      html += '<tr style="font-weight:700;background:rgba(255,255,255,0.05);">' +
         '<td>합계</td>' +
         '<td class="수치">' + 합계수량.toLocaleString() + '</td>' +
         '<td class="수치">' + 원표시(합계공급) + '</td>' +
@@ -1298,7 +1325,7 @@
           증감html = '<span style="color:#9ca3af;">비교불가</span>';
         }
         var 순이익색 = 순이익 >= 0 ? '#16a34a' : '#dc2626';
-        var 강조 = k === (월키(_기준년, _기준월)) ? 'style="background:#eff6ff;"' : '';
+        var 강조 = k === (월키(_기준년, _기준월)) ? 'style="background:rgba(41,98,255,0.10);"' : '';
         html += '<tr ' + 강조 + '>' +
           '<td>' + 월라벨(k) + '</td>' +
           '<td class="수치">' + 만원표시(금액) + '</td>' +
@@ -1307,7 +1334,7 @@
           '<td class="수치">' + 증감html + '</td>' +
           '</tr>';
       }
-      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">데이터 없음</td></tr>';
+      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#565a6e;padding:16px;">데이터 없음</td></tr>';
     }
 
     /* ── 실시간 갱신 ── */
