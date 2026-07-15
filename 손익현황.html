@@ -412,11 +412,11 @@
       </div>
     </div>
 
-    <!-- 납품처별 / 품목별 요약 테이블 -->
+    <!-- 全社 상세 매출 실적 + 매입·지출 상세 (2열) -->
     <div class="차트그리드2" style="margin-bottom:14px;">
       <div class="차트카드">
         <div class="차트제목행">
-          <div class="차트제목">품목별 상세 실적</div>
+          <div class="차트제목">全社 상세 매출 실적</div>
           <div class="차트부제" id="품목테이블부제">기준월</div>
         </div>
         <div style="overflow-x:auto;">
@@ -428,15 +428,29 @@
       </div>
       <div class="차트카드">
         <div class="차트제목행">
-          <div class="차트제목">6개월 누적 요약</div>
-          <div class="차트부제">최근 6개월 합산 실적</div>
+          <div class="차트제목">매입·지출 상세</div>
+          <div class="차트부제" id="매입테이블부제">기준월</div>
         </div>
         <div style="overflow-x:auto;">
-          <table class="요약테이블" id="누적테이블">
-            <thead><tr><th>월</th><th style="text-align:right;">매출</th><th style="text-align:right;">비용+급여</th><th style="text-align:right;">순이익</th><th style="text-align:right;">전월대비</th></tr></thead>
-            <tbody id="누적테이블바디"><tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
+          <table class="요약테이블" id="매입테이블">
+            <thead><tr><th>날짜</th><th>카테고리</th><th>내용</th><th style="text-align:right;">금액</th></tr></thead>
+            <tbody id="매입테이블바디"><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- 6개월 누적 데이터 (전체 너비) -->
+    <div class="차트카드" style="margin-bottom:14px;">
+      <div class="차트제목행">
+        <div class="차트제목">6개월 누적 데이터</div>
+        <div class="차트부제">최근 6개월 매출·비용·손익 추이</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="요약테이블" id="누적테이블">
+          <thead><tr><th>월</th><th style="text-align:right;">매출</th><th style="text-align:right;">비용+급여</th><th style="text-align:right;">순이익</th><th style="text-align:right;">이익률</th><th style="text-align:right;">전월대비</th></tr></thead>
+          <tbody id="누적테이블바디"><tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px;">데이터 없음</td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -707,6 +721,7 @@
       품목차트그리기(기준키);
       일별차트그리기(기준키, 기준달마지막, 이번달여부 ? 오늘.getDate() : 기준달마지막);
       품목테이블그리기(기준키);
+      매입테이블그리기(기준키);
       누적테이블그리기(최근월키배열, 월별합계, 월별건수, 월별총비용, 월별순이익맵);
     }
 
@@ -1332,7 +1347,44 @@
       바디.innerHTML = html;
     }
 
-    /* ── 6개월 누적 요약 테이블 ── */
+    /* ── 매입·지출 상세 테이블 ── */
+    function 매입테이블그리기(기준키) {
+      var 항목들 = 매입지출데이터.filter(function(h) {
+        return (h.월 || '').slice(0, 7) === 기준키;
+      }).slice().sort(function(a, b) {
+        return (a.월 || '') < (b.월 || '') ? -1 : 1;
+      });
+
+      document.getElementById('매입테이블부제').textContent =
+        기준키.replace('-', '년 ').replace(/(\d+)년 0?(\d+)/, '$1년 $2월') + ' 기준';
+
+      if (항목들.length === 0) {
+        document.getElementById('매입테이블바디').innerHTML =
+          '<tr><td colspan="4" style="text-align:center;color:#565a6e;padding:16px;">해당 월 매입·지출 없음</td></tr>';
+        return;
+      }
+
+      var 합계 = 0;
+      var html = '';
+      항목들.forEach(function(h) {
+        var 금액 = Number(h.금액) || 0;
+        합계 += 금액;
+        var 날짜표시 = (h.월 || '').slice(5, 10).replace('-', '/');
+        html += '<tr>' +
+          '<td style="color:#787b86;font-size:11px;">' + 날짜표시 + '</td>' +
+          '<td><span style="display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(41,98,255,0.15);color:#648aff;">' + (h.카테고리 || '—') + '</span></td>' +
+          '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (h.내용 || '—') + '</td>' +
+          '<td class="수치" style="color:#f87171;">' + 원표시(금액) + '</td>' +
+          '</tr>';
+      });
+      html += '<tr style="font-weight:700;background:rgba(255,255,255,0.07);color:#e0e3eb;">' +
+        '<td colspan="3">합계</td>' +
+        '<td class="수치" style="color:#f87171;">' + 원표시(합계) + '</td>' +
+        '</tr>';
+      document.getElementById('매입테이블바디').innerHTML = html;
+    }
+
+    /* ── 6개월 누적 데이터 테이블 ── */
     function 누적테이블그리기(키배열, 월별합계, 월별건수, 월별총비용, 월별순이익맵) {
       var html = '';
       for (var i = 0; i < 키배열.length; i++) {
@@ -1345,24 +1397,34 @@
         var 증감html = '';
         if (이전금액 !== null && 이전금액 > 0) {
           var 율 = ((금액 - 이전금액) / 이전금액 * 100);
-          var 색 = 율 >= 0 ? '#16a34a' : '#dc2626';
+          var 색 = 율 >= 0 ? '#089981' : '#f23645';
           증감html = '<span style="color:' + 색 + ';font-weight:600;">' + (율 >= 0 ? '▲+' : '▼') + 율.toFixed(1) + '%</span>';
         } else if (i === 0) {
-          증감html = '<span style="color:#9ca3af;">—</span>';
+          증감html = '<span style="color:#565a6e;">—</span>';
         } else {
-          증감html = '<span style="color:#9ca3af;">비교불가</span>';
+          증감html = '<span style="color:#565a6e;">비교불가</span>';
         }
-        var 순이익색 = 순이익 >= 0 ? '#16a34a' : '#dc2626';
-        var 강조 = k === (월키(_기준년, _기준월)) ? 'style="background:rgba(41,98,255,0.13);color:#c4c7d0;"' : '';
+        var 순이익색 = 순이익 >= 0 ? '#089981' : '#f23645';
+        var 이익률html = '';
+        if (금액 > 0) {
+          var 이률 = (순이익 / 금액 * 100);
+          var 이률색 = 이률 >= 0 ? '#089981' : '#f23645';
+          이익률html = '<span style="color:' + 이률색 + ';font-weight:600;">' + 이률.toFixed(1) + '%</span>';
+        } else {
+          이익률html = '<span style="color:#565a6e;">—</span>';
+        }
+        var 기준여부 = k === (월키(_기준년, _기준월));
+        var 강조 = 기준여부 ? 'style="background:rgba(41,98,255,0.13);color:#c4c7d0;"' : '';
         html += '<tr ' + 강조 + '>' +
-          '<td>' + 월라벨(k) + '</td>' +
+          '<td' + (기준여부 ? ' style="font-weight:700;color:#648aff;"' : '') + '>' + 월라벨(k) + '</td>' +
           '<td class="수치">' + 만원표시(금액) + '</td>' +
-          '<td class="수치" style="color:#dc2626;">' + (비용 > 0 ? 만원표시(비용) : '—') + '</td>' +
+          '<td class="수치" style="color:#f87171;">' + (비용 > 0 ? 만원표시(비용) : '<span style="color:#565a6e;">—</span>') + '</td>' +
           '<td class="수치" style="color:' + 순이익색 + ';font-weight:600;">' + 만원표시(순이익) + '</td>' +
+          '<td class="수치">' + 이익률html + '</td>' +
           '<td class="수치">' + 증감html + '</td>' +
           '</tr>';
       }
-      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#565a6e;padding:16px;">데이터 없음</td></tr>';
+      document.getElementById('누적테이블바디').innerHTML = html || '<tr><td colspan="6" style="text-align:center;color:#565a6e;padding:16px;">데이터 없음</td></tr>';
     }
 
     /* ── 실시간 갱신 ── */
