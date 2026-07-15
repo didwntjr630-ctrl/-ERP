@@ -396,7 +396,7 @@
           <span class="예측배지" id="예측배지">예측 준비 중</span>
         </div>
       </div>
-      <div class="차트래퍼" style="height:220px;">
+      <div class="차트래퍼" style="height:280px;">
         <canvas id="일별차트"></canvas>
         <div class="로딩오버레이" id="일별로딩">불러오는 중...</div>
       </div>
@@ -1167,14 +1167,26 @@
           var c = chart.ctx, xs = chart.scales.x, ys = chart.scales.y;
           var xPos = xs.getPixelForValue(idx);
           c.save();
+          /* 텍스트 배경 pill */
+          var txt = '오늘';
+          c.font = 'bold 10px sans-serif';
+          c.textAlign = 'center';
+          var tw = c.measureText(txt).width;
+          var ty = ys.top + 18;
+          c.fillStyle = 'rgba(41,98,255,0.75)';
+          var pr = 5;
           c.beginPath();
-          c.strokeStyle = 'rgba(255,255,255,0.25)';
+          c.roundRect(xPos - tw/2 - pr, ty - 12, tw + pr*2, 16, 4);
+          c.fill();
+          /* 세로 점선 (pill 아래부터) */
+          c.beginPath();
+          c.strokeStyle = 'rgba(255,255,255,0.22)';
           c.lineWidth = 1; c.setLineDash([4, 4]);
-          c.moveTo(xPos, ys.top); c.lineTo(xPos, ys.bottom); c.stroke();
+          c.moveTo(xPos, ty + 5); c.lineTo(xPos, ys.bottom); c.stroke();
           c.setLineDash([]);
-          c.fillStyle = 'rgba(255,255,255,0.55)';
-          c.font = 'bold 10px sans-serif'; c.textAlign = 'center';
-          c.fillText('오늘', xPos, ys.top - 4);
+          /* 텍스트 */
+          c.fillStyle = '#ffffff';
+          c.fillText(txt, xPos, ty);
           c.restore();
         }
       };
@@ -1198,7 +1210,7 @@
               },
               borderRadius: { topLeft: 5, topRight: 5 },
               borderSkipped: false,
-              barPercentage: 0.65,
+              barPercentage: 0.78,
             },
             {
               label: '예측',
@@ -1208,7 +1220,7 @@
               borderWidth: 1,
               borderRadius: { topLeft: 5, topRight: 5 },
               borderSkipped: false,
-              barPercentage: 0.65,
+              barPercentage: 0.78,
             }
           ]
         },
