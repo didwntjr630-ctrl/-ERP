@@ -123,12 +123,9 @@ KakaoSend:
 
   Sleep, 600
 
-  ; 창 하단 중앙 클릭 (입력창 포커스)
-  WinGetPos, winX, winY, winW, winH, ahk_id %foundHwnd%
-  clickX := winX + (winW // 2)
-  clickY := winY + winH - 45
-  Click, %clickX%, %clickY%
-  Sleep, 500
+  ; 입력창 포커스 (클릭 없이 ControlFocus만 시도)
+  ControlFocus, EVA_ChildWnd1, ahk_id %foundHwnd%
+  Sleep, 400
 
   ; 붙여넣기 + 전송
   SendInput, ^v
