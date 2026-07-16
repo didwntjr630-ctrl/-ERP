@@ -1,69 +1,77 @@
-#NoEnv
+﻿#NoEnv
+#Persistent
 #SingleInstance Force
 SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
 
-; =====================================================
-;  삼양ERP → 카카오톡 자동 발송 스크립트
-;  ERP "카카오 발송" 클릭 → 클립보드 감지 → 선택한 톡방으로 전송
-;  마커 형식: [ERP_KAKAO:톡방이름]
-; =====================================================
+global isSending := false
 
-OnClipboardChange("클립보드감지")
-Return
+TrayTip, ERP 카카오 발송, 실행 중입니다., 2, 1
 
-클립보드감지(타입) {
-    If (타입 != 1)
-        Return
+OnClipboardChange:
+  if (A_EventInfo != 1)
+    return
+  if (isSending)
+    return
 
-    내용 := Clipboard
+  clipText := Clipboard
 
-    ; ERP 발송 마커 확인
-    If (SubStr(내용, 1, 11) != "[ERP_KAKAO:")
-        Return
+  if (SubStr(clipText, 1, 11) != "[ERP_KAKAO:")
+    return
 
-    ; 톡방 이름 파싱: [ERP_KAKAO:톡방이름] 형태
-    줄끝 := InStr(내용, "`n")
-    If (!줄끝)
-        Return
+  lineEnd := InStr(clipText, "`n")
+  if (!lineEnd)
+    return
 
-    첫줄 := SubStr(내용, 1, 줄끝 - 1)           ; [ERP_KAKAO:톡방이름]
-    톡방이름 := RegExReplace(첫줄, "^\[ERP_KAKAO:(.*)\]$", "$1")
-    메시지 := SubStr(내용, 줄끝 + 1)             ; 실제 메시지 본문
+  firstLine := SubStr(clipText, 1, lineEnd - 1)
+  RegExMatch(firstLine, "\[ERP_KAKAO:(.*)\]", m)
+  roomName := m1
+  msgBody := SubStr(clipText, lineEnd + 1)
 
-    If (!톡방이름 || !메시지)
-        Return
+  if (!roomName || !msgBody)
+    return
 
-    ; 클립보드를 실제 메시지로 교체
-    Clipboard := 메시지
-    ClipWait, 1
+  isSending := true
+  Clipboard := msgBody
+  ClipWait, 2
 
-    ; 카카오톡 실행 여부 확인
-    If !WinExist("ahk_exe KakaoTalk.exe") {
-        MsgBox, 카카오톡이 실행되어 있지 않습니다.`n카카오톡을 먼저 실행해 주세요.
-        Return
-    }
+  if !WinExist("ahk_exe KakaoTalk.exe") {
+    MsgBox, 카카오톡이 실행되어 있지 않습니다.
+    isSending := false
+    return
+  }
 
-    ; 해당 톡방 창이 열려 있는지 확인
-    If WinExist(톡방이름 . " ahk_exe KakaoTalk.exe") {
-        WinActivate, %톡방이름% ahk_exe KakaoTalk.exe
-        Sleep, 300
-    } Else {
-        ; 카카오톡 메인 창 활성화 후 검색으로 톡방 찾기
-        WinActivate, ahk_exe KakaoTalk.exe
-        Sleep, 500
-        Send, ^f                    ; 검색 단축키
-        Sleep, 400
-        Send, %톡방이름%
-        Sleep, 700
-        Send, {Enter}
-        Sleep, 500
-    }
-
-    ; 채팅 입력창 붙여넣기 & 전송
-    Send, ^v
-    Sleep, 300
+  if WinExist(roomName . " ahk_exe KakaoTalk.exe") {
+    WinActivate, %roomName% ahk_exe KakaoTalk.exe
+  } else {
+    WinActivate, ahk_exe KakaoTalk.exe
+    Sleep, 500
+    Send, ^f
+    Sleep, 500
+    SendInput, %roomName%
+    Sleep, 800
     Send, {Enter}
+  }
 
-    TrayTip, 삼양ERP, [%톡방이름%] 카카오톡 전송 완료!, 2, 1
-}
+  WinWaitActive, %roomName% ahk_exe KakaoTalk.exe, , 2
+  Sleep, 600
+
+  ; 입력창 직접 포커스 시도 (카카오톡 컨트롤 클래스)
+  ControlFocus, EVA_ChildWnd1, %roomName% ahk_exe KakaoTalk.exe
+  Sleep, 200
+  if (ErrorLevel) {
+    ; 실패시 좌표 클릭으로 대체 (창 아래에서 80px)
+    WinGetPos, winX, winY, winW, winH
+    Click, % winX + winW//2, % winY + winH - 80
+    Sleep, 300
+    Click, % winX + winW//2, % winY + winH - 80
+    Sleep, 300
+  }
+
+  Send, ^v
+  Sleep, 400
+  Send, {Enter}
+
+  isSending := false
+  TrayTip, ERP, %roomName% 전송완료!, 2, 1
+return
