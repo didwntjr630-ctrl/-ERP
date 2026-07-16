@@ -295,7 +295,7 @@
             <span class="icon badge-new">사용</span>
           </a>
           <div class="arrow">↓</div>
-          <a class="menu-btn" href="손익현황.html">
+          <a class="menu-btn" id="손익현황메뉴" href="손익현황.html" style="display:none;">
             손익 현황
             <span class="icon badge-new">사용</span>
           </a>
@@ -373,6 +373,9 @@
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+      if (세션.사원명 === '양주석') {
+        document.getElementById('손익현황메뉴').style.display = '';
+      }
     }
 
     function 관리자페이지이동() {

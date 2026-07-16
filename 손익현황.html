@@ -466,6 +466,12 @@
   <script src="js/chat.js"></script>
   <script>
     세션체크();
+    var _세션 = 현재세션();
+    if (!_세션 || _세션.사원명 !== '양주석') {
+      alert('접근 권한이 없습니다.');
+      location.href = 'main.html';
+      return;
+    }
     접속자패널초기화();
     채팅초기화();
     document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
