@@ -173,8 +173,8 @@
       </div>
       <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px;">
         <button class="버튼 초록" style="padding:0 18px; height:34px; font-size:13px;" onclick="거래내역서출력()">엑셀 출력</button>
-        <select id="카카오톡방선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
-        <button class="버튼 노랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="카카오이미지발송()">카카오 발송 📷</button>
+        <input id="카카오톡방선택" type="text" placeholder="톡방 이름 입력" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit; width:110px;">
+        <button class="버튼 노랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="카카오이미지발송()">카카오 발송</button>
         <select id="메일수신처선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
         <button class="버튼 파랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="매출메일발송()">메일 발송</button>
       </div>
@@ -1163,13 +1163,7 @@
     }
 
     function 카카오톡방옵션채우기() {
-      var sel = document.getElementById('카카오톡방선택');
-      (APP_CONFIG.카카오톡방목록 || []).forEach(function(항목) {
-        var opt = document.createElement('option');
-        opt.value = 항목.톡방;
-        opt.textContent = '💬 ' + 항목.이름;
-        sel.appendChild(opt);
-      });
+      // input 텍스트 방식으로 변경, 함수 유지만 (호출부 제거 불필요)
     }
 
     날짜기본값();
