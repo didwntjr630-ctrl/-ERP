@@ -764,25 +764,24 @@
       알림표시('이미지 생성 중...', '성공');
 
       try {
-        var canvas = await html2canvas(wrap.firstChild, { scale:2, useCORS:true, backgroundColor:'#ffffff' });
-        document.body.removeChild(wrap);
+        // 1단계: 방 이름 마커 먼저 복사 (user gesture context 유지)
+        await navigator.clipboard.writeText('[ERP_KAKAO_IMG:' + 선택톡방 + ']');
 
-        canvas.toBlob(async function(blob) {
-          try {
-            // 1단계: AHK에 방 이름 전달
-            await navigator.clipboard.writeText('[ERP_KAKAO_IMG:' + 선택톡방 + ']');
-            // 2단계: 50ms 후 이미지 복사
-            setTimeout(async function() {
-              await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-              알림표시('이미지 전송 중 → ' + 선택톡방, '성공');
-            }, 300);
-          } catch(e) {
-            알림표시('클립보드 오류: ' + e.message, '오류');
-          }
-        }, 'image/png');
+        // 2단계: ClipboardItem에 Promise 직접 전달 → user gesture context 안에서 write 호출
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'image/png': html2canvas(wrap.firstChild, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+              .then(function(canvas) {
+                if (wrap.parentNode) document.body.removeChild(wrap);
+                return new Promise(function(resolve) { canvas.toBlob(resolve, 'image/png'); });
+              })
+          })
+        ]);
+
+        알림표시('이미지 전송 중 → ' + 선택톡방, '성공');
       } catch(e) {
-        document.body.removeChild(wrap);
-        알림표시('이미지 생성 실패: ' + e.message, '오류');
+        if (wrap.parentNode) document.body.removeChild(wrap);
+        알림표시('클립보드 오류: ' + e.message, '오류');
       }
     }
 
