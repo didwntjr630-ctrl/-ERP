@@ -173,8 +173,8 @@
       </div>
       <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px;">
         <button class="버튼 초록" style="padding:0 18px; height:34px; font-size:13px;" onclick="거래내역서출력()">엑셀 출력</button>
-        <input id="카카오톡방선택" type="text" placeholder="톡방 이름 입력" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit; width:110px;">
-        <button class="버튼 노랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="카카오이미지발송()">카카오 발송</button>
+        <input id="카카오톡방선택" type="text" placeholder="톡방 이름 입력" style="display:none; height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit; width:110px;">
+        <button id="카카오발송버튼" class="버튼 노랑" style="display:none; padding:0 18px; height:34px; font-size:13px;" onclick="카카오이미지발송()">카카오 발송</button>
         <select id="메일수신처선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
         <button class="버튼 파랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="매출메일발송()">메일 발송</button>
       </div>
@@ -272,7 +272,13 @@
     document.getElementById('부제').textContent = APP_CONFIG.부제;
     document.title = APP_CONFIG.시스템명 + ' - 매출관리';
     var 세션 = 현재세션();
-    if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+    if (세션) {
+      document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
+      if (세션.사원명 === '양주석') {
+        document.getElementById('카카오톡방선택').style.display = '';
+        document.getElementById('카카오발송버튼').style.display = '';
+      }
+    }
 
     var 전체데이터 = [];
     var 현재필터데이터 = [];  // 메일 발송 시 이 변수 기준으로 발송
