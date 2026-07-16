@@ -576,11 +576,8 @@
       });
       var 업체목록 = Object.keys(업체그룹).sort();
 
-      var 전체공급 = 0;
-      var 줄 = [];
-      줄.push('📊 [' + APP_CONFIG.회사명 + '] 매출 현황');
-      줄.push('📅 ' + 기간표시);
-      줄.push('');
+      var 전체공급 = 0, 전체수량 = 0;
+      var 업체블록 = [];
 
       업체목록.forEach(function(업체) {
         var 업체데이터 = 업체그룹[업체];
@@ -589,28 +586,44 @@
           var 품목 = 품목목록.find(function(p) { return p.품명 === h.품명; });
           var 단가 = 품목 ? (품목.단가 || 0) : 0;
           var 수량 = Number(h.출고수량) || 0;
-          if (!품목집계[h.품명]) 품목집계[h.품명] = { 수량: 0, 공급: 0 };
+          if (!품목집계[h.품명]) 품목집계[h.품명] = { 수량: 0, 공급: 0, 단가: 단가 };
           품목집계[h.품명].수량 += 수량;
           품목집계[h.품명].공급 += 단가 * 수량;
         });
         var 소계공급 = Object.values(품목집계).reduce(function(s, d) { return s + d.공급; }, 0);
         var 소계수량 = 업체데이터.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
         전체공급 += 소계공급;
+        전체수량 += 소계수량;
 
-        줄.push('▶ ' + 업체);
+        var 블록 = [];
+        블록.push('▶ ' + 업체 + '  (' + 업체데이터.length + '건 · ' + 소계수량.toLocaleString() + ' EA)');
+        블록.push('┌─────────────────────────────');
         Object.keys(품목집계).sort().forEach(function(품명) {
           var d = 품목집계[품명];
-          줄.push('  • ' + 품명 + '  ' + d.수량.toLocaleString() + 'EA  ' + d.공급.toLocaleString() + '원');
+          블록.push('│ ' + 품명);
+          블록.push('│   단가 ' + d.단가.toLocaleString() + '원 × ' + d.수량.toLocaleString() + 'EA = ' + d.공급.toLocaleString() + '원');
         });
-        줄.push('  소계: ' + 소계공급.toLocaleString() + '원 (VAT포함 ' + Math.round(소계공급 * 1.1).toLocaleString() + '원)');
-        줄.push('');
+        블록.push('└─────────────────────────────');
+        블록.push('  공급가액: ' + 소계공급.toLocaleString() + '원');
+        블록.push('  VAT포함:  ' + Math.round(소계공급 * 1.1).toLocaleString() + '원');
+        업체블록.push(블록.join('\n'));
       });
 
-      if (업체목록.length > 1) {
-        줄.push('━━━━━━━━━━━━━━━━━━━━');
-        줄.push('💰 합계: ' + 전체공급.toLocaleString() + '원');
-        줄.push('💰 VAT포함: ' + Math.round(전체공급 * 1.1).toLocaleString() + '원');
-      }
+      var 전체vat = Math.round(전체공급 * 1.1);
+      var 오늘 = new Date().toLocaleDateString('ko-KR');
+
+      var 줄 = [];
+      줄.push('📊 ' + APP_CONFIG.회사명 + ' 매출현황');
+      줄.push('📅 조회기간: ' + 기간표시);
+      줄.push('🗓 발송일: ' + 오늘);
+      줄.push('');
+      줄.push('━━━ 요약 ━━━━━━━━━━━━━━━━━━');
+      줄.push('📦 총 건수:   ' + 목록.length + '건 · ' + 전체수량.toLocaleString() + ' EA');
+      줄.push('💴 공급가액:  ' + 전체공급.toLocaleString() + '원');
+      줄.push('💰 VAT포함:   ' + 전체vat.toLocaleString() + '원');
+      줄.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      줄.push('');
+      업체블록.forEach(function(b) { 줄.push(b); 줄.push(''); });
 
       // 선택된 톡방
       var 선택톡방 = document.getElementById('카카오톡방선택').value;
