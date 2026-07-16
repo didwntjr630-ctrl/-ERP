@@ -4,71 +4,66 @@ SetWorkingDir %A_ScriptDir%
 SetTitleMatchMode, 2
 
 ; =====================================================
-;  삼양ERP → 카카오톡 단톡방 자동 발송 스크립트
-;  - ERP에서 "카카오 발송" 버튼 클릭 시 클립보드에
-;    [ERP_KAKAO] 마커가 포함된 메시지가 복사됨
-;  - 이 스크립트가 감지하여 카카오톡으로 자동 전송
+;  삼양ERP → 카카오톡 자동 발송 스크립트
+;  ERP "카카오 발송" 클릭 → 클립보드 감지 → 선택한 톡방으로 전송
+;  마커 형식: [ERP_KAKAO:톡방이름]
 ; =====================================================
 
-; ★ 여기에 단톡방 이름을 정확히 입력하세요 ★
-단톡방이름 := "단톡방이름을여기에입력"   ; 예: "삼양이엔지 영업팀"
-
-; 클립보드 감지 루프
 OnClipboardChange("클립보드감지")
 Return
 
 클립보드감지(타입) {
-    Global 단톡방이름
-    If (타입 != 1)   ; 텍스트가 아니면 무시
+    If (타입 != 1)
         Return
 
     내용 := Clipboard
 
     ; ERP 발송 마커 확인
-    If (SubStr(내용, 1, 11) != "[ERP_KAKAO]")
+    If (SubStr(내용, 1, 11) != "[ERP_KAKAO:")
         Return
 
-    ; 마커 제거한 실제 메시지
-    메시지 := SubStr(내용, 13)   ; "[ERP_KAKAO]\n" 이후부터
+    ; 톡방 이름 파싱: [ERP_KAKAO:톡방이름] 형태
+    줄끝 := InStr(내용, "`n")
+    If (!줄끝)
+        Return
 
-    ; 클립보드를 실제 메시지로 교체 (마커 없이)
+    첫줄 := SubStr(내용, 1, 줄끝 - 1)           ; [ERP_KAKAO:톡방이름]
+    톡방이름 := RegExReplace(첫줄, "^\[ERP_KAKAO:(.*)\]$", "$1")
+    메시지 := SubStr(내용, 줄끝 + 1)             ; 실제 메시지 본문
+
+    If (!톡방이름 || !메시지)
+        Return
+
+    ; 클립보드를 실제 메시지로 교체
     Clipboard := 메시지
     ClipWait, 1
 
-    ; 카카오톡 실행 또는 활성화
-    If !WinExist(단톡방이름 . " ahk_exe KakaoTalk.exe")
-    {
-        ; 카카오톡 메인 창이라도 활성화
-        If WinExist("ahk_exe KakaoTalk.exe")
-        {
-            WinActivate, ahk_exe KakaoTalk.exe
-            Sleep, 600
-            ; 검색으로 단톡방 찾기
-            Send, ^f
-            Sleep, 400
-            Send, %단톡방이름%
-            Sleep, 600
-            Send, {Enter}
-            Sleep, 500
-        }
-        Else
-        {
-            MsgBox, 카카오톡이 실행되어 있지 않습니다.`n카카오톡을 먼저 실행하고 단톡방을 열어두세요.
-            Return
-        }
-    }
-    Else
-    {
-        WinActivate, %단톡방이름% ahk_exe KakaoTalk.exe
+    ; 카카오톡 실행 여부 확인
+    If !WinExist("ahk_exe KakaoTalk.exe") {
+        MsgBox, 카카오톡이 실행되어 있지 않습니다.`n카카오톡을 먼저 실행해 주세요.
+        Return
     }
 
-    Sleep, 400
+    ; 해당 톡방 창이 열려 있는지 확인
+    If WinExist(톡방이름 . " ahk_exe KakaoTalk.exe") {
+        WinActivate, %톡방이름% ahk_exe KakaoTalk.exe
+        Sleep, 300
+    } Else {
+        ; 카카오톡 메인 창 활성화 후 검색으로 톡방 찾기
+        WinActivate, ahk_exe KakaoTalk.exe
+        Sleep, 500
+        Send, ^f                    ; 검색 단축키
+        Sleep, 400
+        Send, %톡방이름%
+        Sleep, 700
+        Send, {Enter}
+        Sleep, 500
+    }
 
-    ; 채팅 입력창 클릭 후 붙여넣기
+    ; 채팅 입력창 붙여넣기 & 전송
     Send, ^v
     Sleep, 300
     Send, {Enter}
 
-    ; 완료 알림 (트레이)
-    TrayTip, 삼양ERP, 카카오톡 전송 완료!, 2, 1
+    TrayTip, 삼양ERP, [%톡방이름%] 카카오톡 전송 완료!, 2, 1
 }

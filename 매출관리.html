@@ -173,6 +173,7 @@
       </div>
       <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px;">
         <button class="버튼 초록" style="padding:0 18px; height:34px; font-size:13px;" onclick="거래내역서출력()">엑셀 출력</button>
+        <select id="카카오톡방선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
         <button class="버튼 노랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="카카오발송()">카카오 발송</button>
         <select id="메일수신처선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
         <button class="버튼 파랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="매출메일발송()">메일 발송</button>
@@ -611,8 +612,12 @@
         줄.push('💰 VAT포함: ' + Math.round(전체공급 * 1.1).toLocaleString() + '원');
       }
 
-      // AHK 감지용 마커 포함
-      var 메시지 = '[ERP_KAKAO]\n' + 줄.join('\n');
+      // 선택된 톡방
+      var 선택톡방 = document.getElementById('카카오톡방선택').value;
+      if (!선택톡방) { 알림표시('보낼 카카오 톡방을 선택하세요.', '오류'); return; }
+
+      // AHK 감지용 마커에 톡방 이름 포함
+      var 메시지 = '[ERP_KAKAO:' + 선택톡방 + ']\n' + 줄.join('\n');
 
       navigator.clipboard.writeText(메시지).then(function() {
         알림표시('클립보드 복사 완료 → AutoHotkey가 카카오톡으로 자동 전송합니다.', '성공');
@@ -1005,8 +1010,19 @@
       });
     }
 
+    function 카카오톡방옵션채우기() {
+      var sel = document.getElementById('카카오톡방선택');
+      (APP_CONFIG.카카오톡방목록 || []).forEach(function(항목) {
+        var opt = document.createElement('option');
+        opt.value = 항목.톡방;
+        opt.textContent = '💬 ' + 항목.이름;
+        sel.appendChild(opt);
+      });
+    }
+
     날짜기본값();
     수신처옵션채우기();
+    카카오톡방옵션채우기();
     // 단가 먼저 로드(Supabase) 후 매출 데이터 로드
     저장된단가적용().then(function() {
       수기항목로드();
