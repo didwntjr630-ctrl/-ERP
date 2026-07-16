@@ -947,6 +947,13 @@
       })
       .subscribe();
 
+    // 단가 변경 실시간 구독 — 한 PC에서 저장하면 전체 PC에 즉시 반영
+    수파베이스.channel('단가실시간')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '설정', filter: '키=eq.' + 단가저장소키 }, function() {
+        저장된단가적용().then(function() { 필터적용(); });
+      })
+      .subscribe();
+
     var _수기항목타이머 = null;
     수파베이스.channel('수기항목실시간')
       .on('postgres_changes', { event: '*', schema: 'public', table: '수기항목' }, function() {
