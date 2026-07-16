@@ -272,6 +272,7 @@
     if (세션) document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
 
     var 전체데이터 = [];
+    var 현재필터데이터 = [];  // 메일 발송 시 이 변수 기준으로 발송
 
     /* ── 공용 조회 팝업 ── */
     var 현재팝업설정  = null;
@@ -378,8 +379,13 @@
         alert('메일발송 URL이 설정되지 않았습니다.\nconfig.js의 메일발송URL을 입력해주세요.');
         return;
       }
-      var 목록 = 전체데이터;
-      if (!목록 || 목록.length === 0) { alert('발송할 매출 데이터가 없습니다.'); return; }
+      var 목록 = 현재필터데이터;
+      if (!목록 || 목록.length === 0) { 알림표시('조회된 매출 데이터가 없습니다. 먼저 조회 후 발송하세요.', '오류'); return; }
+
+      var 시작일 = document.getElementById('검색_시작일').value;
+      var 종료일 = document.getElementById('검색_종료일').value;
+      var 기간표시 = (시작일 && 종료일) ? (시작일 + ' ~ ' + 종료일) : '전체 기간';
+      var 오늘 = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
 
       // 납품처별 그룹핑
       var 업체그룹 = {};
@@ -391,9 +397,7 @@
       var 업체목록 = Object.keys(업체그룹).sort();
 
       var 전체수량 = 0, 전체공급 = 0;
-      var 제목 = '[' + APP_CONFIG.회사명 + '] 매출 현황 (' + new Date().toLocaleDateString('ko-KR') + ')';
-      var 본문 = APP_CONFIG.회사명 + ' 매출 현황\n';
-      본문 += '========================================\n\n';
+      var 업체블록들 = [];
 
       업체목록.forEach(function(업체) {
         var 업체데이터 = 업체그룹[업체];
@@ -406,44 +410,143 @@
           품목집계[h.품명].수량 += 수량;
           품목집계[h.품명].공급 += 단가 * 수량;
         });
-
-        var 소계수량 = 업체데이터.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
         var 소계공급 = Object.values(품목집계).reduce(function(s, d) { return s + d.공급; }, 0);
+        var 소계수량 = 업체데이터.reduce(function(s, h) { return s + (Number(h.출고수량) || 0); }, 0);
         var 소계vat  = Math.round(소계공급 * 1.1);
         전체수량 += 소계수량;
         전체공급 += 소계공급;
 
-        본문 += '▶ ' + 업체 + '\n';
-        본문 += '  총 건수: ' + 업체데이터.length + '건  |  수량: ' + 소계수량.toLocaleString() + ' EA\n';
-        본문 += '  공급가액: ' + 소계공급.toLocaleString() + '원  |  VAT포함: ' + 소계vat.toLocaleString() + '원\n';
-        본문 += '  ----------------------------------------\n';
-        var 순번 = 1;
-        Object.keys(품목집계).sort().forEach(function(품명) {
+        var 품목행들 = '';
+        Object.keys(품목집계).sort().forEach(function(품명, idx) {
           var d = 품목집계[품명];
-          본문 += '  ' + 순번++ + '. ' + 품명 + '\n';
-          본문 += '     단가: ' + d.단가.toLocaleString() + '원  |  수량: ' + d.수량.toLocaleString() + ' EA  |  공급가: ' + d.공급.toLocaleString() + '원\n';
+          var 배경 = idx % 2 === 0 ? '#ffffff' : '#f8faff';
+          품목행들 += '<tr style="background:' + 배경 + ';">' +
+            '<td style="padding:9px 14px;color:#334155;font-size:13px;border-bottom:1px solid #e2e8f0;">' + 품명 + '</td>' +
+            '<td style="padding:9px 14px;text-align:right;color:#64748b;font-size:13px;border-bottom:1px solid #e2e8f0;white-space:nowrap;">' + d.단가.toLocaleString() + '원</td>' +
+            '<td style="padding:9px 14px;text-align:right;color:#334155;font-size:13px;border-bottom:1px solid #e2e8f0;white-space:nowrap;">' + d.수량.toLocaleString() + ' EA</td>' +
+            '<td style="padding:9px 14px;text-align:right;color:#1a3a5c;font-weight:600;font-size:13px;border-bottom:1px solid #e2e8f0;white-space:nowrap;">' + d.공급.toLocaleString() + '원</td>' +
+            '</tr>';
         });
-        본문 += '\n';
+
+        업체블록들.push(
+          '<tr><td style="padding:20px 32px 0;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+            '<span style="font-size:14px;font-weight:700;color:#1a3a5c;border-left:3px solid #2a6496;padding-left:10px;">' + 업체 + '</span>' +
+            '<span style="font-size:11px;color:#64748b;background:#f1f5f9;padding:3px 10px;border-radius:20px;">' + 업체데이터.length + '건 · ' + 소계수량.toLocaleString() + ' EA</span>' +
+          '</div>' +
+          '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">' +
+            '<thead><tr style="background:#f1f5f9;">' +
+              '<th style="padding:9px 14px;text-align:left;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.5px;border-bottom:1px solid #e2e8f0;">품명</th>' +
+              '<th style="padding:9px 14px;text-align:right;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;">단가</th>' +
+              '<th style="padding:9px 14px;text-align:right;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;">수량</th>' +
+              '<th style="padding:9px 14px;text-align:right;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;">공급가액</th>' +
+            '</tr></thead>' +
+            '<tbody>' + 품목행들 + '</tbody>' +
+          '</table>' +
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;">' +
+            '<tr>' +
+              '<td style="font-size:12px;color:#64748b;padding:6px 4px;">소계 공급가액</td>' +
+              '<td style="text-align:right;font-size:13px;font-weight:700;color:#1a3a5c;padding:6px 4px;">' + 소계공급.toLocaleString() + '원</td>' +
+              '<td style="text-align:right;font-size:12px;color:#64748b;padding:6px 4px 6px 16px;">VAT포함</td>' +
+              '<td style="text-align:right;font-size:13px;font-weight:700;color:#2a6496;padding:6px 4px;">' + 소계vat.toLocaleString() + '원</td>' +
+            '</tr>' +
+          '</table>' +
+          '</td></tr>'
+        );
       });
 
-      if (업체목록.length > 1) {
-        var 전체vat = Math.round(전체공급 * 1.1);
-        본문 += '========================================\n';
-        본문 += '[ 전체 합계 ]\n';
-        본문 += '  총 건수: ' + 목록.length + '건  |  총 수량: ' + 전체수량.toLocaleString() + ' EA\n';
-        본문 += '  총 공급가액: ' + 전체공급.toLocaleString() + '원\n';
-        본문 += '  VAT포함 합계: ' + 전체vat.toLocaleString() + '원\n';
-        본문 += '========================================\n';
-      }
+      var 전체vat = Math.round(전체공급 * 1.1);
+
+      // KPI 카드 3개
+      var kpi블록 =
+        '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+          '<td width="33%" style="padding:4px;">' +
+            '<div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;text-align:center;">' +
+              '<div style="font-size:11px;color:#64748b;margin-bottom:4px;">총 건수</div>' +
+              '<div style="font-size:22px;font-weight:700;color:#1a3a5c;">' + 목록.length + '</div>' +
+              '<div style="font-size:11px;color:#94a3b8;">건</div>' +
+            '</div>' +
+          '</td>' +
+          '<td width="33%" style="padding:4px;">' +
+            '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;text-align:center;">' +
+              '<div style="font-size:11px;color:#64748b;margin-bottom:4px;">공급가액</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#15803d;">' + Math.round(전체공급/10000).toLocaleString() + '</div>' +
+              '<div style="font-size:11px;color:#94a3b8;">만원</div>' +
+            '</div>' +
+          '</td>' +
+          '<td width="33%" style="padding:4px;">' +
+            '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:14px;text-align:center;">' +
+              '<div style="font-size:11px;color:#64748b;margin-bottom:4px;">VAT포함</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#b45309;">' + Math.round(전체vat/10000).toLocaleString() + '</div>' +
+              '<div style="font-size:11px;color:#94a3b8;">만원</div>' +
+            '</div>' +
+          '</td>' +
+        '</tr></table>';
+
+      // HTML 이메일 본문
+      var htmlBody =
+        '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>' +
+        '<body style="margin:0;padding:0;background:#eef2f7;font-family:\'맑은 고딕\',\'Malgun Gothic\',Arial,sans-serif;">' +
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f7;"><tr><td align="center" style="padding:28px 16px;">' +
+        '<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">' +
+
+        // 헤더
+        '<tr><td style="background:linear-gradient(135deg,#1a3a5c 0%,#2a6496 100%);padding:22px 32px;">' +
+          '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+            '<td style="color:#ffffff;font-size:17px;font-weight:700;letter-spacing:-0.3px;">' + APP_CONFIG.회사명 + '</td>' +
+            '<td align="right" style="color:rgba(255,255,255,0.65);font-size:12px;">' + 오늘 + '</td>' +
+          '</tr></table>' +
+        '</td></tr>' +
+
+        // 히어로
+        '<tr><td style="background:#f0f5ff;padding:28px 32px 24px;border-bottom:1px solid #e2e8f0;">' +
+          '<div style="font-size:10px;font-weight:700;color:#2a6496;letter-spacing:2px;margin-bottom:8px;text-transform:uppercase;">SALES REPORT</div>' +
+          '<div style="font-size:24px;font-weight:800;color:#1a3a5c;margin-bottom:6px;">매출 현황 보고서</div>' +
+          '<div style="font-size:13px;color:#64748b;">📅 조회 기간: <strong>' + 기간표시 + '</strong></div>' +
+        '</td></tr>' +
+
+        // KPI
+        '<tr><td style="padding:24px 32px 8px;">' + kpi블록 + '</td></tr>' +
+
+        // 구분선
+        '<tr><td style="padding:4px 32px 12px;"><div style="height:1px;background:linear-gradient(to right,#e2e8f0,#bfdbfe,#e2e8f0);"></div></td></tr>' +
+
+        // 납품처별 블록
+        업체블록들.join('') +
+
+        // 전체 합계 (납품처 2곳 이상일 때)
+        (업체목록.length > 1 ?
+          '<tr><td style="padding:20px 32px 8px;">' +
+          '<div style="background:linear-gradient(135deg,#1a3a5c,#2a6496);border-radius:10px;padding:18px 20px;">' +
+            '<table width="100%" cellpadding="0" cellspacing="0"><tr>' +
+              '<td style="color:rgba(255,255,255,0.75);font-size:13px;">전체 합계 (' + 목록.length + '건 · ' + 전체수량.toLocaleString() + ' EA)</td>' +
+            '</tr><tr>' +
+              '<td style="color:#ffffff;font-size:13px;padding-top:8px;">공급가액 <strong style="font-size:16px;">' + 전체공급.toLocaleString() + '원</strong></td>' +
+              '<td align="right" style="color:#93c5fd;font-size:13px;padding-top:8px;">VAT포함 <strong style="font-size:16px;color:#ffffff;">' + 전체vat.toLocaleString() + '원</strong></td>' +
+            '</tr></table>' +
+          '</div>' +
+          '</td></tr>'
+        : '') +
+
+        // 푸터
+        '<tr><td style="padding:24px 32px;background:#f8faff;border-top:1px solid #e2e8f0;text-align:center;">' +
+          '<div style="font-size:11px;color:#94a3b8;">' + APP_CONFIG.회사명 + ' ERP 시스템 자동발송 · 회신 불필요</div>' +
+        '</td></tr>' +
+
+        '</table></td></tr></table></body></html>';
+
+      // 텍스트 폴백 (HTML 미지원 메일 클라이언트용)
+      var 본문텍스트 = '[' + APP_CONFIG.회사명 + '] 매출현황 (' + 기간표시 + ')\n총 ' + 목록.length + '건 · 공급가액 ' + 전체공급.toLocaleString() + '원 · VAT포함 ' + 전체vat.toLocaleString() + '원';
 
       var 선택이메일 = document.getElementById('메일수신처선택').value;
       var 선택이름 = document.getElementById('메일수신처선택').options[document.getElementById('메일수신처선택').selectedIndex].text;
+      var 제목 = '[' + APP_CONFIG.회사명 + '] 매출 현황 · ' + 기간표시;
 
       fetch(APP_CONFIG.메일발송URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: 선택이메일, subject: 제목, body: 본문 })
+        body: JSON.stringify({ to: 선택이메일, subject: 제목, body: 본문텍스트, htmlBody: htmlBody })
       }).catch(function(err) {
         console.error('메일 발송 오류:', err);
       });
@@ -613,6 +716,7 @@
       if (납품처) 결과 = 결과.filter(function(h) { return (h.도착공정||'').includes(납품처); });
 
       결과 = 결과.sort(function(a, b) { return b.id - a.id; });
+      현재필터데이터 = 결과;
       테이블그리기(결과);
       수기항목필터적용();
     }
