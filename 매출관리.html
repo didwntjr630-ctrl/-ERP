@@ -598,16 +598,25 @@
       알림표시(다음날짜 + ' 으로 이월되었습니다.', '성공');
     }
 
-    /* ── 단가 관리 ── */
+    /* ── 단가 관리 (Supabase 설정 테이블 저장 — 전 PC 공유) ── */
     var 단가저장소키 = 'erp_단가';
 
-    function 저장된단가적용() {
+    async function 저장된단가적용() {
+      // Supabase 우선, 없으면 localStorage 폴백
+      try {
+        var { data } = await 수파베이스.from('설정').select('값').eq('키', 단가저장소키).single();
+        if (data && data.값) {
+          var 맵 = JSON.parse(data.값);
+          품목목록.forEach(function(p) { if (맵[p.품번] !== undefined) p.단가 = 맵[p.품번]; });
+          return;
+        }
+      } catch(e) {}
+      // 폴백: localStorage (기존 데이터 마이그레이션용)
       var 저장 = localStorage.getItem(단가저장소키);
-      if (!저장) return;
-      var 맵 = JSON.parse(저장);
-      품목목록.forEach(function(p) {
-        if (맵[p.품번] !== undefined) p.단가 = 맵[p.품번];
-      });
+      if (저장) {
+        var 맵 = JSON.parse(저장);
+        품목목록.forEach(function(p) { if (맵[p.품번] !== undefined) p.단가 = 맵[p.품번]; });
+      }
     }
 
     function 단가수정팝업열기() {
@@ -629,7 +638,7 @@
       document.getElementById('단가수정_오버레이').style.display = 'none';
     }
 
-    function 단가저장() {
+    async function 단가저장() {
       var 맵 = {};
       document.querySelectorAll('#단가수정_테이블바디 input').forEach(function(input) {
         var 품번 = input.dataset.품번;
@@ -638,9 +647,18 @@
         var 품목 = 품목목록.find(function(p) { return p.품번 === 품번; });
         if (품목) 품목.단가 = 단가;
       });
-      localStorage.setItem(단가저장소키, JSON.stringify(맵));
+      var json = JSON.stringify(맵);
+      // Supabase 설정 테이블에 저장 (전 PC 공유)
+      var { error } = await 수파베이스.from('설정').upsert({ 키: 단가저장소키, 값: json, 수정일시: new Date().toISOString() });
+      if (error) {
+        알림표시('단가 저장 실패: ' + error.message, '오류');
+        return;
+      }
+      // localStorage 동기화 (폴백 겸 캐시)
+      localStorage.setItem(단가저장소키, json);
       단가수정팝업닫기();
       필터적용();
+      알림표시('단가가 저장되었습니다. (전 PC 공유)', '성공');
     }
 
     function 규격결정(품명) {
@@ -914,10 +932,12 @@
     }
 
     날짜기본값();
-    저장된단가적용();
     수신처옵션채우기();
-    수기항목로드();
-    데이터로드();
+    // 단가 먼저 로드(Supabase) 후 매출 데이터 로드
+    저장된단가적용().then(function() {
+      수기항목로드();
+      데이터로드();
+    });
 
     var _매출타이머 = null;
     수파베이스.channel('매출실시간')
