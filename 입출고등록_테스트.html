@@ -215,7 +215,8 @@
         <div id="공정뷰안내" style="display:none; font-size:12px; color:#666; background:#f0f6fb; border:1px solid #c5d8ed; border-radius:4px; padding:4px 10px;">
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
-        <div id="확정버튼영역" style="display:none; margin-left:auto;">
+        <div id="확정버튼영역" style="display:none; margin-left:auto; gap:8px;">
+          <button id="엑셀다운로드버튼" class="버튼" onclick="출하검사_엑셀다운로드()" style="background:#1d6a36;border-color:#1d6a36;color:white;padding:6px 16px;font-size:13px;font-weight:bold;">엑셀 다운</button>
           <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold;">확 정</button>
         </div>
       </div>
@@ -353,6 +354,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/data.js"></script>
