@@ -954,7 +954,7 @@
       if (품명) 결과 = 결과.filter(function(h) { return (h.품명||'').toLowerCase().includes(품명) || (h.품번||'').toLowerCase().includes(품명); });
       if (납품처) 결과 = 결과.filter(function(h) { return (h.도착공정||'').includes(납품처); });
 
-      결과 = 결과.sort(function(a, b) { return b.id - a.id; });
+      결과 = 결과.sort(function(a, b) { return (b.출고일자||'') > (a.출고일자||'') ? 1 : -1; });
       현재필터데이터 = 결과;
       테이블그리기(결과);
       수기항목필터적용();
@@ -976,7 +976,7 @@
       var { data, error } = await 수파베이스
         .from('매출기록')
         .select('*')
-        .order('확정일시', { ascending: false });
+        .order('출고일자', { ascending: false });
       전체데이터 = error ? [] : (data || []);
       필터적용();
     }
