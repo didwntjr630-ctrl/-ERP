@@ -56,10 +56,15 @@ async function 출고번호생성() {
   var { data } = await 수파베이스
     .from(테이블명)
     .select('출고번호')
-    .like('출고번호', 접두어 + '%');
+    .like('출고번호', 접두어 + '%')
+    .order('출고번호', { ascending: false })
+    .limit(1);
 
-  var 다음순번 = String((data ? data.length : 0) + 1).padStart(3, '0');
-  return 접두어 + 다음순번;
+  var 마지막순번 = 0;
+  if (data && data.length > 0) {
+    마지막순번 = parseInt(data[0].출고번호.slice(-3), 10) || 0;
+  }
+  return 접두어 + String(마지막순번 + 1).padStart(3, '0');
 }
 
 /* 전체 목록 불러오기 */
