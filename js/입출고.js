@@ -19,6 +19,7 @@ var 출발공정목록 = [];
 var 도착공정목록 = [];
 var 확정된id목록 = new Set();
 var _앱브로드캐스트채널 = null;
+var 현재표시목록 = [];
 
 /* ── 폼 임시저장 / 복원 (페이지 이탈 후 복귀 대비) ── */
 var 폼임시저장키 = 'erp_폼임시저장';
@@ -181,7 +182,7 @@ async function 공정뷰선택(공정) {
     if (폼제목)  폼제목.textContent  = 공정 + ' 입출고 등록';
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
     if (안내박스) 안내박스.style.display = (공정 === '출하검사') ? 'none' : 'block';
-    if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사') ? 'block' : 'none';
+    if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
     document.getElementById('검색_공정').value = 공정;
   } else {
@@ -617,6 +618,14 @@ async function 목록새로고침() {
 }
 
 function 목록테이블그리기(목록) {
+  // 출고일자 내림차순 → 같은 날짜는 id 내림차순
+  목록 = 목록.slice().sort(function(a, b) {
+    var da = a.출고일자 || '';
+    var db = b.출고일자 || '';
+    if (da !== db) return db > da ? 1 : -1;
+    return b.id - a.id;
+  });
+  현재표시목록 = 목록;
   var 바디 = document.getElementById('목록테이블바디');
   바디.innerHTML = '';
 
@@ -1253,4 +1262,153 @@ function 알림표시(메시지, 종류) {
   el.className = '알림 ' + 종류;
   el.style.display = 'block';
   setTimeout(function() { el.style.display = 'none'; }, 3500);
+}
+
+/* ══════════════════════════════════════════
+   보은금속 출하검사대장 엑셀 다운로드
+══════════════════════════════════════════ */
+
+function AQL검사수량계산(lotSize) {
+  var n = Number(lotSize) || 0;
+  if (n <= 8)    return 2;
+  if (n <= 15)   return 3;
+  if (n <= 25)   return 5;
+  if (n <= 50)   return 8;
+  if (n <= 90)   return 13;
+  if (n <= 150)  return 20;
+  if (n <= 280)  return 32;
+  if (n <= 500)  return 50;
+  if (n <= 1200) return 80;
+  if (n <= 3200) return 125;
+  return 200;
+}
+
+function 엑셀날짜변환(dateStr) {
+  if (!dateStr) return null;
+  var d = new Date(dateStr + 'T00:00:00');
+  return Math.floor((d - new Date(Date.UTC(1899, 11, 30))) / 86400000);
+}
+
+function 색상판별(품명) {
+  if (!품명) return 'S/V';
+  var 규칙 = (APP_CONFIG.매출고정값 && APP_CONFIG.매출고정값.규격규칙) || [];
+  for (var i = 0; i < 규칙.length; i++) {
+    if (품명.toUpperCase().includes(규칙[i].품명포함.toUpperCase())) return 규칙[i].규격;
+  }
+  return (APP_CONFIG.매출고정값 && APP_CONFIG.매출고정값.규격기본) || 'S/V';
+}
+
+async function 출하검사_엑셀다운로드() {
+  var 데이터 = 현재표시목록.filter(function(h) {
+    return h.공정 === '출하검사' && (h.도착공정 || '').includes('보은금속');
+  });
+
+  if (데이터.length === 0) {
+    알림표시('보은금속 출하 데이터가 없습니다. 조회 후 다운로드하세요.', '오류');
+    return;
+  }
+
+  var 버튼 = document.getElementById('엑셀다운로드버튼');
+  if (버튼) { 버튼.disabled = true; 버튼.textContent = '생성 중...'; }
+
+  try {
+    if (typeof 보은금속출하대장_BASE64 === 'undefined') {
+      throw new Error('보은금속템플릿.js 가 로드되지 않았습니다.');
+    }
+
+    // base64 → ArrayBuffer
+    var bin = atob(보은금속출하대장_BASE64);
+    var buf = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+
+    // ExcelJS로 템플릿 로드 (스타일 완전 보존)
+    var workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buf.buffer);
+    var ws = workbook.worksheets[0];
+
+    var 오늘 = new Date();
+    var 월 = String(오늘.getMonth() + 1).padStart(2, '0');
+
+    // 제목 월 업데이트
+    ws.getCell('A1').value = '보 은 금 속 출 하 검 사 대 장 ( ' + 월 + ' 월 )';
+
+    // 6행 스타일을 열별로 저장 (템플릿 없는 행에 복사)
+    var REF_ROW = 6;
+    var COL_MAX = 25; // A~Y
+    var refStyles = [];
+    for (var c = 1; c <= COL_MAX; c++) {
+      var rc = ws.getRow(REF_ROW).getCell(c);
+      refStyles[c] = JSON.parse(JSON.stringify(rc.style || {}));
+    }
+
+    // 마지막 유효 행 파악
+    var tmplLast = ws.lastRow ? ws.lastRow.number : REF_ROW;
+
+    function 행채우기(rowNum, 항목, idx, 날짜표시) {
+      var row = ws.getRow(rowNum);
+      var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
+      var 불량 = Number(항목.불량수량) || 0;
+      var 검사수량 = AQL검사수량계산(수량);
+      var 차종 = (APP_CONFIG.차종매핑[항목.품명] || {}).차종 || '';
+      var 색상 = 색상판별(항목.품명);
+      var 판정 = 불량 === 0 ? 'OK' : 'NG';
+      var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
+
+      // 템플릿 행이 없으면 스타일 수동 복사
+      if (rowNum > tmplLast) {
+        for (var c = 1; c <= COL_MAX; c++) {
+          row.getCell(c).style = JSON.parse(JSON.stringify(refStyles[c] || {}));
+        }
+      }
+
+      row.getCell(1).value = idx + 1;
+      var dateCell = row.getCell(2);
+      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00') : null;
+      if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
+      row.getCell(3).value = 항목['lot번호'] || '';
+      row.getCell(4).value = 수량;
+      row.getCell(5).value = 차종;
+      row.getCell(6).value = 색상;
+      row.getCell(7).value = 검사수량;
+      row.getCell(8).value = 불량;
+      var rateCell = row.getCell(9);
+      rateCell.value = 불량율;
+      rateCell.numFmt = '0%';
+      for (var j = 10; j <= 20; j++) row.getCell(j).value = null; // J~T
+      row.getCell(21).value = 판정;                                // U
+      for (var k = 22; k <= 25; k++) row.getCell(k).value = null; // V~Y
+      row.commit();
+    }
+
+    // 데이터 채우기
+    데이터.forEach(function(항목, idx) {
+      var 날짜표시 = idx === 0 || 항목.출고일자 !== 데이터[idx - 1].출고일자;
+      행채우기(REF_ROW + idx, 항목, idx, 날짜표시);
+    });
+
+    // 남은 템플릿 행 값 초기화 (스타일·테두리 유지)
+    for (var r = REF_ROW + 데이터.length; r <= tmplLast; r++) {
+      var row = ws.getRow(r);
+      for (var c = 1; c <= COL_MAX; c++) row.getCell(c).value = null;
+      row.commit();
+    }
+
+    // 다운로드
+    var 파일명 = '보은금속출하검사대장_' + 오늘.getFullYear() + 월 + '.xlsx';
+    var outBuf = await workbook.xlsx.writeBuffer();
+    var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 파일명;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    알림표시('다운로드 완료: ' + 파일명, '성공');
+
+  } catch (e) {
+    console.error('엑셀 다운로드 오류:', e);
+    알림표시('엑셀 생성 실패: ' + e.message, '오류');
+  } finally {
+    if (버튼) { 버튼.disabled = false; 버튼.textContent = '엑셀 다운'; }
+  }
 }
