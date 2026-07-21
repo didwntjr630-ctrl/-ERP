@@ -1371,11 +1371,8 @@ async function 출하검사_엑셀다운로드() {
     await workbook.xlsx.load(buf.buffer);
     var ws = workbook.worksheets[0];
 
-    var 오늘 = new Date();
-    var 월 = String(오늘.getMonth() + 1).padStart(2, '0');
-
-    // 제목 월 업데이트
-    ws.getCell('A1').value = '보 은 금 속 출 하 검 사 대 장 ( ' + 월 + ' 월 )';
+    // 제목 월 업데이트 (선택한 년/월 기준)
+    ws.getCell('A1').value = '보 은 금 속 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
 
     // 6행 스타일을 열별로 저장 (템플릿 없는 행에 복사)
     var REF_ROW = 6;
@@ -1439,7 +1436,7 @@ async function 출하검사_엑셀다운로드() {
     }
 
     // 다운로드
-    var 파일명 = '보은금속출하검사대장_' + 오늘.getFullYear() + 월 + '.xlsx';
+    var 파일명 = '보은금속출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
     var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     var url = URL.createObjectURL(blob);
