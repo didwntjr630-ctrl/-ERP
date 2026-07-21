@@ -178,6 +178,17 @@ document.addEventListener('DOMContentLoaded', async function() {
       if (popup && wrap && !wrap.contains(e.target)) popup.style.display = 'none';
     });
   })();
+  // 업체 선택 셀렉터 초기화
+  (function() {
+    var 업체sel = document.getElementById('엑셀업체');
+    if (!업체sel) return;
+    (APP_CONFIG.출하검사옵션.도착공정 || []).forEach(function(업체명) {
+      var opt = document.createElement('option');
+      opt.value = 업체명;
+      opt.textContent = 업체명;
+      업체sel.appendChild(opt);
+    });
+  })();
   await 공정뷰선택('출하검사');  // 출하검사 기본 선택
   폼임시저장복원();               // 이탈 전 작성 내용 복원
 
@@ -1403,15 +1414,19 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
-  // 선택한 년/월로 DB에서 직접 조회 (화면 필터와 무관)
+  // 선택한 년/월/업체로 DB에서 직접 조회 (화면 필터와 무관)
   var 선택년 = (document.getElementById('엑셀년도') || {}).value || String(new Date().getFullYear());
   var 선택월 = (document.getElementById('엑셀월') || {}).value || String(new Date().getMonth() + 1).padStart(2, '0');
+  var 선택업체 = (document.getElementById('엑셀업체') || {}).value || (APP_CONFIG.출하검사옵션.도착공정 || [])[0] || '';
+  var 업체단축명 = 선택업체.replace(/\(주\)/g, '').trim();
+  var 업체타이틀 = 업체단축명.split('').join(' ');
   var 시작일 = 선택년 + '-' + 선택월 + '-01';
   var 말일   = new Date(Number(선택년), Number(선택월), 0).getDate();
   var 종료일 = 선택년 + '-' + 선택월 + '-' + String(말일).padStart(2, '0');
 
   var 버튼 = document.getElementById('엑셀다운로드버튼');
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '조회 중...'; }
+  if (!선택업체) { 알림표시('업체를 선택하세요.', '오류'); if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; } return; }
 
   var { data: 조회결과, error: 조회오류 } = await 수파베이스
     .from('입출고기록')
@@ -1424,12 +1439,12 @@ async function 출하검사_엑셀다운로드() {
 
   if (조회오류) {
     알림표시('데이터 조회 실패: ' + 조회오류.message, '오류');
-    if (버튼) { 버튼.disabled = false; 버튼.textContent = '엑셀 다운'; }
+    if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
     return;
   }
 
   var 데이터 = (조회결과 || []).filter(function(h) {
-    return (h.도착공정 || '').includes('보은금속');
+    return (h.도착공정 || '') === 선택업체;
   }).sort(function(a, b) {
     var da = a.출고일자 || '';
     var db = b.출고일자 || '';
@@ -1438,8 +1453,8 @@ async function 출하검사_엑셀다운로드() {
   });
 
   if (데이터.length === 0) {
-    알림표시(선택년 + '년 ' + Number(선택월) + '월 보은금속 출하 데이터가 없습니다.', '오류');
-    if (버튼) { 버튼.disabled = false; 버튼.textContent = '엑셀 다운'; }
+    알림표시(선택년 + '년 ' + Number(선택월) + '월 ' + 업체단축명 + ' 출하 데이터가 없습니다.', '오류');
+    if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
     return;
   }
 
@@ -1459,7 +1474,7 @@ async function 출하검사_엑셀다운로드() {
     var ws = workbook.worksheets[0];
 
     // 제목 월 업데이트 (선택한 년/월 기준)
-    ws.getCell('A1').value = '보 은 금 속 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
+    ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
 
     // 6행 스타일을 열별로 저장 (템플릿 없는 행에 복사)
     var REF_ROW = 6;
@@ -1533,7 +1548,7 @@ async function 출하검사_엑셀다운로드() {
     ws.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
 
     // 다운로드
-    var 파일명 = '보은금속출하검사대장_' + 선택년 + 선택월 + '.xlsx';
+    var 파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
 
     // JSZip으로 Print_Titles 직접 주입 (ExcelJS rowsToRepeatAtTop 버그 우회)
@@ -1565,6 +1580,6 @@ async function 출하검사_엑셀다운로드() {
     console.error('엑셀 다운로드 오류:', e);
     알림표시('엑셀 생성 실패: ' + e.message, '오류');
   } finally {
-    if (버튼) { 버튼.disabled = false; 버튼.textContent = '엑셀 다운'; }
+    if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
   }
 }
