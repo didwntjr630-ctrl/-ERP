@@ -74,6 +74,23 @@ document.addEventListener('DOMContentLoaded', async function() {
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
+  // 엑셀 년/월 셀렉터 초기화 (현재 년·월 기본값)
+  (function() {
+    var 오늘 = new Date();
+    var 현재년 = 오늘.getFullYear();
+    var 현재월 = String(오늘.getMonth() + 1).padStart(2, '0');
+    var 년sel = document.getElementById('엑셀년도');
+    if (!년sel) return;
+    for (var y = 현재년 - 2; y <= 현재년 + 1; y++) {
+      var opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = y + '년';
+      if (y === 현재년) opt.selected = true;
+      년sel.appendChild(opt);
+    }
+    var 월sel = document.getElementById('엑셀월');
+    if (월sel) Array.from(월sel.options).forEach(function(o) { if (o.value === 현재월) o.selected = true; });
+  })();
   await 공정뷰선택('출하검사');  // 출하검사 기본 선택
   폼임시저장복원();               // 이탈 전 작성 내용 복원
 
@@ -1285,7 +1302,7 @@ function AQL검사수량계산(lotSize) {
 
 function 엑셀날짜변환(dateStr) {
   if (!dateStr) return null;
-  var d = new Date(dateStr + 'T00:00:00');
+  var d = new Date(dateStr + 'T00:00:00Z');
   return Math.floor((d - new Date(Date.UTC(1899, 11, 30))) / 86400000);
 }
 
@@ -1299,9 +1316,34 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
-  var 데이터 = 현재표시목록.filter(function(h) {
-    return h.공정 === '출하검사' && (h.도착공정 || '').includes('보은금속');
-  }).slice().sort(function(a, b) {
+  // 선택한 년/월로 DB에서 직접 조회 (화면 필터와 무관)
+  var 선택년 = (document.getElementById('엑셀년도') || {}).value || String(new Date().getFullYear());
+  var 선택월 = (document.getElementById('엑셀월') || {}).value || String(new Date().getMonth() + 1).padStart(2, '0');
+  var 시작일 = 선택년 + '-' + 선택월 + '-01';
+  var 말일   = new Date(Number(선택년), Number(선택월), 0).getDate();
+  var 종료일 = 선택년 + '-' + 선택월 + '-' + String(말일).padStart(2, '0');
+
+  var 버튼 = document.getElementById('엑셀다운로드버튼');
+  if (버튼) { 버튼.disabled = true; 버튼.textContent = '조회 중...'; }
+
+  var { data: 조회결과, error: 조회오류 } = await 수파베이스
+    .from('입출고기록')
+    .select('*')
+    .eq('공정', '출하검사')
+    .gte('출고일자', 시작일)
+    .lte('출고일자', 종료일);
+
+  if (버튼) 버튼.textContent = '생성 중...';
+
+  if (조회오류) {
+    알림표시('데이터 조회 실패: ' + 조회오류.message, '오류');
+    if (버튼) { 버튼.disabled = false; 버튼.textContent = '엑셀 다운'; }
+    return;
+  }
+
+  var 데이터 = (조회결과 || []).filter(function(h) {
+    return (h.도착공정 || '').includes('보은금속');
+  }).sort(function(a, b) {
     var da = a.출고일자 || '';
     var db = b.출고일자 || '';
     if (da !== db) return da > db ? 1 : -1;
@@ -1309,12 +1351,10 @@ async function 출하검사_엑셀다운로드() {
   });
 
   if (데이터.length === 0) {
-    알림표시('보은금속 출하 데이터가 없습니다. 조회 후 다운로드하세요.', '오류');
+    알림표시(선택년 + '년 ' + Number(선택월) + '월 보은금속 출하 데이터가 없습니다.', '오류');
+    if (버튼) { 버튼.disabled = false; 버튼.textContent = '엑셀 다운'; }
     return;
   }
-
-  var 버튼 = document.getElementById('엑셀다운로드버튼');
-  if (버튼) { 버튼.disabled = true; 버튼.textContent = '생성 중...'; }
 
   try {
     if (typeof 보은금속출하대장_BASE64 === 'undefined') {
@@ -1368,7 +1408,7 @@ async function 출하검사_엑셀다운로드() {
 
       row.getCell(1).value = idx + 1;
       var dateCell = row.getCell(2);
-      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00') : null;
+      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00Z') : null;
       if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
       row.getCell(3).value = 항목['lot번호'] || '';
       row.getCell(4).value = 수량;
