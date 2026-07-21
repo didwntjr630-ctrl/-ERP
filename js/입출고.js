@@ -618,6 +618,13 @@ async function 목록새로고침() {
 }
 
 function 목록테이블그리기(목록) {
+  // 출고일자 내림차순 → 같은 날짜는 id 내림차순
+  목록 = 목록.slice().sort(function(a, b) {
+    var da = a.출고일자 || '';
+    var db = b.출고일자 || '';
+    if (da !== db) return db > da ? 1 : -1;
+    return b.id - a.id;
+  });
   현재표시목록 = 목록;
   var 바디 = document.getElementById('목록테이블바디');
   바디.innerHTML = '';
