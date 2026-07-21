@@ -308,6 +308,15 @@ async function 공정뷰선택(공정) {
     document.getElementById('검색_공정').value = '';
   }
 
+  // 출하현황 제목 변경
+  var 현황제목 = document.querySelector('#출하현황카드제목, .카드 .페이지제목[data-현황]');
+  // 제목 직접 탐색 (고정 텍스트 기준)
+  document.querySelectorAll('.카드 .페이지제목').forEach(function(el) {
+    if (el.textContent.trim() === '출하 현황' || el.textContent.trim() === '코팅 출하 현황') {
+      el.textContent = (공정 === '공정검사') ? '코팅 출하 현황' : '출하 현황';
+    }
+  });
+
   공정별출발도착옵션갱신(공정);
   // 검사대장 출력 업체 선택지 갱신
   var 업체sel = document.getElementById('엑셀업체');
@@ -833,12 +842,13 @@ function 목록테이블그리기(목록) {
    공정별 재고 현황
 ══════════════════════════════════════════ */
 async function 출하현황요약() {
+  var 기준공정 = 현재작업공정 === '공정검사' ? '공정검사' : '출하검사';
   var 전체 = await 데이터불러오기();
   var 품명필터   = document.getElementById('출하현황_품명필터').value;
   var 납품처필터 = document.getElementById('출하현황_납품처필터').value;
   var 월필터     = document.getElementById('출하현황_월필터').value;
   var 출하데이터 = 전체.filter(function(h) {
-    return h.공정 === '출하검사'
+    return h.공정 === 기준공정
       && (!품명필터   || h.품명     === 품명필터)
       && (!납품처필터 || h.도착공정 === 납품처필터)
       && (!월필터     || (h.출고일자 || h.일자 || '').startsWith(월필터));
