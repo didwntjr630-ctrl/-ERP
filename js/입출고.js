@@ -1438,7 +1438,6 @@ async function 출하검사_엑셀다운로드() {
     // 인쇄 설정
     var 마지막행 = 데이터.length > 0 ? REF_ROW + 데이터.length - 1 : tmplLast;
     ws.pageSetup.printArea = 'A1:Y' + 마지막행;
-    ws.pageSetup.rowsToRepeatAtTop = '1:5';
     ws.pageSetup.orientation = 'landscape';
     ws.pageSetup.fitToPage = true;
     ws.pageSetup.fitToWidth = 1;
@@ -1449,6 +1448,23 @@ async function 출하검사_엑셀다운로드() {
     // 다운로드
     var 파일명 = '보은금속출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
+
+    // JSZip으로 Print_Titles 직접 주입 (ExcelJS rowsToRepeatAtTop 버그 우회)
+    try {
+      var 시트명 = ws.name;
+      var zip = await JSZip.loadAsync(outBuf);
+      var wbXml = await zip.file('xl/workbook.xml').async('string');
+      var ptXml = '<definedName name="Print_Titles" localSheetId="0">\'' + 시트명 + '\'!$1:$5</definedName>';
+      if (wbXml.includes('Print_Titles')) {
+        wbXml = wbXml.replace(/<definedName name="Print_Titles"[^>]*>[\s\S]*?<\/definedName>/, ptXml);
+      } else if (wbXml.includes('<definedNames>')) {
+        wbXml = wbXml.replace('<definedNames>', '<definedNames>' + ptXml);
+      } else {
+        wbXml = wbXml.replace('</workbook>', '<definedNames>' + ptXml + '</definedNames></workbook>');
+      }
+      zip.file('xl/workbook.xml', wbXml);
+      outBuf = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+    } catch(e) { console.warn('Print_Titles 설정 실패:', e); }
     var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
