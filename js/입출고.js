@@ -1301,6 +1301,11 @@ function 색상판별(품명) {
 async function 출하검사_엑셀다운로드() {
   var 데이터 = 현재표시목록.filter(function(h) {
     return h.공정 === '출하검사' && (h.도착공정 || '').includes('보은금속');
+  }).slice().sort(function(a, b) {
+    var da = a.출고일자 || '';
+    var db = b.출고일자 || '';
+    if (da !== db) return da > db ? 1 : -1;
+    return a.id - b.id;
   });
 
   if (데이터.length === 0) {
