@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // 폴링: 5초마다 확정 상태 체크 (Realtime 보완용)
   setInterval(async function() {
-    if (현재작업공정 !== '출하검사') return;
+    if (현재작업공정 !== '출하검사' && 현재작업공정 !== '공정검사') return;
     var 이전크기 = 확정된id목록.size;
     var 이전목록 = new Set(확정된id목록);
     await 확정id목록갱신();
@@ -248,7 +248,7 @@ function 오늘날짜세팅() {
 
 /* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
 function 입고수량변경() {
-  if (현재작업공정 === '출하검사') {
+  if (현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
     var v = document.getElementById('입고수량').value;
     document.getElementById('출고수량').value = v;
   }
@@ -296,8 +296,8 @@ async function 공정뷰선택(공정) {
   if (공정) {
     if (폼제목)  폼제목.textContent  = 공정 + ' 입출고 등록';
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
-    if (안내박스) 안내박스.style.display = (공정 === '출하검사') ? 'none' : 'block';
-    if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사') ? 'flex' : 'none';
+    if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정 === '공정검사') ? 'none' : 'block';
+    if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정 === '공정검사') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
     document.getElementById('검색_공정').value = 공정;
   } else {
@@ -316,16 +316,16 @@ async function 공정뷰선택(공정) {
 }
 
 function 출하검사폼전환(공정) {
-  var 출하검사 = 공정 === '출하검사';
-  document.getElementById('불량수량그룹').style.display = 출하검사 ? 'none' : '';
-  document.getElementById('잔량그룹').style.display     = 출하검사 ? 'none' : '';
-  if (출하검사) {
+  var 검사공정 = 공정 === '출하검사' || 공정 === '공정검사';
+  document.getElementById('불량수량그룹').style.display = 검사공정 ? 'none' : '';
+  document.getElementById('잔량그룹').style.display     = 검사공정 ? 'none' : '';
+  if (검사공정) {
     document.getElementById('출발공정').value = APP_CONFIG.출하검사옵션.출발공정[0];
   }
 }
 
 function 공정별출발도착옵션갱신(공정) {
-  if (공정 === '출하검사') {
+  if (공정 === '출하검사' || 공정 === '공정검사') {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.출하검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.출하검사옵션.도착공정.slice();
   } else {
@@ -381,7 +381,7 @@ function 공정팝업열기(구분) {
 }
 
 async function 확정id목록갱신() {
-  if (현재작업공정 !== '출하검사') { 확정된id목록 = new Set(); return; }
+  if (현재작업공정 !== '출하검사' && 현재작업공정 !== '공정검사') { 확정된id목록 = new Set(); return; }
   var { data } = await 수파베이스.from('매출기록').select('입출고id');
   확정된id목록 = new Set((data || []).map(function(r) { return Number(r['입출고id']); }));
 }
@@ -393,14 +393,14 @@ async function 공정필터목록갱신() {
 
   if (!현재작업공정) {
     결과 = 전체;
-  } else if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사') {
+  } else if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정; });
   } else {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
   }
 
-  // 출하검사: 조회 기간 날짜 필터 적용 (기본값 = 이번 달)
-  if (현재작업공정 === '출하검사') {
+  // 출하검사·공정검사: 조회 기간 날짜 필터 적용 (기본값 = 이번 달)
+  if (현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
     var _시작 = document.getElementById('검색_시작일').value;
     var _종료 = document.getElementById('검색_종료일').value;
     if (_시작) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') >= _시작; });
@@ -699,7 +699,7 @@ function 폼초기화(일자유지) {
   document.getElementById('출고수량').value            = '';
   document.getElementById('불량수량').value            = '';
   document.getElementById('lot번호').value             = '';
-  document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : (현재작업공정 || '');
+  document.getElementById('출발공정').value            = (현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') ? APP_CONFIG.출하검사옵션.출발공정[0] : (현재작업공정 || '');
   document.getElementById('출발공정').disabled          = false;
   document.getElementById('도착공정').value            = '';
   document.getElementById('담당자입력').value          = '';
@@ -944,7 +944,7 @@ async function 검색조회() {
   });
   if (담당) 결과 = 결과.filter(function(h) { return (h.담당자||'') === 담당; });
 
-  if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사') {
+  if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
     결과 = 결과.filter(function(h) { return h.공정 === 현재작업공정; });
   } else if (현재작업공정) {
     결과 = 결과.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
@@ -1431,7 +1431,7 @@ async function 출하검사_엑셀다운로드() {
   var { data: 조회결과, error: 조회오류 } = await 수파베이스
     .from('입출고기록')
     .select('*')
-    .eq('공정', '출하검사')
+    .eq('공정', 현재작업공정 || '출하검사')
     .gte('출고일자', 시작일)
     .lte('출고일자', 종료일);
 
