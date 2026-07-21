@@ -216,13 +216,26 @@
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
         <div id="확정버튼영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
-          <select id="엑셀년도" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;"></select>
-          <select id="엑셀월" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;">
-            <option value="01">1월</option><option value="02">2월</option><option value="03">3월</option>
-            <option value="04">4월</option><option value="05">5월</option><option value="06">6월</option>
-            <option value="07">7월</option><option value="08">8월</option><option value="09">9월</option>
-            <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
-          </select>
+          <input type="hidden" id="엑셀년도">
+          <input type="hidden" id="엑셀월">
+          <div id="월피커감싸기" style="position:relative; display:inline-flex; align-items:center;">
+            <div id="월피커표시" onclick="월피커토글(event)" style="height:32px; min-width:130px; border:1px solid #ccc; border-radius:6px; padding:0 10px; cursor:pointer; display:flex; align-items:center; gap:6px; background:#fff; font-size:13px; user-select:none; white-space:nowrap;">
+              <span style="font-size:14px;">🗓️</span>
+              <span id="월피커텍스트">로드 중...</span>
+            </div>
+            <div id="월피커팝업" onclick="event.stopPropagation()" style="display:none; position:absolute; top:36px; left:0; background:#fff; border:1px solid #ddd; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.18); padding:14px; z-index:9999; width:216px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; background:#222; border-radius:7px; padding:6px 10px;">
+                <button onclick="월피커년도변경(-1)" style="border:none; background:none; cursor:pointer; color:#fff; font-size:20px; line-height:1; padding:0 4px;">‹</button>
+                <span id="월피커년도헤더" style="color:#fff; font-size:14px; font-weight:bold;"></span>
+                <button onclick="월피커년도변경(1)" style="border:none; background:none; cursor:pointer; color:#fff; font-size:20px; line-height:1; padding:0 4px;">›</button>
+              </div>
+              <div id="월피커그리드" style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px;"></div>
+              <div style="display:flex; justify-content:space-between; margin-top:10px; border-top:1px solid #eee; padding-top:8px;">
+                <button onclick="월피커지우기()" style="font-size:12px; color:#666; background:none; border:none; cursor:pointer; padding:2px 8px;">지우기</button>
+                <button onclick="월피커이번달()" style="font-size:12px; color:#1a73e8; background:none; border:none; cursor:pointer; font-weight:bold; padding:2px 8px;">이번 달</button>
+              </div>
+            </div>
+          </div>
           <button id="엑셀다운로드버튼" class="버튼 초록" onclick="출하검사_엑셀다운로드()">엑셀 다운</button>
           <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold;">확 정</button>
         </div>

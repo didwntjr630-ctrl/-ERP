@@ -20,6 +20,92 @@ var 도착공정목록 = [];
 var 확정된id목록 = new Set();
 var _앱브로드캐스트채널 = null;
 var 현재표시목록 = [];
+var 월피커_내부년 = new Date().getFullYear();
+var 월피커_선택년 = new Date().getFullYear();
+var 월피커_선택월 = new Date().getMonth() + 1;
+
+/* ── 월 피커 ── */
+function 월피커토글(e) {
+  if (e) e.stopPropagation();
+  var popup = document.getElementById('월피커팝업');
+  if (!popup) return;
+  if (popup.style.display === 'none') {
+    월피커그리드그리기();
+    popup.style.display = 'block';
+  } else {
+    popup.style.display = 'none';
+  }
+}
+
+function 월피커년도변경(방향) {
+  월피커_내부년 += 방향;
+  월피커그리드그리기();
+}
+
+function 월피커그리드그리기() {
+  var 헤더 = document.getElementById('월피커년도헤더');
+  if (헤더) 헤더.textContent = 월피커_내부년;
+  var 그리드 = document.getElementById('월피커그리드');
+  if (!그리드) return;
+  var 오늘 = new Date();
+  var 오늘년 = 오늘.getFullYear();
+  var 오늘월 = 오늘.getMonth() + 1;
+  그리드.innerHTML = '';
+  for (var m = 1; m <= 12; m++) {
+    var 선택됨 = (월피커_내부년 === 월피커_선택년 && m === 월피커_선택월);
+    var 이번달 = (월피커_내부년 === 오늘년 && m === 오늘월);
+    var btn = document.createElement('button');
+    btn.style.cssText = 'border:none; border-radius:6px; padding:7px 2px; cursor:pointer; font-size:13px; width:100%; position:relative;'
+      + (선택됨 ? 'background:#222; color:#fff; font-weight:bold;' : 'background:#f5f5f5; color:#333;');
+    var label = document.createTextNode(m + '월');
+    btn.appendChild(label);
+    if (이번달 && !선택됨) {
+      var dot = document.createElement('span');
+      dot.style.cssText = 'position:absolute; top:2px; right:3px; width:5px; height:5px; background:#e53935; border-radius:50%; display:block;';
+      btn.appendChild(dot);
+    }
+    (function(month) {
+      btn.onclick = function(e) { e.stopPropagation(); 월피커선택(월피커_내부년, month); };
+    })(m);
+    그리드.appendChild(btn);
+  }
+}
+
+function 월피커선택(년, 월) {
+  월피커_선택년 = 년;
+  월피커_선택월 = 월;
+  var 년el = document.getElementById('엑셀년도');
+  var 월el = document.getElementById('엑셀월');
+  if (년el) 년el.value = String(년);
+  if (월el) 월el.value = String(월).padStart(2, '0');
+  월피커텍스트갱신();
+  var popup = document.getElementById('월피커팝업');
+  if (popup) popup.style.display = 'none';
+}
+
+function 월피커텍스트갱신() {
+  var span = document.getElementById('월피커텍스트');
+  if (!span) return;
+  if (!월피커_선택년 || !월피커_선택월) { span.textContent = '년월 선택'; return; }
+  span.textContent = 월피커_선택년 + '년 ' + String(월피커_선택월).padStart(2, '0') + '월';
+}
+
+function 월피커지우기() {
+  월피커_선택년 = null;
+  월피커_선택월 = null;
+  var 년el = document.getElementById('엑셀년도');
+  var 월el = document.getElementById('엑셀월');
+  if (년el) 년el.value = '';
+  if (월el) 월el.value = '';
+  월피커텍스트갱신();
+  월피커그리드그리기();
+}
+
+function 월피커이번달() {
+  var 오늘 = new Date();
+  월피커_내부년 = 오늘.getFullYear();
+  월피커선택(오늘.getFullYear(), 오늘.getMonth() + 1);
+}
 
 /* ── 폼 임시저장 / 복원 (페이지 이탈 후 복귀 대비) ── */
 var 폼임시저장키 = 'erp_폼임시저장';
@@ -74,22 +160,23 @@ document.addEventListener('DOMContentLoaded', async function() {
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
-  // 엑셀 년/월 셀렉터 초기화 (현재 년·월 기본값)
+  // 월 피커 초기화
   (function() {
     var 오늘 = new Date();
-    var 현재년 = 오늘.getFullYear();
-    var 현재월 = String(오늘.getMonth() + 1).padStart(2, '0');
-    var 년sel = document.getElementById('엑셀년도');
-    if (!년sel) return;
-    for (var y = 현재년 - 2; y <= 현재년 + 1; y++) {
-      var opt = document.createElement('option');
-      opt.value = String(y);
-      opt.textContent = y + '년';
-      if (y === 현재년) opt.selected = true;
-      년sel.appendChild(opt);
-    }
-    var 월sel = document.getElementById('엑셀월');
-    if (월sel) Array.from(월sel.options).forEach(function(o) { if (o.value === 현재월) o.selected = true; });
+    월피커_내부년 = 오늘.getFullYear();
+    월피커_선택년 = 오늘.getFullYear();
+    월피커_선택월 = 오늘.getMonth() + 1;
+    var 년el = document.getElementById('엑셀년도');
+    var 월el = document.getElementById('엑셀월');
+    if (년el) 년el.value = String(월피커_선택년);
+    if (월el) 월el.value = String(월피커_선택월).padStart(2, '0');
+    월피커텍스트갱신();
+    월피커그리드그리기();
+    document.addEventListener('click', function(e) {
+      var popup = document.getElementById('월피커팝업');
+      var wrap = document.getElementById('월피커감싸기');
+      if (popup && wrap && !wrap.contains(e.target)) popup.style.display = 'none';
+    });
   })();
   await 공정뷰선택('출하검사');  // 출하검사 기본 선택
   폼임시저장복원();               // 이탈 전 작성 내용 복원
