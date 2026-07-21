@@ -1291,7 +1291,7 @@ function 색상판별(품명) {
   return (APP_CONFIG.매출고정값 && APP_CONFIG.매출고정값.규격기본) || 'S/V';
 }
 
-function 출하검사_엑셀다운로드() {
+async function 출하검사_엑셀다운로드() {
   var 데이터 = 현재표시목록.filter(function(h) {
     return h.공정 === '출하검사' && (h.도착공정 || '').includes('보은금속');
   });
@@ -1309,42 +1309,36 @@ function 출하검사_엑셀다운로드() {
       throw new Error('보은금속템플릿.js 가 로드되지 않았습니다.');
     }
 
-    // 템플릿 로드 (base64 내장 → fetch 불필요)
-    var wb = XLSX.read(보은금속출하대장_BASE64, { type: 'base64', cellStyles: true });
-    var ws = wb.Sheets[wb.SheetNames[0]];
+    // base64 → ArrayBuffer
+    var bin = atob(보은금속출하대장_BASE64);
+    var buf = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
 
-    // 데이터 열
-    var DATA_COLS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y'];
+    // ExcelJS로 템플릿 로드 (스타일 완전 보존)
+    var workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buf.buffer);
+    var ws = workbook.worksheets[0];
 
-    // 첫 데이터 행(6행)의 스타일을 열별로 저장 → 신규 행에 그대로 적용
-    var rowStyle = {};
-    DATA_COLS.forEach(function(col) {
-      var cell = ws[col + '6'];
-      if (cell && cell.s) rowStyle[col] = JSON.parse(JSON.stringify(cell.s));
-    });
-
-    // 기존 데이터 행 초기화 (6행~200행)
-    for (var r = 6; r <= 200; r++) {
-      DATA_COLS.forEach(function(col) { delete ws[col + r]; });
-    }
-
-    // 제목 월 업데이트
     var 오늘 = new Date();
     var 월 = String(오늘.getMonth() + 1).padStart(2, '0');
-    if (ws['A1']) ws['A1'].v = '보 은 금 속 출 하 검 사 대 장 ( ' + 월 + ' 월 )';
 
-    function 셀(type, value, col, numFmt) {
-      var c = { t: type, v: value };
-      if (rowStyle[col]) c.s = rowStyle[col];
-      if (numFmt) c.z = numFmt;
-      return c;
+    // 제목 월 업데이트
+    ws.getCell('A1').value = '보 은 금 속 출 하 검 사 대 장 ( ' + 월 + ' 월 )';
+
+    // 6행 스타일을 열별로 저장 (템플릿 없는 행에 복사)
+    var REF_ROW = 6;
+    var COL_MAX = 25; // A~Y
+    var refStyles = [];
+    for (var c = 1; c <= COL_MAX; c++) {
+      var rc = ws.getRow(REF_ROW).getCell(c);
+      refStyles[c] = JSON.parse(JSON.stringify(rc.style || {}));
     }
 
-    var lastRow = 5;
-    데이터.forEach(function(항목, idx) {
-      var r = String(6 + idx);
-      lastRow = 6 + idx;
+    // 마지막 유효 행 파악
+    var tmplLast = ws.lastRow ? ws.lastRow.number : REF_ROW;
 
+    function 행채우기(rowNum, 항목, idx) {
+      var row = ws.getRow(rowNum);
       var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
       var 불량 = Number(항목.불량수량) || 0;
       var 검사수량 = AQL검사수량계산(수량);
@@ -1353,33 +1347,52 @@ function 출하검사_엑셀다운로드() {
       var 판정 = 불량 === 0 ? 'OK' : 'NG';
       var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
 
-      ws['A' + r] = 셀('n', idx + 1, 'A');
-      ws['B' + r] = 항목.출고일자
-        ? 셀('n', 엑셀날짜변환(항목.출고일자), 'B', 'yyyy-mm-dd')
-        : 셀('z', null, 'B');
-      ws['C' + r] = 셀('s', 항목['lot번호'] || '', 'C');
-      ws['D' + r] = 셀('n', 수량, 'D');
-      ws['E' + r] = 셀('s', 차종, 'E');
-      ws['F' + r] = 셀('s', 색상, 'F');
-      ws['G' + r] = 셀('n', 검사수량, 'G');
-      ws['H' + r] = 셀('n', 불량, 'H');
-      ws['I' + r] = 셀('n', 불량율, 'I', '0%');
-      ['J','K','L','M','N','O','P','Q','R','S','T'].forEach(function(col) {
-        ws[col + r] = 셀('z', null, col);
-      });
-      ws['U' + r] = 셀('s', 판정, 'U');
-      ['V','W','X','Y'].forEach(function(col) {
-        ws[col + r] = 셀('z', null, col);
-      });
-    });
+      // 템플릿 행이 없으면 스타일 수동 복사
+      if (rowNum > tmplLast) {
+        for (var c = 1; c <= COL_MAX; c++) {
+          row.getCell(c).style = JSON.parse(JSON.stringify(refStyles[c] || {}));
+        }
+      }
 
-    // 시트 범위 확장
-    var 범위 = XLSX.utils.decode_range(ws['!ref'] || 'A1:Y5');
-    범위.e.r = Math.max(범위.e.r, lastRow - 1);
-    ws['!ref'] = XLSX.utils.encode_range(범위);
+      row.getCell(1).value = idx + 1;
+      var dateCell = row.getCell(2);
+      dateCell.value = 항목.출고일자 ? new Date(항목.출고일자 + 'T00:00:00') : null;
+      dateCell.numFmt = 'yyyy-mm-dd';
+      row.getCell(3).value = 항목['lot번호'] || '';
+      row.getCell(4).value = 수량;
+      row.getCell(5).value = 차종;
+      row.getCell(6).value = 색상;
+      row.getCell(7).value = 검사수량;
+      row.getCell(8).value = 불량;
+      var rateCell = row.getCell(9);
+      rateCell.value = 불량율;
+      rateCell.numFmt = '0%';
+      for (var j = 10; j <= 20; j++) row.getCell(j).value = null; // J~T
+      row.getCell(21).value = 판정;                                // U
+      for (var k = 22; k <= 25; k++) row.getCell(k).value = null; // V~Y
+      row.commit();
+    }
 
+    // 데이터 채우기
+    데이터.forEach(function(항목, idx) { 행채우기(REF_ROW + idx, 항목, idx); });
+
+    // 남은 템플릿 행 값 초기화 (스타일·테두리 유지)
+    for (var r = REF_ROW + 데이터.length; r <= tmplLast; r++) {
+      var row = ws.getRow(r);
+      for (var c = 1; c <= COL_MAX; c++) row.getCell(c).value = null;
+      row.commit();
+    }
+
+    // 다운로드
     var 파일명 = '보은금속출하검사대장_' + 오늘.getFullYear() + 월 + '.xlsx';
-    XLSX.writeFile(wb, 파일명, { bookType: 'xlsx', cellStyles: true });
+    var outBuf = await workbook.xlsx.writeBuffer();
+    var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 파일명;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     알림표시('다운로드 완료: ' + 파일명, '성공');
 
   } catch (e) {
