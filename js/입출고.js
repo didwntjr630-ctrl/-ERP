@@ -1285,7 +1285,7 @@ function AQL검사수량계산(lotSize) {
 
 function 엑셀날짜변환(dateStr) {
   if (!dateStr) return null;
-  var d = new Date(dateStr + 'T00:00:00');
+  var d = new Date(dateStr + 'T00:00:00Z');
   return Math.floor((d - new Date(Date.UTC(1899, 11, 30))) / 86400000);
 }
 
@@ -1368,7 +1368,7 @@ async function 출하검사_엑셀다운로드() {
 
       row.getCell(1).value = idx + 1;
       var dateCell = row.getCell(2);
-      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00') : null;
+      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00Z') : null;
       if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
       row.getCell(3).value = 항목['lot번호'] || '';
       row.getCell(4).value = 수량;
