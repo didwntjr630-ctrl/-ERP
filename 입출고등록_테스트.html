@@ -215,7 +215,14 @@
         <div id="공정뷰안내" style="display:none; font-size:12px; color:#666; background:#f0f6fb; border:1px solid #c5d8ed; border-radius:4px; padding:4px 10px;">
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
-        <div id="확정버튼영역" style="display:none; margin-left:auto; gap:8px;">
+        <div id="확정버튼영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
+          <select id="엑셀년도" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;"></select>
+          <select id="엑셀월" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;">
+            <option value="01">1월</option><option value="02">2월</option><option value="03">3월</option>
+            <option value="04">4월</option><option value="05">5월</option><option value="06">6월</option>
+            <option value="07">7월</option><option value="08">8월</option><option value="09">9월</option>
+            <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+          </select>
           <button id="엑셀다운로드버튼" class="버튼 초록" onclick="출하검사_엑셀다운로드()">엑셀 다운</button>
           <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold;">확 정</button>
         </div>
