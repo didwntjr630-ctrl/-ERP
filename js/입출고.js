@@ -1337,7 +1337,7 @@ async function 출하검사_엑셀다운로드() {
     // 마지막 유효 행 파악
     var tmplLast = ws.lastRow ? ws.lastRow.number : REF_ROW;
 
-    function 행채우기(rowNum, 항목, idx) {
+    function 행채우기(rowNum, 항목, idx, 날짜표시) {
       var row = ws.getRow(rowNum);
       var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
       var 불량 = Number(항목.불량수량) || 0;
@@ -1356,8 +1356,8 @@ async function 출하검사_엑셀다운로드() {
 
       row.getCell(1).value = idx + 1;
       var dateCell = row.getCell(2);
-      dateCell.value = 항목.출고일자 ? new Date(항목.출고일자 + 'T00:00:00') : null;
-      dateCell.numFmt = 'yyyy-mm-dd';
+      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00') : null;
+      if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
       row.getCell(3).value = 항목['lot번호'] || '';
       row.getCell(4).value = 수량;
       row.getCell(5).value = 차종;
@@ -1374,7 +1374,10 @@ async function 출하검사_엑셀다운로드() {
     }
 
     // 데이터 채우기
-    데이터.forEach(function(항목, idx) { 행채우기(REF_ROW + idx, 항목, idx); });
+    데이터.forEach(function(항목, idx) {
+      var 날짜표시 = idx === 0 || 항목.출고일자 !== 데이터[idx - 1].출고일자;
+      행채우기(REF_ROW + idx, 항목, idx, 날짜표시);
+    });
 
     // 남은 템플릿 행 값 초기화 (스타일·테두리 유지)
     for (var r = REF_ROW + 데이터.length; r <= tmplLast; r++) {
