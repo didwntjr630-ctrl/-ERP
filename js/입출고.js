@@ -1291,7 +1291,7 @@ function 색상판별(품명) {
   return (APP_CONFIG.매출고정값 && APP_CONFIG.매출고정값.규격기본) || 'S/V';
 }
 
-async function 출하검사_엑셀다운로드() {
+function 출하검사_엑셀다운로드() {
   var 데이터 = 현재표시목록.filter(function(h) {
     return h.공정 === '출하검사' && (h.도착공정 || '').includes('보은금속');
   });
@@ -1305,30 +1305,36 @@ async function 출하검사_엑셀다운로드() {
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '생성 중...'; }
 
   try {
-    var 템플릿URL = '/보은금속출하검사대장/' + encodeURIComponent('2026년 보은금속_두산정밀 수입_출하대장2.xlsm');
-    var res = await fetch(템플릿URL);
-    if (!res.ok) throw new Error('템플릿 파일 로드 실패 (HTTP ' + res.status + ')');
-    var 버퍼 = await res.arrayBuffer();
+    var 오늘 = new Date();
+    var 월 = String(오늘.getMonth() + 1).padStart(2, '0');
 
-    var wb = XLSX.read(new Uint8Array(버퍼), { type: 'array', cellStyles: true });
-    var ws = wb.Sheets[wb.SheetNames[0]];
+    // ── 시트 데이터 구성 (배열 방식) ──
+    var 행들 = [];
 
-    // 기존 데이터 행(6행~)의 셀 스타일 참조 복사 (헤더·AQL 테이블 제외)
-    var DATA_COLS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y'];
-    var 기준스타일 = {};
-    DATA_COLS.forEach(function(col) {
-      var cell = ws[col + '6'];
-      if (cell && cell.s) 기준스타일[col] = cell.s;
-    });
+    // Row 1: 제목
+    행들.push(['보 은 금 속 출 하 검 사 대 장 ( ' + 월 + ' 월 )',
+      '','','','','','','','','','','','','','','','','','','','','','','','']);
 
-    // 기존 데이터 행 삭제 (6행 이후, AB-AC 열 AQL 테이블은 유지)
-    for (var r = 6; r <= 200; r++) {
-      DATA_COLS.forEach(function(col) { delete ws[col + r]; });
-    }
+    // Row 2, 3: 여백
+    행들.push([]); 행들.push([]);
 
-    // 새 데이터 채우기
+    // Row 4: 메인 헤더
+    행들.push([
+      'NO', '출하일자', 'LOT NO', '출하수량', '모델명', '색상',
+      '검사수량', '불량수량', '불량율',
+      '불  량  내 용', '', '', '', '', '', '', '', '', '', '',
+      '판정', '비       고', '', '', ''
+    ]);
+
+    // Row 5: 불량 서브헤더
+    행들.push([
+      '', '', '', '', '', '', '', '', '',
+      '기포', '코팅얼룩', 'A/D얼룩', '찍힘', 'S/C', '이물', '툴자국', '소재', 'H/L', '휨', '기타',
+      '', '', '', '', ''
+    ]);
+
+    // Row 6+: 데이터
     데이터.forEach(function(항목, idx) {
-      var r = String(6 + idx);
       var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
       var 불량 = Number(항목.불량수량) || 0;
       var 검사수량 = AQL검사수량계산(수량);
@@ -1337,33 +1343,65 @@ async function 출하검사_엑셀다운로드() {
       var 판정 = 불량 === 0 ? 'OK' : 'NG';
       var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
 
-      function mkCell(type, val, fmt) {
-        var cell = { t: type, v: val };
-        if (fmt) cell.z = fmt;
-        return cell;
-      }
-
-      ws['A' + r] = mkCell('n', idx + 1);
-      if (항목.출고일자) ws['B' + r] = mkCell('n', 엑셀날짜변환(항목.출고일자), 'yyyy-mm-dd');
-      ws['C' + r] = mkCell('s', 항목['lot번호'] || '');
-      ws['D' + r] = mkCell('n', 수량);
-      ws['E' + r] = mkCell('s', 차종);
-      ws['F' + r] = mkCell('s', 색상);
-      ws['G' + r] = mkCell('n', 검사수량);
-      ws['H' + r] = mkCell('n', 불량);
-      ws['I' + r] = mkCell('n', 불량율, '0.00%');
-      ws['U' + r] = mkCell('s', 판정);
+      행들.push([
+        idx + 1,
+        항목.출고일자 ? 엑셀날짜변환(항목.출고일자) : '',
+        항목['lot번호'] || '',
+        수량, 차종, 색상, 검사수량, 불량, 불량율,
+        '', '', '', '', '', '', '', '', '', '', '',  // J~T: 불량 상세 빈칸
+        판정,
+        '', '', '', ''   // V~Y: 비고 빈칸
+      ]);
     });
 
-    // 시트 범위 업데이트
-    ws['!ref'] = 'A1:AC' + Math.max(5 + 데이터.length, 30);
+    var ws = XLSX.utils.aoa_to_sheet(행들);
 
-    // 파일명: 보은금속출하검사대장_YYYYMM.xlsx
-    var 오늘 = new Date();
-    var 파일명 = '보은금속출하검사대장_' + 오늘.getFullYear() +
-                  String(오늘.getMonth() + 1).padStart(2, '0') + '.xlsx';
+    // 날짜·불량율 셀 서식 지정
+    데이터.forEach(function(항목, idx) {
+      var r = 5 + idx;  // 0-indexed (row 6 = index 5)
+      var dateCell = ws[XLSX.utils.encode_cell({ r: r, c: 1 })];
+      if (dateCell && 항목.출고일자) { dateCell.t = 'n'; dateCell.z = 'yyyy-mm-dd'; }
+      var ratioCell = ws[XLSX.utils.encode_cell({ r: r, c: 8 })];
+      if (ratioCell) ratioCell.z = '0.00%';
+    });
 
-    XLSX.writeFile(wb, 파일명, { bookType: 'xlsx' });
+    // 병합 셀 설정
+    var 병합 = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 24 } },  // 제목 가로 전체
+      { s: { r: 3, c: 9 }, e: { r: 3, c: 19 } },   // 불량내용 헤더
+      { s: { r: 3, c: 21 }, e: { r: 4, c: 24 } },  // 비고 헤더 (2행 포함)
+    ];
+    // 고정 헤더 컬럼 세로 병합 (A~I, U: 4~5행)
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 20].forEach(function(c) {
+      병합.push({ s: { r: 3, c: c }, e: { r: 4, c: c } });
+    });
+    ws['!merges'] = 병합;
+
+    // 열 너비
+    ws['!cols'] = [
+      { wch: 5 },   // A: NO
+      { wch: 13 },  // B: 출하일자
+      { wch: 24 },  // C: LOT NO
+      { wch: 9 },   // D: 출하수량
+      { wch: 12 },  // E: 모델명
+      { wch: 7 },   // F: 색상
+      { wch: 9 },   // G: 검사수량
+      { wch: 9 },   // H: 불량수량
+      { wch: 8 },   // I: 불량율
+      // J~T: 불량 상세 11개 (각 6)
+      { wch: 6 }, { wch: 7 }, { wch: 7 }, { wch: 6 }, { wch: 6 },
+      { wch: 6 }, { wch: 7 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 },
+      { wch: 7 },   // U: 판정
+      { wch: 18 },  // V: 비고
+    ];
+
+    // 시트명·워크북 생성
+    var 시트명 = '보은출하검사대장' + String(오늘.getFullYear()).slice(-2) + '_' + 월;
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 시트명);
+
+    var 파일명 = '보은금속출하검사대장_' + 오늘.getFullYear() + 월 + '.xlsx';
+    XLSX.writeFile(wb, 파일명);
     알림표시('다운로드 완료: ' + 파일명, '성공');
 
   } catch (e) {
