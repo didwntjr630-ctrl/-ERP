@@ -1435,6 +1435,17 @@ async function 출하검사_엑셀다운로드() {
       row.commit();
     }
 
+    // 인쇄 설정
+    var 마지막행 = 데이터.length > 0 ? REF_ROW + 데이터.length - 1 : tmplLast;
+    ws.pageSetup.printArea = 'A1:Y' + 마지막행;
+    ws.pageSetup.rowsToRepeatAtTop = '1:5';
+    ws.pageSetup.orientation = 'landscape';
+    ws.pageSetup.fitToPage = true;
+    ws.pageSetup.fitToWidth = 1;
+    ws.pageSetup.fitToHeight = 0;
+    ws.pageSetup.horizontalCentered = true;
+    ws.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+
     // 다운로드
     var 파일명 = '보은금속출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
