@@ -204,6 +204,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
   });
 
+  // 목록 테이블 좌우 방향키 셀 이동
+  document.getElementById('목록테이블바디').addEventListener('keydown', function(e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var 대상 = e.target.tagName === 'TD' ? e.target : (e.target.closest ? e.target.closest('td') : null);
+    if (!대상) return;
+    var 이동 = e.key === 'ArrowRight' ? 대상.nextElementSibling : 대상.previousElementSibling;
+    if (이동) { 이동.focus(); e.preventDefault(); }
+  });
+
   // 다른 PC의 변경을 실시간으로 반영 (Supabase Realtime)
   var _실시간타이머 = null;
   function _실시간갱신() {
@@ -234,6 +243,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (변경) 공정필터목록갱신();
   }, 5000);
 });
+
+/* ── 날짜 직접 타이핑 포맷 (8자리 숫자 → YYYY-MM-DD) ── */
+function 날짜입력포맷(input) {
+  var raw = input.value.replace(/[^0-9]/g, '').slice(0, 8);
+  var fmt = raw;
+  if (raw.length > 6) fmt = raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6);
+  else if (raw.length > 4) fmt = raw.slice(0, 4) + '-' + raw.slice(4);
+  input.value = fmt;
+  폼임시저장();
+}
 
 /* ── 날짜 기본값 ── */
 function 오늘날짜세팅() {
@@ -531,7 +550,7 @@ async function 저장하기() {
   // 필수 항목 일괄 검사
   var 미입력 = [];
   if (!품명값 || !선택된품목) 미입력.push('품명 (목록에서 선택)');
-  if (!일자값)        미입력.push('일자');
+  if (!일자값 || !/^\d{4}-\d{2}-\d{2}$/.test(일자값)) 미입력.push('일자 (YYYY-MM-DD 형식)');
   if (!lot값)         미입력.push('LOT No.');
   if (!출발값)        미입력.push('출발 공정');
   if (!입고값)        미입력.push('입고수량');
@@ -837,6 +856,7 @@ function 목록테이블그리기(목록) {
       '<td>' + (항목.출고일자 || '') + '</td>' +
       '<td>' + (항목['lot번호']  || '') + '</td>' +
       '<td>' + 조치버튼 + '</td>';
+    Array.from(행.children).forEach(function(td) { td.tabIndex = -1; });
     바디.appendChild(행);
   });
 }

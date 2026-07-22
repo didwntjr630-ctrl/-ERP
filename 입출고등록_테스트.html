@@ -124,7 +124,8 @@
         </div>
         <div class="입력그룹" style="flex:0 0 130px;">
           <label for="출고일자">일자</label>
-          <input type="date" id="출고일자" onchange="폼임시저장()" onkeydown="폼엔터핸들러(event,'출고일자')">
+          <input type="text" id="출고일자" placeholder="YYYYMMDD 또는 YYYY-MM-DD" maxlength="10"
+                 oninput="날짜입력포맷(this)" onkeydown="폼엔터핸들러(event,'출고일자')">
         </div>
         <div class="입력그룹 lot노">
           <label for="lot번호">LOT No. <span style="color:#888; font-weight:normal;">(더블클릭 검색)</span></label>
