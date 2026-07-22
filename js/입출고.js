@@ -115,7 +115,7 @@ function 폼임시저장() {
   var 데이터 = {
     품명:     document.getElementById('품명').value,
     품번:     선택된품목 ? 선택된품목.품번 : '',
-    일자:     document.getElementById('출고일자').value,
+    일자:     '',
     lot:      document.getElementById('lot번호').value,
     출발공정: document.getElementById('출발공정').value,
     도착공정: document.getElementById('도착공정').value,
@@ -138,7 +138,7 @@ function 폼임시저장복원() {
     선택된품목 = 품목목록.find(function(p) { return p.품명 === d.품명; }) || null;
     if (선택된품목) document.getElementById('품명품번표시').textContent = '(' + 선택된품목.품번 + ')';
   }
-  if (d.일자)     document.getElementById('출고일자').value = d.일자;
+  // 일자는 항상 빈 칸으로 시작 (Enter → 오늘 날짜, 직접 타이핑 가능)
   if (d.lot)      document.getElementById('lot번호').value  = d.lot;
   if (d.출발공정) document.getElementById('출발공정').value = d.출발공정;
   if (d.도착공정) document.getElementById('도착공정').value = d.도착공정;
