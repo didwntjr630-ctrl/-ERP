@@ -182,7 +182,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   (function() {
     var 업체sel = document.getElementById('엑셀업체');
     if (!업체sel) return;
-    (APP_CONFIG.출하검사옵션.도착공정 || []).forEach(function(업체명) {
+    var 초기목록 = APP_CONFIG.출하검사옵션.엑셀출력업체 || APP_CONFIG.출하검사옵션.도착공정 || [];
+    초기목록.forEach(function(업체명) {
       var opt = document.createElement('option');
       opt.value = 업체명;
       opt.textContent = 업체명;
@@ -323,7 +324,8 @@ async function 공정뷰선택(공정) {
   if (업체sel) {
     업체sel.innerHTML = '';
     var 옵션소스 = (공정 === '공정검사') ? APP_CONFIG.공정검사옵션 : APP_CONFIG.출하검사옵션;
-    (옵션소스.도착공정 || []).forEach(function(업체명) {
+    var 출력업체목록 = 옵션소스.엑셀출력업체 || 옵션소스.도착공정 || [];
+    출력업체목록.forEach(function(업체명) {
       var opt = document.createElement('option');
       opt.value = 업체명; opt.textContent = 업체명;
       업체sel.appendChild(opt);
@@ -1009,6 +1011,33 @@ function 검색_품목팝업열기() {
 }
 
 /* ══════════════════════════════════════════
+   LOT 번호 입력 포맷 (4-4-3-rest 자동 띄어쓰기)
+══════════════════════════════════════════ */
+function lot번호포맷(input) {
+  var pos = input.selectionStart;
+  var raw = input.value.replace(/ /g, '');
+  var 숫자부 = raw.replace(/[^0-9]/g, '');
+  var 접미사 = raw.replace(/^[0-9]+/, '');  // 하이픈 이후 등 나머지
+
+  var chunks = [];
+  if (숫자부.length > 0)  chunks.push(숫자부.slice(0, 4));
+  if (숫자부.length > 4)  chunks.push(숫자부.slice(4, 8));
+  if (숫자부.length > 8)  chunks.push(숫자부.slice(8, 11));
+  if (숫자부.length > 11) chunks.push(숫자부.slice(11));
+
+  var formatted = chunks.join(' ') + (접미사 ? ' ' + 접미사 : '');
+
+  // 공백 삽입만큼 커서 위치 보정
+  var 공백수_기존 = input.value.slice(0, pos).split(' ').length - 1;
+  var 공백수_새 = formatted.slice(0, pos + (formatted.length - input.value.length)).split(' ').length - 1;
+  var 새pos = Math.min(pos + (formatted.length - input.value.length), formatted.length);
+
+  input.value = formatted;
+  try { input.setSelectionRange(새pos, 새pos); } catch(e) {}
+  폼임시저장();
+}
+
+/* ══════════════════════════════════════════
    LOT 번호 팝업 (더블클릭)
 ══════════════════════════════════════════ */
 async function lot팝업열기() {
@@ -1460,7 +1489,8 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
-  // 선택한 년/월/업체로 DB에서 직접 조회 (화면 필터와 무관)
+  var 공정검사여부 = 현재작업공정 === '공정검사';
+
   var 선택년 = (document.getElementById('엑셀년도') || {}).value || String(new Date().getFullYear());
   var 선택월 = (document.getElementById('엑셀월') || {}).value || String(new Date().getMonth() + 1).padStart(2, '0');
   var 선택업체 = (document.getElementById('엑셀업체') || {}).value || (APP_CONFIG.출하검사옵션.도착공정 || [])[0] || '';
@@ -1474,12 +1504,12 @@ async function 출하검사_엑셀다운로드() {
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '조회 중...'; }
   if (!선택업체) { 알림표시('업체를 선택하세요.', '오류'); if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; } return; }
 
-  var { data: 조회결과, error: 조회오류 } = await 수파베이스
-    .from('입출고기록')
-    .select('*')
-    .eq('공정', 현재작업공정 || '출하검사')
-    .gte('출고일자', 시작일)
-    .lte('출고일자', 종료일);
+  // 공정검사: MX5 누적을 위해 날짜 필터 없이 전체 조회 / 출하검사: 선택 월만 조회
+  var 쿼리 = 수파베이스.from('입출고기록').select('*').eq('공정', 현재작업공정 || '출하검사');
+  if (!공정검사여부) {
+    쿼리 = 쿼리.gte('출고일자', 시작일).lte('출고일자', 종료일);
+  }
+  var { data: 조회결과, error: 조회오류 } = await 쿼리;
 
   if (버튼) 버튼.textContent = '생성 중...';
 
@@ -1489,130 +1519,189 @@ async function 출하검사_엑셀다운로드() {
     return;
   }
 
-  var 데이터 = (조회결과 || []).filter(function(h) {
-    return (h.도착공정 || '') === 선택업체;
-  }).sort(function(a, b) {
-    var da = a.출고일자 || '';
-    var db = b.출고일자 || '';
-    if (da !== db) return da > db ? 1 : -1;
-    return a.id - b.id;
-  });
+  function 날짜정렬(arr) {
+    return arr.sort(function(a, b) {
+      var da = a.출고일자 || '', db = b.출고일자 || '';
+      if (da !== db) return da > db ? 1 : -1;
+      return a.id - b.id;
+    });
+  }
 
-  if (데이터.length === 0) {
-    알림표시(선택년 + '년 ' + Number(선택월) + '월 ' + 업체단축명 + ' 출하 데이터가 없습니다.', '오류');
-    if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
-    return;
+  function 차종추출(품명) {
+    return (APP_CONFIG.차종매핑[품명] || {}).차종 || 품명 || '';
+  }
+
+  var 전체 = (조회결과 || []).filter(function(h) { return (h.도착공정 || '') === 선택업체; });
+
+  var MX5데이터, 비MX5데이터, 데이터;
+  if (공정검사여부) {
+    // MX5: 전체 기간 누적, 비MX5: 선택 월만
+    MX5데이터 = 날짜정렬(전체.filter(function(h) { return 차종추출(h.품명) === 'MX5'; }));
+    비MX5데이터 = 날짜정렬(전체.filter(function(h) {
+      return 차종추출(h.품명) !== 'MX5' && (h.출고일자 || '') >= 시작일 && (h.출고일자 || '') <= 종료일;
+    }));
+    if (MX5데이터.length === 0 && 비MX5데이터.length === 0) {
+      알림표시(선택년 + '년 ' + Number(선택월) + '월 ' + 업체단축명 + ' 데이터가 없습니다.', '오류');
+      if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
+      return;
+    }
+  } else {
+    데이터 = 날짜정렬(전체);
+    if (데이터.length === 0) {
+      알림표시(선택년 + '년 ' + Number(선택월) + '월 ' + 업체단축명 + ' 출하 데이터가 없습니다.', '오류');
+      if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
+      return;
+    }
   }
 
   try {
-    if (typeof 보은금속출하대장_BASE64 === 'undefined') {
-      throw new Error('보은금속템플릿.js 가 로드되지 않았습니다.');
+    var BASE64 = 공정검사여부 ? 아노다이징출하대장_BASE64 : 보은금속출하대장_BASE64;
+    if (typeof BASE64 === 'undefined') {
+      throw new Error((공정검사여부 ? '아노다이징' : '보은금속') + '템플릿.js 가 로드되지 않았습니다.');
     }
 
-    // base64 → ArrayBuffer
-    var bin = atob(보은금속출하대장_BASE64);
+    var bin = atob(BASE64);
     var buf = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
 
-    // ExcelJS로 템플릿 로드 (스타일 완전 보존)
     var workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
-    var ws = workbook.worksheets[0];
 
-    // 제목 월 업데이트 (선택한 년/월 기준)
-    ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
-
-    // 6행 스타일을 열별로 저장 (템플릿 없는 행에 복사)
     var REF_ROW = 6;
-    var COL_MAX = 25; // A~Y
-    var refStyles = [];
-    for (var c = 1; c <= COL_MAX; c++) {
-      var rc = ws.getRow(REF_ROW).getCell(c);
-      refStyles[c] = JSON.parse(JSON.stringify(rc.style || {}));
-    }
 
-    // 마지막 유효 행 파악
-    var tmplLast = ws.lastRow ? ws.lastRow.number : REF_ROW;
+    // 시트에 데이터를 채우고 인쇄 설정까지 처리하는 내부 함수
+    function 시트채우기(targetWs, 데이터목록, colMax) {
+      var targetRefStyles = [];
+      for (var c = 1; c <= colMax; c++) {
+        var rc = targetWs.getRow(REF_ROW).getCell(c);
+        targetRefStyles[c] = JSON.parse(JSON.stringify(rc.style || {}));
+      }
+      var targetTmplLast = targetWs.lastRow ? targetWs.lastRow.number : REF_ROW;
 
-    function 행채우기(rowNum, 항목, idx, 날짜표시) {
-      var row = ws.getRow(rowNum);
-      var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
-      var 불량 = Number(항목.불량수량) || 0;
-      var 검사수량 = AQL검사수량계산(수량);
-      var 차종 = (APP_CONFIG.차종매핑[항목.품명] || {}).차종 || '';
-      var 색상 = 색상판별(항목.품명);
-      var 판정 = 불량 === 0 ? 'OK' : 'NG';
-      var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
+      데이터목록.forEach(function(항목, idx) {
+        var rowNum = REF_ROW + idx;
+        var row = targetWs.getRow(rowNum);
+        var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
+        var 불량 = Number(항목.불량수량) || 0;
+        var 검사수량 = AQL검사수량계산(수량);
+        var 차종 = 차종추출(항목.품명);
+        var 색상 = 색상판별(항목.품명);
+        var 판정 = 불량 === 0 ? 'OK' : 'NG';
+        var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
+        var 날짜표시 = idx === 0 || 항목.출고일자 !== 데이터목록[idx - 1].출고일자;
 
-      // 템플릿 행이 없으면 스타일 수동 복사
-      if (rowNum > tmplLast) {
-        for (var c = 1; c <= COL_MAX; c++) {
-          row.getCell(c).style = JSON.parse(JSON.stringify(refStyles[c] || {}));
+        if (rowNum > targetTmplLast) {
+          for (var c = 1; c <= colMax; c++) {
+            row.getCell(c).style = JSON.parse(JSON.stringify(targetRefStyles[c] || {}));
+          }
         }
+
+        row.getCell(1).value = idx + 1;
+        var dateCell = row.getCell(2);
+        dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00Z') : null;
+        if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
+        row.getCell(3).value = 항목['lot번호'] || '';
+        row.getCell(4).value = 수량;
+        row.getCell(5).value = 차종;
+        row.getCell(6).value = 색상;
+        row.getCell(7).value = 검사수량;
+        row.getCell(8).value = 불량;
+
+        if (공정검사여부) {
+          for (var j = 9; j <= 18; j++) row.getCell(j).value = null;
+          row.getCell(19).value = 판정;
+          row.getCell(20).value = null;
+          for (var k = 21; k <= 24; k++) row.getCell(k).value = null;
+        } else {
+          var rateCell = row.getCell(9);
+          rateCell.value = 불량율;
+          rateCell.numFmt = '0%';
+          for (var j = 10; j <= 20; j++) row.getCell(j).value = null;
+          row.getCell(21).value = 판정;
+          for (var k = 22; k <= 25; k++) row.getCell(k).value = null;
+        }
+        row.commit();
+      });
+
+      // 남은 템플릿 행 값 초기화 (스타일·테두리 유지)
+      for (var r = REF_ROW + 데이터목록.length; r <= targetTmplLast; r++) {
+        var tRow = targetWs.getRow(r);
+        for (var c = 1; c <= colMax; c++) tRow.getCell(c).value = null;
+        tRow.commit();
       }
 
-      row.getCell(1).value = idx + 1;
-      var dateCell = row.getCell(2);
-      dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00Z') : null;
-      if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
-      row.getCell(3).value = 항목['lot번호'] || '';
-      row.getCell(4).value = 수량;
-      row.getCell(5).value = 차종;
-      row.getCell(6).value = 색상;
-      row.getCell(7).value = 검사수량;
-      row.getCell(8).value = 불량;
-      var rateCell = row.getCell(9);
-      rateCell.value = 불량율;
-      rateCell.numFmt = '0%';
-      for (var j = 10; j <= 20; j++) row.getCell(j).value = null; // J~T
-      row.getCell(21).value = 판정;                                // U
-      for (var k = 22; k <= 25; k++) row.getCell(k).value = null; // V~Y
-      row.commit();
+      // 인쇄 설정
+      var 마지막행 = 데이터목록.length > 0 ? REF_ROW + 데이터목록.length - 1 : targetTmplLast;
+      targetWs.pageSetup.orientation = 'landscape';
+      targetWs.pageSetup.horizontalCentered = true;
+      if (공정검사여부) {
+        targetWs.pageSetup.paperSize = 9;
+        targetWs.pageSetup.scale = 75;
+        targetWs.pageSetup.fitToPage = false;
+        targetWs.pageSetup.printArea = 'A1:X' + 마지막행;
+        targetWs.pageSetup.margins = {
+          left:   0.70866141732283472,
+          right:  0.19685039370078741,
+          top:    0.74803149606299213,
+          bottom: 0.35433070866141736,
+          header: 0.31496062992125984,
+          footer: 0.31496062992125984
+        };
+      } else {
+        targetWs.pageSetup.fitToPage = true;
+        targetWs.pageSetup.fitToWidth = 1;
+        targetWs.pageSetup.fitToHeight = 0;
+        targetWs.pageSetup.printArea = 'A1:Y' + 마지막행;
+        targetWs.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+      }
     }
 
-    // 데이터 채우기
-    데이터.forEach(function(항목, idx) {
-      var 날짜표시 = idx === 0 || 항목.출고일자 !== 데이터[idx - 1].출고일자;
-      행채우기(REF_ROW + idx, 항목, idx, 날짜표시);
-    });
+    var 파일명, ptXml;
 
-    // 남은 템플릿 행 값 초기화 (스타일·테두리 유지)
-    for (var r = REF_ROW + 데이터.length; r <= tmplLast; r++) {
-      var row = ws.getRow(r);
-      for (var c = 1; c <= COL_MAX; c++) row.getCell(c).value = null;
-      row.commit();
+    if (공정검사여부) {
+      // 시트1(MX5_태산출하검사대장_25~): MX5 전체 누적
+      // 시트2(코팅수입검사대장): 비MX5 선택 월 데이터
+      var ws1 = workbook.worksheets[0];
+      var ws2 = workbook.getWorksheet('태산출하검사대장 2026년_월_07');
+      if (!ws1 || !ws2) throw new Error('아노다이징 템플릿 시트를 찾을 수 없습니다.');
+      ws2.name = '코팅수입검사대장';
+      ws2.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + String(Number(선택월)).padStart(2, '0') + '월 )';
+
+      시트채우기(ws1, MX5데이터, 24);
+      시트채우기(ws2, 비MX5데이터, 24);
+
+      파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
+      ptXml = '<definedName name="_xlnm.Print_Titles" localSheetId="0">\'MX5_태산출하검사대장_25~\'!$1:$5</definedName>' +
+              '<definedName name="_xlnm.Print_Titles" localSheetId="1">\'코팅수입검사대장\'!$1:$5</definedName>';
+    } else {
+      var ws = workbook.worksheets[0];
+      ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
+      시트채우기(ws, 데이터, 25);
+
+      파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
+      ptXml = '<definedName name="_xlnm.Print_Titles" localSheetId="0">\'' + ws.name + '\'!$1:$5</definedName>';
     }
 
-    // 인쇄 설정
-    var 마지막행 = 데이터.length > 0 ? REF_ROW + 데이터.length - 1 : tmplLast;
-    ws.pageSetup.printArea = 'A1:Y' + 마지막행;
-    ws.pageSetup.orientation = 'landscape';
-    ws.pageSetup.fitToPage = true;
-    ws.pageSetup.fitToWidth = 1;
-    ws.pageSetup.fitToHeight = 0;
-    ws.pageSetup.horizontalCentered = true;
-    ws.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
-
-    // 다운로드
-    var 파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
 
-    // JSZip으로 Print_Titles 직접 주입 (ExcelJS rowsToRepeatAtTop 버그 우회)
+    // JSZip으로 _xlnm.Print_Titles 주입 (ExcelJS rowsToRepeatAtTop 버그 우회)
     try {
-      var 시트명 = ws.name;
       var zip = await JSZip.loadAsync(outBuf);
       var wbXml = await zip.file('xl/workbook.xml').async('string');
-      var ptXml = '<definedName name="Print_Titles" localSheetId="0">\'' + 시트명 + '\'!$1:$5</definedName>';
-      if (wbXml.includes('Print_Titles')) {
-        wbXml = wbXml.replace(/<definedName name="Print_Titles"[^>]*>[\s\S]*?<\/definedName>/, ptXml);
-      } else if (wbXml.includes('<definedNames>')) {
+
+      wbXml = wbXml.replace(/<definedName name="Print_Titles"[^>]*>[\s\S]*?<\/definedName>/g, '');
+      wbXml = wbXml.replace(/<definedName name="_xlnm\.Print_Titles"[^>]*>[\s\S]*?<\/definedName>/g, '');
+
+      if (wbXml.includes('<definedNames>')) {
         wbXml = wbXml.replace('<definedNames>', '<definedNames>' + ptXml);
       } else {
         wbXml = wbXml.replace('</workbook>', '<definedNames>' + ptXml + '</definedNames></workbook>');
       }
+
       zip.file('xl/workbook.xml', wbXml);
       outBuf = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
     } catch(e) { console.warn('Print_Titles 설정 실패:', e); }
+
     var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
