@@ -1489,6 +1489,8 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
+  var 공정검사여부 = 현재작업공정 === '공정검사';
+
   // 선택한 년/월/업체로 DB에서 직접 조회 (화면 필터와 무관)
   var 선택년 = (document.getElementById('엑셀년도') || {}).value || String(new Date().getFullYear());
   var 선택월 = (document.getElementById('엑셀월') || {}).value || String(new Date().getMonth() + 1).padStart(2, '0');
@@ -1534,33 +1536,49 @@ async function 출하검사_엑셀다운로드() {
   }
 
   try {
-    if (typeof 보은금속출하대장_BASE64 === 'undefined') {
-      throw new Error('보은금속템플릿.js 가 로드되지 않았습니다.');
+    // 공정에 따라 템플릿 선택
+    var BASE64 = 공정검사여부 ? 아노다이징출하대장_BASE64 : 보은금속출하대장_BASE64;
+    if (typeof BASE64 === 'undefined') {
+      throw new Error((공정검사여부 ? '아노다이징' : '보은금속') + '템플릿.js 가 로드되지 않았습니다.');
     }
 
     // base64 → ArrayBuffer
-    var bin = atob(보은금속출하대장_BASE64);
+    var bin = atob(BASE64);
     var buf = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
 
     // ExcelJS로 템플릿 로드 (스타일 완전 보존)
     var workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
-    var ws = workbook.worksheets[0];
 
-    // 제목 월 업데이트 (선택한 년/월 기준)
-    ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
+    // 공정검사: 아노다이징 양식 2번째 시트(07월) 사용, 출하검사: 첫 번째 시트
+    var ws, 시트인덱스;
+    if (공정검사여부) {
+      ws = workbook.getWorksheet('태산출하검사대장 2026년_월_07');
+      시트인덱스 = 1; // workbook 내 0기준 인덱스 (MX5=0, 07월=1)
+    } else {
+      ws = workbook.worksheets[0];
+      시트인덱스 = 0;
+    }
+    if (!ws) throw new Error('템플릿 시트를 찾을 수 없습니다.');
 
-    // 6행 스타일을 열별로 저장 (템플릿 없는 행에 복사)
+    // 제목 업데이트
+    if (공정검사여부) {
+      ws.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + String(Number(선택월)).padStart(2, '0') + '월 )';
+    } else {
+      ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
+    }
+
     var REF_ROW = 6;
-    var COL_MAX = 25; // A~Y
+    var COL_MAX = 공정검사여부 ? 24 : 25; // 아노다이징=A~X(24), 보은금속=A~Y(25)
+
+    // 기준 행 스타일 저장 (템플릿 범위 초과 시 복사용)
     var refStyles = [];
     for (var c = 1; c <= COL_MAX; c++) {
       var rc = ws.getRow(REF_ROW).getCell(c);
       refStyles[c] = JSON.parse(JSON.stringify(rc.style || {}));
     }
 
-    // 마지막 유효 행 파악
     var tmplLast = ws.lastRow ? ws.lastRow.number : REF_ROW;
 
     function 행채우기(rowNum, 항목, idx, 날짜표시) {
@@ -1573,29 +1591,39 @@ async function 출하검사_엑셀다운로드() {
       var 판정 = 불량 === 0 ? 'OK' : 'NG';
       var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
 
-      // 템플릿 행이 없으면 스타일 수동 복사
       if (rowNum > tmplLast) {
         for (var c = 1; c <= COL_MAX; c++) {
           row.getCell(c).style = JSON.parse(JSON.stringify(refStyles[c] || {}));
         }
       }
 
-      row.getCell(1).value = idx + 1;
+      // A~H: 두 양식 공통
+      row.getCell(1).value = idx + 1;                                                          // A: NO
       var dateCell = row.getCell(2);
       dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00Z') : null;
       if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
-      row.getCell(3).value = 항목['lot번호'] || '';
-      row.getCell(4).value = 수량;
-      row.getCell(5).value = 차종;
-      row.getCell(6).value = 색상;
-      row.getCell(7).value = 검사수량;
-      row.getCell(8).value = 불량;
-      var rateCell = row.getCell(9);
-      rateCell.value = 불량율;
-      rateCell.numFmt = '0%';
-      for (var j = 10; j <= 20; j++) row.getCell(j).value = null; // J~T
-      row.getCell(21).value = 판정;                                // U
-      for (var k = 22; k <= 25; k++) row.getCell(k).value = null; // V~Y
+      row.getCell(3).value = 항목['lot번호'] || '';                                            // C: LOT NO
+      row.getCell(4).value = 수량;                                                             // D: 출하수량
+      row.getCell(5).value = 차종;                                                             // E: 모델명
+      row.getCell(6).value = 색상;                                                             // F: 색상
+      row.getCell(7).value = 검사수량;                                                         // G: 검사수량
+      row.getCell(8).value = 불량;                                                             // H: 불량수량
+
+      if (공정검사여부) {
+        // 아노다이징 양식: I~R=불량내용(빈값), S=판정, T=공정불량, U~X=비고
+        for (var j = 9; j <= 18; j++) row.getCell(j).value = null;  // I~R
+        row.getCell(19).value = 판정;                                 // S: 판정
+        row.getCell(20).value = null;                                 // T: 공정불량
+        for (var k = 21; k <= 24; k++) row.getCell(k).value = null; // U~X: 비고
+      } else {
+        // 보은금속 양식: I=불량율, J~T=빈값, U=판정, V~Y=빈값
+        var rateCell = row.getCell(9);
+        rateCell.value = 불량율;
+        rateCell.numFmt = '0%';
+        for (var j = 10; j <= 20; j++) row.getCell(j).value = null; // J~T
+        row.getCell(21).value = 판정;                                 // U: 판정
+        for (var k = 22; k <= 25; k++) row.getCell(k).value = null; // V~Y
+      }
       row.commit();
     }
 
@@ -1614,7 +1642,8 @@ async function 출하검사_엑셀다운로드() {
 
     // 인쇄 설정
     var 마지막행 = 데이터.length > 0 ? REF_ROW + 데이터.length - 1 : tmplLast;
-    ws.pageSetup.printArea = 'A1:Y' + 마지막행;
+    var 인쇄끝열 = 공정검사여부 ? 'X' : 'Y';
+    ws.pageSetup.printArea = 'A1:' + 인쇄끝열 + 마지막행;
     ws.pageSetup.orientation = 'landscape';
     ws.pageSetup.fitToPage = true;
     ws.pageSetup.fitToWidth = 1;
@@ -1622,7 +1651,6 @@ async function 출하검사_엑셀다운로드() {
     ws.pageSetup.horizontalCentered = true;
     ws.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
 
-    // 다운로드
     var 파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
 
@@ -1631,9 +1659,11 @@ async function 출하검사_엑셀다운로드() {
       var 시트명 = ws.name;
       var zip = await JSZip.loadAsync(outBuf);
       var wbXml = await zip.file('xl/workbook.xml').async('string');
-      var ptXml = '<definedName name="Print_Titles" localSheetId="0">\'' + 시트명 + '\'!$1:$5</definedName>';
-      if (wbXml.includes('Print_Titles')) {
-        wbXml = wbXml.replace(/<definedName name="Print_Titles"[^>]*>[\s\S]*?<\/definedName>/, ptXml);
+      var ptXml = '<definedName name="Print_Titles" localSheetId="' + 시트인덱스 + '">\'' + 시트명 + '\'!$1:$5</definedName>';
+      // 해당 시트 인덱스의 Print_Titles를 교체, 없으면 추가
+      var ptPattern = new RegExp('<definedName name="Print_Titles" localSheetId="' + 시트인덱스 + '"[^>]*>[\\s\\S]*?<\\/definedName>');
+      if (ptPattern.test(wbXml)) {
+        wbXml = wbXml.replace(ptPattern, ptXml);
       } else if (wbXml.includes('<definedNames>')) {
         wbXml = wbXml.replace('<definedNames>', '<definedNames>' + ptXml);
       } else {
@@ -1642,6 +1672,7 @@ async function 출하검사_엑셀다운로드() {
       zip.file('xl/workbook.xml', wbXml);
       outBuf = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
     } catch(e) { console.warn('Print_Titles 설정 실패:', e); }
+
     var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
