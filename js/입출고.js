@@ -1642,14 +1642,31 @@ async function 출하검사_엑셀다운로드() {
 
     // 인쇄 설정
     var 마지막행 = 데이터.length > 0 ? REF_ROW + 데이터.length - 1 : tmplLast;
-    var 인쇄끝열 = 공정검사여부 ? 'X' : 'Y';
-    ws.pageSetup.printArea = 'A1:' + 인쇄끝열 + 마지막행;
     ws.pageSetup.orientation = 'landscape';
-    ws.pageSetup.fitToPage = true;
-    ws.pageSetup.fitToWidth = 1;
-    ws.pageSetup.fitToHeight = 0;
     ws.pageSetup.horizontalCentered = true;
-    ws.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+
+    if (공정검사여부) {
+      // 아노다이징 양식: A4, 75% 고정 배율, 정밀 여백 (원본 템플릿 기준)
+      ws.pageSetup.paperSize = 9;
+      ws.pageSetup.scale = 75;
+      ws.pageSetup.fitToPage = false;
+      ws.pageSetup.printArea = 'A1:X' + 마지막행;
+      ws.pageSetup.margins = {
+        left:   0.70866141732283472,
+        right:  0.19685039370078741,
+        top:    0.74803149606299213,
+        bottom: 0.35433070866141736,
+        header: 0.31496062992125984,
+        footer: 0.31496062992125984
+      };
+    } else {
+      // 보은금속 양식: 1페이지 너비 맞춤
+      ws.pageSetup.fitToPage = true;
+      ws.pageSetup.fitToWidth = 1;
+      ws.pageSetup.fitToHeight = 0;
+      ws.pageSetup.printArea = 'A1:Y' + 마지막행;
+      ws.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+    }
 
     var 파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
