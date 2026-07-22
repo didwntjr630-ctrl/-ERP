@@ -163,6 +163,16 @@
       background: white;
     }
 
+    .version-list.스크롤가능 {
+      max-height: 260px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .version-list.스크롤가능::-webkit-scrollbar { width: 6px; }
+    .version-list.스크롤가능::-webkit-scrollbar-track { background: #f0f4f8; }
+    .version-list.스크롤가능::-webkit-scrollbar-thumb { background: #b0c8e0; border-radius: 3px; }
+
     .version-item {
       display: flex;
       align-items: flex-start;
@@ -500,6 +510,7 @@
           + '<div class="version-desc">' + v.내용 + '</div>'
           + '</div>';
       }).join('');
+      if (히스토리.length > 5) list.classList.add('스크롤가능');
     })();
 
     // 초기 로드
