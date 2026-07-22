@@ -204,14 +204,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
   });
 
-  // 목록 테이블 좌우 방향키 셀 이동
-  document.getElementById('목록테이블바디').addEventListener('keydown', function(e) {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    var 대상 = e.target.tagName === 'TD' ? e.target : (e.target.closest ? e.target.closest('td') : null);
-    if (!대상) return;
-    var 이동 = e.key === 'ArrowRight' ? 대상.nextElementSibling : 대상.previousElementSibling;
-    if (이동) { 이동.focus(); e.preventDefault(); }
-  });
+  // 목록 테이블 셀 클릭 포커스 + 좌우 방향키 이동
+  (function() {
+    var 바디 = document.getElementById('목록테이블바디');
+    if (!바디) return;
+    // 셀 직접 클릭 시 포커스 확실히 잡기 (자식 요소가 아닌 td 자체에)
+    바디.addEventListener('mousedown', function(e) {
+      if (e.target.tagName === 'TD') { e.preventDefault(); e.target.focus(); }
+    });
+    // 좌우 방향키로 인접 셀 이동
+    바디.addEventListener('keydown', function(e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      var 대상 = e.target.tagName === 'TD' ? e.target : (e.target.closest ? e.target.closest('td') : null);
+      if (!대상) return;
+      var 이동 = e.key === 'ArrowRight' ? 대상.nextElementSibling : 대상.previousElementSibling;
+      if (이동) { 이동.focus(); e.preventDefault(); }
+    });
+  })();
 
   // 다른 PC의 변경을 실시간으로 반영 (Supabase Realtime)
   var _실시간타이머 = null;
@@ -251,6 +260,13 @@ function 날짜입력포맷(input) {
   if (raw.length > 6) fmt = raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6);
   else if (raw.length > 4) fmt = raw.slice(0, 4) + '-' + raw.slice(4);
   input.value = fmt;
+  폼임시저장();
+}
+
+/* ── 캘린더 팝업 선택 시 텍스트 입력란에 값 복사 ── */
+function 날짜캘린더선택(값) {
+  if (!값) return;
+  document.getElementById('출고일자').value = 값;
   폼임시저장();
 }
 
@@ -1405,6 +1421,19 @@ function 폼엔터핸들러(event, 현재id) {
   if (event.key !== 'Enter') return;
   event.preventDefault();
   var 검사공정 = 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사';
+
+  // 출고일자: 빈 칸이면 오늘 날짜 기입 후 lot번호로 이동
+  if (현재id === '출고일자') {
+    var 일자el = document.getElementById('출고일자');
+    if (!일자el.value || !/^\d{4}-\d{2}-\d{2}$/.test(일자el.value)) {
+      var t = new Date();
+      일자el.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+      폼임시저장();
+    }
+    var lotEl = document.getElementById('lot번호');
+    if (lotEl) lotEl.focus();
+    return;
+  }
 
   // 출하검사·공정검사: 출고수량 → 담당자 바로 이동 (불량수량 스킵)
   if (검사공정 && 현재id === '출고수량') {
