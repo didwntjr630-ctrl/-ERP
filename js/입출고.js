@@ -182,7 +182,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   (function() {
     var 업체sel = document.getElementById('엑셀업체');
     if (!업체sel) return;
-    (APP_CONFIG.출하검사옵션.도착공정 || []).forEach(function(업체명) {
+    var 초기목록 = APP_CONFIG.출하검사옵션.엑셀출력업체 || APP_CONFIG.출하검사옵션.도착공정 || [];
+    초기목록.forEach(function(업체명) {
       var opt = document.createElement('option');
       opt.value = 업체명;
       opt.textContent = 업체명;
@@ -323,7 +324,8 @@ async function 공정뷰선택(공정) {
   if (업체sel) {
     업체sel.innerHTML = '';
     var 옵션소스 = (공정 === '공정검사') ? APP_CONFIG.공정검사옵션 : APP_CONFIG.출하검사옵션;
-    (옵션소스.도착공정 || []).forEach(function(업체명) {
+    var 출력업체목록 = 옵션소스.엑셀출력업체 || 옵션소스.도착공정 || [];
+    출력업체목록.forEach(function(업체명) {
       var opt = document.createElement('option');
       opt.value = 업체명; opt.textContent = 업체명;
       업체sel.appendChild(opt);
@@ -1006,6 +1008,33 @@ function 검색_품목팝업열기() {
     열목록: [{ 제목: '품번', 필드: '품번' }, { 제목: '품명', 필드: '품명' }, { 제목: '규격', 필드: '규격' }],
     선택시: function(항목) { document.getElementById('검색_품명').value = 항목.품명; }
   });
+}
+
+/* ══════════════════════════════════════════
+   LOT 번호 입력 포맷 (4-4-3-rest 자동 띄어쓰기)
+══════════════════════════════════════════ */
+function lot번호포맷(input) {
+  var pos = input.selectionStart;
+  var raw = input.value.replace(/ /g, '');
+  var 숫자부 = raw.replace(/[^0-9]/g, '');
+  var 접미사 = raw.replace(/^[0-9]+/, '');  // 하이픈 이후 등 나머지
+
+  var chunks = [];
+  if (숫자부.length > 0)  chunks.push(숫자부.slice(0, 4));
+  if (숫자부.length > 4)  chunks.push(숫자부.slice(4, 8));
+  if (숫자부.length > 8)  chunks.push(숫자부.slice(8, 11));
+  if (숫자부.length > 11) chunks.push(숫자부.slice(11));
+
+  var formatted = chunks.join(' ') + (접미사 ? ' ' + 접미사 : '');
+
+  // 공백 삽입만큼 커서 위치 보정
+  var 공백수_기존 = input.value.slice(0, pos).split(' ').length - 1;
+  var 공백수_새 = formatted.slice(0, pos + (formatted.length - input.value.length)).split(' ').length - 1;
+  var 새pos = Math.min(pos + (formatted.length - input.value.length), formatted.length);
+
+  input.value = formatted;
+  try { input.setSelectionRange(새pos, 새pos); } catch(e) {}
+  폼임시저장();
 }
 
 /* ══════════════════════════════════════════
