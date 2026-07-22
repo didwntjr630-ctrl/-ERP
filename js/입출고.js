@@ -609,6 +609,7 @@ async function 저장하기() {
 
   폼임시저장초기화();
   폼초기화(true);
+  document.getElementById('품명').focus();
   await 공정필터목록갱신();
   await 공정별재고요약();
 }
