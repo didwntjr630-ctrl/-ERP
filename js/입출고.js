@@ -270,14 +270,9 @@ function 날짜캘린더선택(값) {
   폼임시저장();
 }
 
-/* ── 날짜 기본값 ── */
+/* ── 날짜 기본값 (일자 칸은 비워 둠 — Enter 치면 오늘 날짜, 직접 타이핑 가능) ── */
 function 오늘날짜세팅() {
   var d = new Date();
-  var v = d.getFullYear() + '-' +
-          String(d.getMonth()+1).padStart(2,'0') + '-' +
-          String(d.getDate()).padStart(2,'0');
-  var el = document.getElementById('출고일자');
-  if (el) el.value = v;
   var 월el = document.getElementById('출하현황_월필터');
   if (월el) 월el.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
