@@ -1562,8 +1562,9 @@ async function 출하검사_엑셀다운로드() {
     }
     if (!ws) throw new Error('템플릿 시트를 찾을 수 없습니다.');
 
-    // 제목 업데이트
+    // 시트명 및 제목 업데이트
     if (공정검사여부) {
+      ws.name = '코팅수입검사대장';
       ws.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + String(Number(선택월)).padStart(2, '0') + '월 )';
     } else {
       ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
@@ -1671,21 +1672,24 @@ async function 출하검사_엑셀다운로드() {
     var 파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
     var outBuf = await workbook.xlsx.writeBuffer();
 
-    // JSZip으로 Print_Titles 직접 주입 (ExcelJS rowsToRepeatAtTop 버그 우회)
+    // JSZip으로 _xlnm.Print_Titles 주입 (ExcelJS rowsToRepeatAtTop 버그 우회)
     try {
       var 시트명 = ws.name;
       var zip = await JSZip.loadAsync(outBuf);
       var wbXml = await zip.file('xl/workbook.xml').async('string');
-      var ptXml = '<definedName name="Print_Titles" localSheetId="' + 시트인덱스 + '">\'' + 시트명 + '\'!$1:$5</definedName>';
-      // 해당 시트 인덱스의 Print_Titles를 교체, 없으면 추가
-      var ptPattern = new RegExp('<definedName name="Print_Titles" localSheetId="' + 시트인덱스 + '"[^>]*>[\\s\\S]*?<\\/definedName>');
-      if (ptPattern.test(wbXml)) {
-        wbXml = wbXml.replace(ptPattern, ptXml);
-      } else if (wbXml.includes('<definedNames>')) {
+
+      // 기존 Print_Titles 항목 전부 제거 (prefix 유무 무관, 중복 충돌 방지)
+      wbXml = wbXml.replace(/<definedName name="Print_Titles"[^>]*>[\s\S]*?<\/definedName>/g, '');
+      wbXml = wbXml.replace(/<definedName name="_xlnm\.Print_Titles"[^>]*>[\s\S]*?<\/definedName>/g, '');
+
+      // Excel 정식 이름(_xlnm.Print_Titles)으로 주입
+      var ptXml = '<definedName name="_xlnm.Print_Titles" localSheetId="' + 시트인덱스 + '">\'' + 시트명 + '\'!$1:$5</definedName>';
+      if (wbXml.includes('<definedNames>')) {
         wbXml = wbXml.replace('<definedNames>', '<definedNames>' + ptXml);
       } else {
         wbXml = wbXml.replace('</workbook>', '<definedNames>' + ptXml + '</definedNames></workbook>');
       }
+
       zip.file('xl/workbook.xml', wbXml);
       outBuf = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
     } catch(e) { console.warn('Print_Titles 설정 실패:', e); }
