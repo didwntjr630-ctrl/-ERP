@@ -122,9 +122,20 @@
           </div>
           <div class="품번표시" id="품명품번표시"></div>
         </div>
-        <div class="입력그룹" style="flex:0 0 130px;">
+        <div class="입력그룹" style="flex:0 0 155px;">
           <label for="출고일자">일자</label>
-          <input type="date" id="출고일자" onchange="폼임시저장()" onkeydown="폼엔터핸들러(event,'출고일자')">
+          <div style="display:flex; gap:4px; align-items:center;">
+            <input type="text" id="출고일자" placeholder="YYYYMMDD" maxlength="10" style="flex:1; min-width:0;"
+                   oninput="날짜입력포맷(this)" onkeydown="폼엔터핸들러(event,'출고일자')">
+            <button type="button" title="달력으로 선택"
+                    onclick="var c=document.getElementById('출고일자_캘린더');try{c.showPicker();}catch(e){c.click();}"
+                    style="cursor:pointer; padding:5px 6px; border-radius:5px; background:#6b7280;
+                           color:white; font-size:13px; line-height:1; flex-shrink:0; border:none;
+                           display:inline-flex; align-items:center; justify-content:center;">📅</button>
+            <input type="date" id="출고일자_캘린더" tabindex="-1"
+                   style="position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;"
+                   onchange="날짜캘린더선택(this.value)">
+          </div>
         </div>
         <div class="입력그룹 lot노">
           <label for="lot번호">LOT No. <span style="color:#888; font-weight:normal;">(더블클릭 검색)</span></label>

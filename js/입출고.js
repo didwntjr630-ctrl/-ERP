@@ -115,7 +115,7 @@ function 폼임시저장() {
   var 데이터 = {
     품명:     document.getElementById('품명').value,
     품번:     선택된품목 ? 선택된품목.품번 : '',
-    일자:     document.getElementById('출고일자').value,
+    일자:     '',
     lot:      document.getElementById('lot번호').value,
     출발공정: document.getElementById('출발공정').value,
     도착공정: document.getElementById('도착공정').value,
@@ -138,7 +138,7 @@ function 폼임시저장복원() {
     선택된품목 = 품목목록.find(function(p) { return p.품명 === d.품명; }) || null;
     if (선택된품목) document.getElementById('품명품번표시').textContent = '(' + 선택된품목.품번 + ')';
   }
-  if (d.일자)     document.getElementById('출고일자').value = d.일자;
+  // 일자는 항상 빈 칸으로 시작 (Enter → 오늘 날짜, 직접 타이핑 가능)
   if (d.lot)      document.getElementById('lot번호').value  = d.lot;
   if (d.출발공정) document.getElementById('출발공정').value = d.출발공정;
   if (d.도착공정) document.getElementById('도착공정').value = d.도착공정;
@@ -204,6 +204,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
   });
 
+  // 목록 테이블 셀 클릭 포커스 + 좌우 방향키 이동
+  (function() {
+    var 바디 = document.getElementById('목록테이블바디');
+    if (!바디) return;
+    // 셀 직접 클릭 시 포커스 확실히 잡기 (자식 요소가 아닌 td 자체에)
+    바디.addEventListener('mousedown', function(e) {
+      if (e.target.tagName === 'TD') { e.preventDefault(); e.target.focus(); }
+    });
+    // 좌우 방향키로 인접 셀 이동
+    바디.addEventListener('keydown', function(e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      var 대상 = e.target.tagName === 'TD' ? e.target : (e.target.closest ? e.target.closest('td') : null);
+      if (!대상) return;
+      var 이동 = e.key === 'ArrowRight' ? 대상.nextElementSibling : 대상.previousElementSibling;
+      if (이동) { 이동.focus(); e.preventDefault(); }
+    });
+  })();
+
   // 다른 PC의 변경을 실시간으로 반영 (Supabase Realtime)
   var _실시간타이머 = null;
   function _실시간갱신() {
@@ -235,14 +253,26 @@ document.addEventListener('DOMContentLoaded', async function() {
   }, 5000);
 });
 
-/* ── 날짜 기본값 ── */
+/* ── 날짜 직접 타이핑 포맷 (8자리 숫자 → YYYY-MM-DD) ── */
+function 날짜입력포맷(input) {
+  var raw = input.value.replace(/[^0-9]/g, '').slice(0, 8);
+  var fmt = raw;
+  if (raw.length > 6) fmt = raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6);
+  else if (raw.length > 4) fmt = raw.slice(0, 4) + '-' + raw.slice(4);
+  input.value = fmt;
+  폼임시저장();
+}
+
+/* ── 캘린더 팝업 선택 시 텍스트 입력란에 값 복사 ── */
+function 날짜캘린더선택(값) {
+  if (!값) return;
+  document.getElementById('출고일자').value = 값;
+  폼임시저장();
+}
+
+/* ── 날짜 기본값 (일자 칸은 비워 둠 — Enter 치면 오늘 날짜, 직접 타이핑 가능) ── */
 function 오늘날짜세팅() {
   var d = new Date();
-  var v = d.getFullYear() + '-' +
-          String(d.getMonth()+1).padStart(2,'0') + '-' +
-          String(d.getDate()).padStart(2,'0');
-  var el = document.getElementById('출고일자');
-  if (el) el.value = v;
   var 월el = document.getElementById('출하현황_월필터');
   if (월el) 월el.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
@@ -531,7 +561,7 @@ async function 저장하기() {
   // 필수 항목 일괄 검사
   var 미입력 = [];
   if (!품명값 || !선택된품목) 미입력.push('품명 (목록에서 선택)');
-  if (!일자값)        미입력.push('일자');
+  if (!일자값 || !/^\d{4}-\d{2}-\d{2}$/.test(일자값)) 미입력.push('일자 (YYYY-MM-DD 형식)');
   if (!lot값)         미입력.push('LOT No.');
   if (!출발값)        미입력.push('출발 공정');
   if (!입고값)        미입력.push('입고수량');
@@ -837,6 +867,7 @@ function 목록테이블그리기(목록) {
       '<td>' + (항목.출고일자 || '') + '</td>' +
       '<td>' + (항목['lot번호']  || '') + '</td>' +
       '<td>' + 조치버튼 + '</td>';
+    Array.from(행.children).forEach(function(td) { td.tabIndex = -1; });
     바디.appendChild(행);
   });
 }
@@ -1385,6 +1416,19 @@ function 폼엔터핸들러(event, 현재id) {
   if (event.key !== 'Enter') return;
   event.preventDefault();
   var 검사공정 = 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사';
+
+  // 출고일자: 빈 칸이면 오늘 날짜 기입 후 lot번호로 이동
+  if (현재id === '출고일자') {
+    var 일자el = document.getElementById('출고일자');
+    if (!일자el.value || !/^\d{4}-\d{2}-\d{2}$/.test(일자el.value)) {
+      var t = new Date();
+      일자el.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+      폼임시저장();
+    }
+    var lotEl = document.getElementById('lot번호');
+    if (lotEl) lotEl.focus();
+    return;
+  }
 
   // 출하검사·공정검사: 출고수량 → 담당자 바로 이동 (불량수량 스킵)
   if (검사공정 && 현재id === '출고수량') {

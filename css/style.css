@@ -773,6 +773,12 @@ table tbody td {
   color: #374151;
 }
 
+table tbody td:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: -2px;
+  background: #EFF6FF !important;
+}
+
 .버튼.소형 {
   padding: 0 10px;
   font-size: 12px;
