@@ -1046,10 +1046,11 @@ function 검색_품목팝업열기() {
    LOT 번호 입력 포맷 (4-4-3-rest 자동 띄어쓰기)
 ══════════════════════════════════════════ */
 function lot번호포맷(input) {
-  var pos = input.selectionStart;
   var raw = input.value.replace(/ /g, '');
-  var 숫자부 = raw.replace(/[^0-9]/g, '');
-  var 접미사 = raw.replace(/^[0-9]+/, '');  // 하이픈 이후 등 나머지
+  // 앞쪽 연속 숫자만 추출 (첫 비숫자 문자 앞까지)
+  var 숫자부 = (raw.match(/^[0-9]*/) || [''])[0];
+  // 첫 비숫자 이후 모든 문자 (예: -2, -1 등)
+  var 접미사 = raw.slice(숫자부.length);
 
   var chunks = [];
   if (숫자부.length > 0)  chunks.push(숫자부.slice(0, 4));
@@ -1057,15 +1058,8 @@ function lot번호포맷(input) {
   if (숫자부.length > 8)  chunks.push(숫자부.slice(8, 11));
   if (숫자부.length > 11) chunks.push(숫자부.slice(11));
 
-  var formatted = chunks.join(' ') + (접미사 ? ' ' + 접미사 : '');
-
-  // 공백 삽입만큼 커서 위치 보정
-  var 공백수_기존 = input.value.slice(0, pos).split(' ').length - 1;
-  var 공백수_새 = formatted.slice(0, pos + (formatted.length - input.value.length)).split(' ').length - 1;
-  var 새pos = Math.min(pos + (formatted.length - input.value.length), formatted.length);
-
-  input.value = formatted;
-  try { input.setSelectionRange(새pos, 새pos); } catch(e) {}
+  // 접미사(-2 등)는 공백 없이 마지막 덩어리에 바로 붙임
+  input.value = chunks.join(' ') + 접미사;
   폼임시저장();
 }
 
