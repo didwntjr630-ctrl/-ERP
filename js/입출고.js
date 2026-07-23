@@ -375,6 +375,7 @@ function 출하검사폼전환(공정) {
   if (공정 === '출하검사') {
     출발el.value    = APP_CONFIG.출하검사옵션.출발공정[0];
     출발el.readOnly = false;
+    document.getElementById('도착공정').value = APP_CONFIG.출하검사옵션.도착공정[0];
   } else if (공정 === '공정검사') {
     출발el.value    = APP_CONFIG.공정검사옵션.출발공정[0];
     출발el.readOnly = true;
@@ -767,7 +768,7 @@ function 폼초기화(일자유지) {
   document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : 현재작업공정 === '공정검사' ? APP_CONFIG.공정검사옵션.출발공정[0] : (현재작업공정 || '');
   document.getElementById('출발공정').readOnly         = 현재작업공정 === '공정검사';
   document.getElementById('출발공정').disabled          = false;
-  document.getElementById('도착공정').value            = 현재작업공정 === '공정검사' ? APP_CONFIG.공정검사옵션.도착공정[0] : '';
+  document.getElementById('도착공정').value            = 현재작업공정 === '공정검사' ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
   document.getElementById('담당자입력').value          = '';
   document.getElementById('담당자코드표시').textContent = '';
   document.getElementById('잔량표시').textContent      = '-';
