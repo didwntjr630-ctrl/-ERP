@@ -20,91 +20,16 @@ var 도착공정목록 = [];
 var 확정된id목록 = new Set();
 var _앱브로드캐스트채널 = null;
 var 현재표시목록 = [];
-var 월피커_내부년 = new Date().getFullYear();
-var 월피커_선택년 = new Date().getFullYear();
-var 월피커_선택월 = new Date().getMonth() + 1;
-
-/* ── 월 피커 ── */
-function 월피커토글(e) {
-  if (e) e.stopPropagation();
-  var popup = document.getElementById('월피커팝업');
-  if (!popup) return;
-  if (popup.style.display === 'none') {
-    월피커그리드그리기();
-    popup.style.display = 'block';
-  } else {
-    popup.style.display = 'none';
-  }
-}
-
-function 월피커년도변경(방향) {
-  월피커_내부년 += 방향;
-  월피커그리드그리기();
-}
-
-function 월피커그리드그리기() {
-  var 헤더 = document.getElementById('월피커년도헤더');
-  if (헤더) 헤더.textContent = 월피커_내부년;
-  var 그리드 = document.getElementById('월피커그리드');
-  if (!그리드) return;
-  var 오늘 = new Date();
-  var 오늘년 = 오늘.getFullYear();
-  var 오늘월 = 오늘.getMonth() + 1;
-  그리드.innerHTML = '';
-  for (var m = 1; m <= 12; m++) {
-    var 선택됨 = (월피커_내부년 === 월피커_선택년 && m === 월피커_선택월);
-    var 이번달 = (월피커_내부년 === 오늘년 && m === 오늘월);
-    var btn = document.createElement('button');
-    btn.style.cssText = 'border:none; border-radius:6px; padding:7px 2px; cursor:pointer; font-size:13px; width:100%; position:relative;'
-      + (선택됨 ? 'background:#222; color:#fff; font-weight:bold;' : 'background:#f5f5f5; color:#333;');
-    var label = document.createTextNode(m + '월');
-    btn.appendChild(label);
-    if (이번달 && !선택됨) {
-      var dot = document.createElement('span');
-      dot.style.cssText = 'position:absolute; top:2px; right:3px; width:5px; height:5px; background:#e53935; border-radius:50%; display:block;';
-      btn.appendChild(dot);
-    }
-    (function(month) {
-      btn.onclick = function(e) { e.stopPropagation(); 월피커선택(월피커_내부년, month); };
-    })(m);
-    그리드.appendChild(btn);
-  }
-}
-
-function 월피커선택(년, 월) {
-  월피커_선택년 = 년;
-  월피커_선택월 = 월;
-  var 년el = document.getElementById('엑셀년도');
-  var 월el = document.getElementById('엑셀월');
-  if (년el) 년el.value = String(년);
-  if (월el) 월el.value = String(월).padStart(2, '0');
-  월피커텍스트갱신();
-  var popup = document.getElementById('월피커팝업');
-  if (popup) popup.style.display = 'none';
-}
-
-function 월피커텍스트갱신() {
-  var span = document.getElementById('월피커텍스트');
-  if (!span) return;
-  if (!월피커_선택년 || !월피커_선택월) { span.textContent = '년월 선택'; return; }
-  span.textContent = 월피커_선택년 + '년 ' + String(월피커_선택월).padStart(2, '0') + '월';
-}
-
-function 월피커지우기() {
-  월피커_선택년 = null;
-  월피커_선택월 = null;
-  var 년el = document.getElementById('엑셀년도');
-  var 월el = document.getElementById('엑셀월');
-  if (년el) 년el.value = '';
-  if (월el) 월el.value = '';
-  월피커텍스트갱신();
-  월피커그리드그리기();
-}
-
-function 월피커이번달() {
-  var 오늘 = new Date();
-  월피커_내부년 = 오늘.getFullYear();
-  월피커선택(오늘.getFullYear(), 오늘.getMonth() + 1);
+/* ── 날짜 범위 필터 ── */
+function 엑셀날짜이번달() {
+  var d = new Date();
+  var 년 = d.getFullYear();
+  var 월 = String(d.getMonth() + 1).padStart(2, '0');
+  var 말일 = String(new Date(년, d.getMonth() + 1, 0).getDate()).padStart(2, '0');
+  var s = document.getElementById('엑셀시작일');
+  var e = document.getElementById('엑셀종료일');
+  if (s) s.value = 년 + '-' + 월 + '-01';
+  if (e) e.value = 년 + '-' + 월 + '-' + 말일;
 }
 
 /* ── 폼 임시저장 / 복원 (페이지 이탈 후 복귀 대비) ── */
@@ -160,24 +85,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
-  // 월 피커 초기화
-  (function() {
-    var 오늘 = new Date();
-    월피커_내부년 = 오늘.getFullYear();
-    월피커_선택년 = 오늘.getFullYear();
-    월피커_선택월 = 오늘.getMonth() + 1;
-    var 년el = document.getElementById('엑셀년도');
-    var 월el = document.getElementById('엑셀월');
-    if (년el) 년el.value = String(월피커_선택년);
-    if (월el) 월el.value = String(월피커_선택월).padStart(2, '0');
-    월피커텍스트갱신();
-    월피커그리드그리기();
-    document.addEventListener('click', function(e) {
-      var popup = document.getElementById('월피커팝업');
-      var wrap = document.getElementById('월피커감싸기');
-      if (popup && wrap && !wrap.contains(e.target)) popup.style.display = 'none';
-    });
-  })();
+  // 날짜 범위 초기화 (이번 달)
+  엑셀날짜이번달();
   // 업체 선택 셀렉터 초기화
   (function() {
     var 업체sel = document.getElementById('엑셀업체');
@@ -1531,14 +1440,14 @@ function 색상판별(품명) {
 async function 출하검사_엑셀다운로드() {
   var 공정검사여부 = 현재작업공정 === '공정검사';
 
-  var 선택년 = (document.getElementById('엑셀년도') || {}).value || String(new Date().getFullYear());
-  var 선택월 = (document.getElementById('엑셀월') || {}).value || String(new Date().getMonth() + 1).padStart(2, '0');
+  var _오늘 = new Date();
+  var _년 = _오늘.getFullYear(), _월 = String(_오늘.getMonth()+1).padStart(2,'0');
+  var _말일 = String(new Date(_년, _오늘.getMonth()+1, 0).getDate()).padStart(2,'0');
+  var 시작일 = (document.getElementById('엑셀시작일') || {}).value || (_년 + '-' + _월 + '-01');
+  var 종료일 = (document.getElementById('엑셀종료일') || {}).value || (_년 + '-' + _월 + '-' + _말일);
   var 선택업체 = (document.getElementById('엑셀업체') || {}).value || (APP_CONFIG.출하검사옵션.도착공정 || [])[0] || '';
   var 업체단축명 = 선택업체.replace(/\(주\)/g, '').trim();
   var 업체타이틀 = 업체단축명.split('').join(' ');
-  var 시작일 = 선택년 + '-' + 선택월 + '-01';
-  var 말일   = new Date(Number(선택년), Number(선택월), 0).getDate();
-  var 종료일 = 선택년 + '-' + 선택월 + '-' + String(말일).padStart(2, '0');
 
   var 버튼 = document.getElementById('엑셀다운로드버튼');
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '조회 중...'; }
@@ -1581,14 +1490,14 @@ async function 출하검사_엑셀다운로드() {
       return 차종추출(h.품명) !== 'MX5' && (h.출고일자 || '') >= 시작일 && (h.출고일자 || '') <= 종료일;
     }));
     if (MX5데이터.length === 0 && 비MX5데이터.length === 0) {
-      알림표시(선택년 + '년 ' + Number(선택월) + '월 ' + 업체단축명 + ' 데이터가 없습니다.', '오류');
+      알림표시(시작일 + ' ~ ' + 종료일 + ' ' + 업체단축명 + ' 데이터가 없습니다.', '오류');
       if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
       return;
     }
   } else {
     데이터 = 날짜정렬(전체);
     if (데이터.length === 0) {
-      알림표시(선택년 + '년 ' + Number(선택월) + '월 ' + 업체단축명 + ' 출하 데이터가 없습니다.', '오류');
+      알림표시(시작일 + ' ~ ' + 종료일 + ' ' + 업체단축명 + ' 출하 데이터가 없습니다.', '오류');
       if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; }
       return;
     }
@@ -1705,20 +1614,20 @@ async function 출하검사_엑셀다운로드() {
       var ws2 = workbook.getWorksheet('태산출하검사대장 2026년_월_07');
       if (!ws1 || !ws2) throw new Error('아노다이징 템플릿 시트를 찾을 수 없습니다.');
       ws2.name = '코팅수입검사대장';
-      ws2.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + String(Number(선택월)).padStart(2, '0') + '월 )';
+      ws2.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + 시작일 + ' ~ ' + 종료일 + ' )';
 
       시트채우기(ws1, MX5데이터, 24);
       시트채우기(ws2, 비MX5데이터, 24);
 
-      파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
+      파일명 = 업체단축명 + '출하검사대장_' + 시작일.replace(/-/g,'') + '~' + 종료일.replace(/-/g,'') + '.xlsx';
       ptXml = '<definedName name="_xlnm.Print_Titles" localSheetId="0">\'MX5_태산출하검사대장_25~\'!$1:$5</definedName>' +
               '<definedName name="_xlnm.Print_Titles" localSheetId="1">\'코팅수입검사대장\'!$1:$5</definedName>';
     } else {
       var ws = workbook.worksheets[0];
-      ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + Number(선택월) + ' 월 )';
+      ws.getCell('A1').value = 업체타이틀 + ' 출 하 검 사 대 장 ( ' + 시작일 + ' ~ ' + 종료일 + ' )';
       시트채우기(ws, 데이터, 25);
 
-      파일명 = 업체단축명 + '출하검사대장_' + 선택년 + 선택월 + '.xlsx';
+      파일명 = 업체단축명 + '출하검사대장_' + 시작일.replace(/-/g,'') + '~' + 종료일.replace(/-/g,'') + '.xlsx';
       ptXml = '<definedName name="_xlnm.Print_Titles" localSheetId="0">\'' + ws.name + '\'!$1:$5</definedName>';
     }
 
