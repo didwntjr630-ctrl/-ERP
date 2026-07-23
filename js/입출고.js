@@ -20,6 +20,14 @@ var 도착공정목록 = [];
 var 확정된id목록 = new Set();
 var _앱브로드캐스트채널 = null;
 var 현재표시목록 = [];
+/* ── LOT 수동 띄어쓰기 모드 ── */
+var _lot수동모드 = false;
+
+function lot키다운(e) {
+  if (e.key === ' ') _lot수동모드 = true;
+  폼엔터핸들러(e, 'lot번호');
+}
+
 /* ── 날짜 범위 필터 ── */
 function 엑셀날짜이번달() {
   var d = new Date();
@@ -674,6 +682,7 @@ function 폼초기화(일자유지) {
   document.getElementById('출고수량').value            = '';
   document.getElementById('불량수량').value            = '';
   document.getElementById('lot번호').value             = '';
+  _lot수동모드 = false;
   document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : 현재작업공정 === '공정검사' ? APP_CONFIG.공정검사옵션.출발공정[0] : (현재작업공정 || '');
   document.getElementById('출발공정').readOnly         = 현재작업공정 === '공정검사';
   document.getElementById('출발공정').disabled          = false;
@@ -956,6 +965,11 @@ function 검색_품목팝업열기() {
    LOT 번호 입력 포맷 (4-4-3-rest 자동 띄어쓰기)
 ══════════════════════════════════════════ */
 function lot번호포맷(input) {
+  // 필드가 비워지면 수동 모드 해제
+  if (!input.value.trim()) { _lot수동모드 = false; 폼임시저장(); return; }
+  // Space를 직접 눌러 수동 모드이면 자동포맷 건너뜀
+  if (_lot수동모드) { 폼임시저장(); return; }
+
   var raw = input.value.replace(/ /g, '');
   // 앞쪽 연속 숫자만 추출 (첫 비숫자 문자 앞까지)
   var 숫자부 = (raw.match(/^[0-9]*/) || [''])[0];
