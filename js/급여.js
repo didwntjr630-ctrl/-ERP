@@ -312,6 +312,9 @@ async function 출근현황그리기() {
 
   래퍼.style.overflowY = 'auto';
   래퍼.style.maxHeight = _직원목록.length > 8 ? '540px' : '';
+
+  // 연차 현황 (선택 년도 기준)
+  await 연차현황그리기(년);
 }
 
 function _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴) {
@@ -501,6 +504,88 @@ function _셀갱신(직원id, 날짜) {
   var 주말 = 주말인가(날짜);
   var 공휴 = 공휴일인가(날짜);
   td.innerHTML = _근태셀HTML(직원id, 날짜, 기록, 빨간, 주말, 공휴);
+}
+
+/* ══════════════════════════════════════════════════
+   연차 현황
+══════════════════════════════════════════════════ */
+
+function 연차발생일수계산(입사일str, 기준년) {
+  if (!입사일str) return 15;
+  var 입사 = new Date(입사일str + 'T00:00:00');
+  var 기준 = new Date(기준년 + '-01-01T00:00:00');
+  var 오늘 = new Date();
+  if (기준 > 오늘) 기준 = 오늘;
+
+  // 입사일 ~ 기준일 개월수
+  var 총개월 = (기준.getFullYear() - 입사.getFullYear()) * 12 + (기준.getMonth() - 입사.getMonth());
+  if (총개월 < 1) return 0;
+  if (총개월 < 12) return Math.min(총개월, 11); // 1년 미만: 1개월 개근당 1일 (최대 11일)
+
+  // 1년 이상: 근속년수 기준 15일 + 2년마다 1일 추가 (최대 25일)
+  var 근속년수 = Math.floor(총개월 / 12);
+  return Math.min(15 + Math.floor((근속년수 - 1) / 2), 25);
+}
+
+async function 연차현황그리기(년) {
+  var 패널 = document.getElementById('연차현황패널');
+  var 그리드 = document.getElementById('연차현황그리드');
+  var 년표시 = document.getElementById('연차기준년도표시');
+  if (!패널 || !그리드) return;
+
+  if (_직원목록.length === 0) { 패널.style.display = 'none'; return; }
+
+  if (년표시) 년표시.textContent = '(' + 년 + '년 기준)';
+
+  // 해당 연도 전체 연차·반차 기록 조회
+  var { data: 연차기록 } = await 수파베이스.from('근태기록')
+    .select('직원id, 근태종류')
+    .in('근태종류', ['연차', '반차'])
+    .gte('날짜', 년 + '-01-01')
+    .lte('날짜', 년 + '-12-31');
+
+  var 사용맵 = {};
+  (연차기록 || []).forEach(function(r) {
+    if (!사용맵[r.직원id]) 사용맵[r.직원id] = 0;
+    사용맵[r.직원id] += (r.근태종류 === '연차') ? 1 : 0.5;
+  });
+
+  var rows = _직원목록.map(function(emp) {
+    var 총연차 = 연차발생일수계산(emp.입사일, 년);
+    var 사용 = 사용맵[emp.id] || 0;
+    var 잔여 = Math.max(0, 총연차 - 사용);
+    var 잔여색 = 잔여 <= 0 ? '#dc2626' : 잔여 <= 3 ? '#f97316' : '#16a34a';
+    var 바width = 총연차 > 0 ? Math.min(100, (사용 / 총연차) * 100) : 0;
+    var 바색 = 바width >= 100 ? '#dc2626' : 바width >= 70 ? '#f97316' : '#3b82f6';
+    return '<tr style="border-bottom:1px solid #f3f4f6;">' +
+      '<td style="padding:7px 10px; font-weight:600; white-space:nowrap;">' +
+        (emp.직급 ? '<span style="font-size:10px;color:#9ca3af;margin-right:4px;">' + emp.직급 + '</span>' : '') +
+        emp.이름 + '</td>' +
+      '<td style="padding:7px 10px; font-size:11px; color:#6b7280; white-space:nowrap;">' + (emp.입사일 || '-') + '</td>' +
+      '<td style="padding:7px 10px; text-align:center; font-weight:700;">' + 총연차 + '일</td>' +
+      '<td style="padding:7px 10px; text-align:center; color:#1d4ed8; font-weight:600;">' + 사용 + '일</td>' +
+      '<td style="padding:7px 10px; text-align:center; font-weight:700; color:' + 잔여색 + '; font-size:14px;">' + 잔여 + '일</td>' +
+      '<td style="padding:7px 14px; min-width:120px;">' +
+        '<div style="background:#e5e7eb; border-radius:4px; height:6px; overflow:hidden;">' +
+          '<div style="background:' + 바색 + '; width:' + 바width.toFixed(0) + '%; height:100%; border-radius:4px; transition:width .3s;"></div>' +
+        '</div>' +
+        '<div style="font-size:10px; color:#9ca3af; margin-top:2px; text-align:right;">' + 바width.toFixed(0) + '% 사용</div>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
+  그리드.innerHTML =
+    '<table style="border-collapse:collapse; font-size:12px; width:100%;">' +
+    '<thead><tr style="background:#f3f4f6; font-size:11px; color:#6b7280;">' +
+    '<th style="padding:6px 10px; text-align:left; font-weight:600;">직원</th>' +
+    '<th style="padding:6px 10px; font-weight:600;">입사일</th>' +
+    '<th style="padding:6px 10px; font-weight:600;">총 연차</th>' +
+    '<th style="padding:6px 10px; font-weight:600;">사용</th>' +
+    '<th style="padding:6px 10px; font-weight:600;">잔여</th>' +
+    '<th style="padding:6px 10px; font-weight:600; text-align:left;">소진율</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+  패널.style.display = '';
 }
 
 /* ══════════════════════════════════════════════════
