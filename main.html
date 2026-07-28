@@ -373,9 +373,7 @@
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
-      if (세션.사원명 === '양주석') {
-        document.getElementById('손익현황메뉴').style.display = '';
-      }
+      document.getElementById('손익현황메뉴').style.display = '';
     }
 
     function 관리자페이지이동() {

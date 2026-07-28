@@ -274,10 +274,8 @@
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
-      if (세션.사원명 === '양주석') {
-        document.getElementById('카카오톡방선택').style.display = '';
-        document.getElementById('카카오발송버튼').style.display = '';
-      }
+      document.getElementById('카카오톡방선택').style.display = '';
+      document.getElementById('카카오발송버튼').style.display = '';
     }
 
     var 전체데이터 = [];
