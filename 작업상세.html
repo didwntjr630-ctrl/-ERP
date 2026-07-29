@@ -324,6 +324,15 @@
       <div class="작업기본정보_납기">납기 <span id="현황_납기일">-</span> · <span id="현황_담당자"></span></div>
     </div>
 
+    <!-- 입고사진 -->
+    <div id="입고사진영역" style="display:none;margin:10px 0 2px;text-align:center;">
+      <img id="입고사진이미지"
+           style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);object-fit:cover;cursor:zoom-in;display:block;margin:0 auto;"
+           title="클릭하면 크게 봅니다"
+           onclick="입고사진전체보기()">
+      <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;">📷 입고사진 · 클릭하면 크게 봅니다</div>
+    </div>
+
     <div class="수치그리드">
       <div class="수치항목 입고">
         <div class="수치항목_레이블">입고</div>
@@ -569,5 +578,21 @@
     }
   </script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+
+  <!-- 입고사진 전체보기 모달 -->
+  <div id="입고사진_오버레이" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;
+       align-items:center;justify-content:center;cursor:zoom-out;" onclick="입고사진닫기()">
+    <img id="입고사진_큰이미지" style="max-width:96vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+  </div>
+  <script>
+    function 입고사진전체보기() {
+      var src = document.getElementById('입고사진이미지').src;
+      document.getElementById('입고사진_큰이미지').src = src;
+      document.getElementById('입고사진_오버레이').style.display = 'flex';
+    }
+    function 입고사진닫기() {
+      document.getElementById('입고사진_오버레이').style.display = 'none';
+    }
+  </script>
 </body>
 </html>

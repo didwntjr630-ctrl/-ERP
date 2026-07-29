@@ -4,6 +4,9 @@
 
 var _작업목록 = [];
 var _현재상태필터 = '전체';
+var _필터_시작일 = '';
+var _필터_종료일 = '';
+var _필터_업체   = '';
 
 /* ── WO 번호 자동 생성 ── */
 async function WO번호생성() {
@@ -53,8 +56,19 @@ function 통계업데이트() {
 /* ── 목록 렌더링 ── */
 function 작업목록렌더링() {
   var filtered = _현재상태필터 === '전체'
-    ? _작업목록
+    ? _작업목록.slice()
     : _작업목록.filter(function(r){ return r.상태 === _현재상태필터; });
+
+  if (_필터_시작일) {
+    filtered = filtered.filter(function(r){ return r.입고일 && r.입고일 >= _필터_시작일; });
+  }
+  if (_필터_종료일) {
+    filtered = filtered.filter(function(r){ return r.입고일 && r.입고일 <= _필터_종료일; });
+  }
+  if (_필터_업체) {
+    var 키워드 = _필터_업체.toLowerCase();
+    filtered = filtered.filter(function(r){ return (r.업체 || '').toLowerCase().indexOf(키워드) >= 0; });
+  }
 
   var tbody = document.getElementById('작업목록바디');
   if (!tbody) return;
@@ -74,9 +88,15 @@ function 작업목록렌더링() {
     var 상태배경 = r.상태 === '완료' ? '#eafaf1' : '#fff7ed';
     var 납기표시 = r.납기일 ? r.납기일 : '-';
 
+    var 사진아이콘 = r.사진url
+      ? '<span title="입고사진 있음" style="font-size:14px;vertical-align:middle;margin-left:4px;cursor:pointer;" ' +
+          'onclick="event.stopPropagation();사진크게보기(\'' + r.사진url.replace(/'/g, "\\'") + '\')">📷</span>'
+      : '';
+
     return '<tr style="cursor:pointer;" onclick="작업상세이동(\'' + r.작업번호 + '\')">' +
       '<td style="text-align:left;padding-left:14px;">' +
         '<b style="color:#1a3a5c;font-size:13px;letter-spacing:0.3px;">' + r.작업번호 + '</b>' +
+        사진아이콘 +
       '</td>' +
       '<td>' + (r.업체 || '-') + '</td>' +
       '<td>' + (r.품목 || '-') + '</td>' +
@@ -101,6 +121,38 @@ function 작업목록렌더링() {
       '</td>' +
     '</tr>';
   }).join('');
+}
+
+/* ── 날짜·업체 필터 ── */
+function 필터조회() {
+  _필터_시작일 = (document.getElementById('필터_시작일') || {}).value || '';
+  _필터_종료일 = (document.getElementById('필터_종료일') || {}).value || '';
+  _필터_업체   = ((document.getElementById('필터_업체') || {}).value || '').trim();
+  작업목록렌더링();
+}
+
+function 필터초기화() {
+  _필터_시작일 = '';
+  _필터_종료일 = '';
+  _필터_업체   = '';
+  var s = document.getElementById('필터_시작일'); if (s) s.value = '';
+  var e = document.getElementById('필터_종료일'); if (e) e.value = '';
+  var u = document.getElementById('필터_업체');   if (u) u.value = '';
+  작업목록렌더링();
+}
+
+/* ── 사진 크게 보기 (목록에서 📷 클릭 시) ── */
+function 사진크게보기(url) {
+  var ov = document.getElementById('사진크게보기_오버레이');
+  var img = document.getElementById('사진크게보기_이미지');
+  if (!ov || !img) return;
+  img.src = url;
+  ov.style.display = 'flex';
+}
+
+function 사진크게보기닫기() {
+  var ov = document.getElementById('사진크게보기_오버레이');
+  if (ov) ov.style.display = 'none';
 }
 
 /* ── 상태 필터 ── */

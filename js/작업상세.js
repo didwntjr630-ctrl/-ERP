@@ -93,6 +93,18 @@ function 진행현황렌더링() {
   var 바 = document.getElementById('진행바');
   바.style.width      = 진행률 + '%';
   바.style.background = 진행률 >= 100 ? '#10b981' : '#f97316';
+
+  // 입고사진
+  var 사진영역 = document.getElementById('입고사진영역');
+  var 사진img  = document.getElementById('입고사진이미지');
+  if (사진영역 && 사진img) {
+    if (_작업정보.사진url) {
+      사진img.src = _작업정보.사진url;
+      사진영역.style.display = 'block';
+    } else {
+      사진영역.style.display = 'none';
+    }
+  }
 }
 
 /* ── 탭 전환 ── */
