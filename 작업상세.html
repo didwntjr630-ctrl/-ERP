@@ -312,7 +312,14 @@
       <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:2px;" id="시스템명_부제"></div>
       <div class="헤더WO" id="WO번호표시">...</div>
     </div>
-    <div class="헤더상태" id="현황_상태">진행중</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="작업정보수정열기()"
+              style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;
+                     border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;">
+        ✏ 수정
+      </button>
+      <div class="헤더상태" id="현황_상태">진행중</div>
+    </div>
   </div>
 
   <!-- 진행현황 카드 -->
@@ -366,6 +373,41 @@
     </div>
   </div>
 
+  <!-- 작업정보 수정 패널 -->
+  <div id="작업정보수정패널" style="display:none;background:white;border-bottom:2px solid #f97316;padding:16px;">
+    <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">작업 정보 수정</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;">
+        <label style="font-size:11px;font-weight:600;color:#6B7280;">업체 *</label>
+        <input type="text" id="수정_업체" style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:14px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;">
+        <label style="font-size:11px;font-weight:600;color:#6B7280;">품목 *</label>
+        <input type="text" id="수정_품목" style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:14px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 110px;">
+        <label style="font-size:11px;font-weight:600;color:#6B7280;">입고수량 *</label>
+        <input type="number" id="수정_입고수량" min="1" style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:14px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:0 0 140px;">
+        <label style="font-size:11px;font-weight:600;color:#6B7280;">납기일</label>
+        <input type="date" id="수정_납기일" style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:14px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;">
+        <label style="font-size:11px;font-weight:600;color:#6B7280;">담당자</label>
+        <input type="text" id="수정_담당자" style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:14px;">
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:600;color:#6B7280;">메모</label>
+      <input type="text" id="수정_메모" placeholder="특이사항 (선택)" style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:14px;">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button id="작업정보수정저장버튼" class="버튼 초록" onclick="작업정보수정저장()" style="padding:0 20px;height:36px;">저장</button>
+      <button class="버튼 회색" onclick="작업정보수정닫기()" style="padding:0 16px;height:36px;">취소</button>
+    </div>
+  </div>
+
   <!-- 탭 바 -->
   <div class="탭바">
     <button class="탭버튼" data-탭="작업실적" onclick="탭전환('작업실적')">작업실적</button>
@@ -416,8 +458,9 @@
                    onkeydown="if(event.key==='Enter')작업실적저장()">
           </div>
         </div>
-        <div class="등록버튼행">
+        <div class="등록버튼행" style="gap:8px;">
           <button id="실적저장버튼" class="버튼 초록" onclick="작업실적저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
+          <button id="실적취소버튼" class="버튼 회색" onclick="작업실적수정취소()" style="display:none;padding:0 20px;height:40px;font-size:14px;">취소</button>
         </div>
       </div>
 
@@ -434,6 +477,7 @@
                 <th style="color:#fca5a5;">불량</th>
                 <th>작업자</th>
                 <th>메모</th>
+                <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody id="실적목록바디">
@@ -471,8 +515,9 @@
                    onkeydown="if(event.key==='Enter')출하저장()">
           </div>
         </div>
-        <div class="등록버튼행">
+        <div class="등록버튼행" style="gap:8px;">
           <button id="출하저장버튼" class="버튼 파랑" onclick="출하저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
+          <button id="출하취소버튼" class="버튼 회색" onclick="출하수정취소()" style="display:none;padding:0 20px;height:40px;font-size:14px;">취소</button>
         </div>
       </div>
 
@@ -485,6 +530,7 @@
                 <th>출하일</th>
                 <th style="color:#6ee7b7;">출하수량</th>
                 <th>메모</th>
+                <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody id="출하목록바디">
@@ -523,6 +569,23 @@
     }
   </script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+
+  <!-- 확인 모달 -->
+  <div id="상세확인모달_오버레이" class="팝업오버레이" style="display:none;">
+    <div class="팝업창" style="max-width:320px;">
+      <div class="팝업헤더" style="background:linear-gradient(180deg,#c0392b,#962d22);">
+        <span>삭제 확인</span>
+        <button class="팝업닫기버튼" onclick="상세확인모달닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:16px 20px;">
+        <div id="상세확인모달_메시지" style="font-size:13px;color:#374151;line-height:1.7;"></div>
+      </div>
+      <div class="팝업하단" style="justify-content:center;gap:10px;">
+        <button class="버튼 빨강" id="상세확인모달_확인버튼" style="min-width:70px;">삭제</button>
+        <button class="버튼 회색" onclick="상세확인모달닫기()" style="min-width:70px;">취소</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 입고사진 전체보기 모달 -->
   <div id="입고사진_오버레이" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;
