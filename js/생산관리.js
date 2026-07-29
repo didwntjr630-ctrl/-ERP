@@ -278,30 +278,47 @@ function 작업상세이동(WO) {
   location.href = '작업상세.html?wo=' + encodeURIComponent(WO);
 }
 
+/* ── 확인 모달 ── */
+function 확인모달표시(메시지, 제목, 콜백) {
+  var el제목 = document.getElementById('확인모달_제목');
+  var el메시지 = document.getElementById('확인모달_메시지');
+  var el버튼 = document.getElementById('확인모달_확인버튼');
+  if (!el메시지 || !el버튼) { if (confirm(메시지)) 콜백(); return; }
+  if (el제목) el제목.textContent = 제목 || '삭제 확인';
+  el메시지.textContent = 메시지;
+  el버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+  document.getElementById('확인모달_오버레이').style.display = 'flex';
+}
+
+function 확인모달닫기() {
+  var ov = document.getElementById('확인모달_오버레이');
+  if (ov) ov.style.display = 'none';
+}
+
 /* ── 작업 삭제 ── */
 async function 작업삭제(WO번호) {
   var 행 = _작업목록.find(function(r){ return r.작업번호 === WO번호; });
-  var 확인메시지 = '작업 ' + WO번호 + '\n' +
+  var 메시지 = '작업 ' + WO번호 + '\n' +
     (행 ? '업체: ' + (행.업체||'') + ' / 품목: ' + (행.품목||'') + '\n' : '') +
-    '\n관련 작업실적, 불량, 출하 데이터가 모두 삭제됩니다.\n삭제하시겠습니까?';
+    '\n관련 작업실적, 불량, 출하 데이터가 모두 삭제됩니다.';
 
-  if (!confirm(확인메시지)) return;
+  확인모달표시(메시지, '작업 삭제', async function() {
+    try {
+      await Promise.all([
+        수파베이스.from('작업실적').delete().eq('작업번호', WO번호),
+        수파베이스.from('불량').delete().eq('작업번호', WO번호),
+        수파베이스.from('출하').delete().eq('작업번호', WO번호)
+      ]);
+      var { error } = await 수파베이스.from('작업').delete().eq('작업번호', WO번호);
+      if (error) throw error;
 
-  try {
-    await Promise.all([
-      수파베이스.from('작업실적').delete().eq('작업번호', WO번호),
-      수파베이스.from('불량').delete().eq('작업번호', WO번호),
-      수파베이스.from('출하').delete().eq('작업번호', WO번호)
-    ]);
-    var { error } = await 수파베이스.from('작업').delete().eq('작업번호', WO번호);
-    if (error) throw error;
-
-    await 작업목록로드();
-    생산알림표시(WO번호 + ' 삭제 완료', '성공');
-  } catch(e) {
-    console.error(e);
-    생산알림표시('삭제 오류: ' + (e.message || e), '오류');
-  }
+      await 작업목록로드();
+      생산알림표시(WO번호 + ' 삭제 완료', '성공');
+    } catch(e) {
+      console.error(e);
+      생산알림표시('삭제 오류: ' + (e.message || e), '오류');
+    }
+  });
 }
 
 /* ── QR 출력 팝업 ── */
