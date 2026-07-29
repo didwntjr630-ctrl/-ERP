@@ -80,17 +80,17 @@ function 작업목록렌더링() {
       '</td>' +
       '<td>' + (r.업체 || '-') + '</td>' +
       '<td>' + (r.품목 || '-') + '</td>' +
-      '<td style="font-variant-numeric:tabular-nums;">' + (r.입고수량 || 0).toLocaleString() + ' EA</td>' +
+      '<td class="hide-mobile" style="font-variant-numeric:tabular-nums;">' + (r.입고수량 || 0).toLocaleString() + ' EA</td>' +
       '<td>' +
         '<span style="background:' + 상태배경 + ';color:' + 상태색 + ';' +
           'padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;">' +
           r.상태 +
         '</span>' +
       '</td>' +
-      '<td' + (납기임박 ? ' style="color:#c0392b;font-weight:700;"' : '') + '>' +
-        납기표시 + (납기임박 ? '  ⚠' : '') +
+      '<td class="hide-mobile"' + (납기임박 ? ' style="color:#c0392b;font-weight:700;"' : '') + '>' +
+        납기표시 + (납기임박 ? ' !' : '') +
       '</td>' +
-      '<td>' + (r.담당자 || '-') + '</td>' +
+      '<td class="hide-mobile">' + (r.담당자 || '-') + '</td>' +
       '<td style="text-align:center;">' +
         '<div style="display:flex;gap:4px;justify-content:center;">' +
           '<button class="버튼 회색 소형" style="padding:0 10px;" ' +
