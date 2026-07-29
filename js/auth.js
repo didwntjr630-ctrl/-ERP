@@ -145,6 +145,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function 세션체크() {
   if (!현재세션()) {
+    // QR 스캔 접속: ?wo= 파라미터 있으면 공용 작업자 세션으로 자동 처리 (로그인 패스)
+    if (new URLSearchParams(location.search).get('wo')) {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        사원명: '생산', 직급: '작업자', 관리자: false, 시각: new Date().toISOString()
+      }));
+      return true;
+    }
     location.href = 'login.html?redirect=' + encodeURIComponent(location.href);
     return false;
   }
