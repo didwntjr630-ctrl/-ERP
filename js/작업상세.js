@@ -21,15 +21,13 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('WO번호표시').textContent = _WO번호;
   document.title = _WO번호 + ' - 삼양ERP';
 
-  // 작업자·시간 기본값
+  // 작업자 기본값 (세션에서 자동 입력)
   var 세션 = 현재세션();
   if (세션) {
     var 이름 = 세션.직급 + ' ' + 세션.사원명;
     var el = document.getElementById('입력실적_작업자');
     if (el) el.value = 이름;
   }
-  var 시간el = document.getElementById('입력실적_작업시간');
-  if (시간el) 시간el.value = 지금시간();
 
   var 출하일el = document.getElementById('입력출하_출하일');
   if (출하일el) 출하일el.value = new Date().toISOString().slice(0, 10);
@@ -126,12 +124,16 @@ function 현재탭렌더링() {
    작업실적 탭
 ══════════════════════════════════════ */
 
-/* 작업수량 → 양품수량 자동계산 */
+/* 작업수량 → 양품수량 자동계산 (입력값 없으면 빈칸 유지) */
 function 실적수량변경() {
-  var 작업 = parseInt(document.getElementById('입력실적_작업수량').value) || 0;
-  var 불량 = parseInt(document.getElementById('입력실적_불량수량').value) || 0;
+  var 작업str = document.getElementById('입력실적_작업수량').value;
+  var 불량str = document.getElementById('입력실적_불량수량').value;
+  var 작업 = parseInt(작업str) || 0;
+  var 불량 = parseInt(불량str) || 0;
   var 양품el = document.getElementById('입력실적_양품수량');
-  if (양품el) 양품el.value = Math.max(0, 작업 - 불량);
+  if (양품el) {
+    양품el.value = (작업str || 불량str) ? Math.max(0, 작업 - 불량) : '';
+  }
 }
 
 function 작업실적목록렌더링() {
@@ -160,7 +162,6 @@ async function 작업실적저장() {
   var 양품수량 = parseInt(document.getElementById('입력실적_양품수량').value) || 0;
   var 불량수량 = parseInt(document.getElementById('입력실적_불량수량').value) || 0;
   var 작업자   = document.getElementById('입력실적_작업자').value.trim();
-  var 작업시간 = document.getElementById('입력실적_작업시간').value;
   var 메모     = document.getElementById('입력실적_메모').value.trim();
 
   if (!작업수량) { 상세알림표시('작업수량을 입력해주세요.', '오류'); return; }
@@ -170,7 +171,7 @@ async function 작업실적저장() {
 
   try {
     var { error } = await 수파베이스.from('작업실적').insert({
-      작업번호: _WO번호, 작업수량, 양품수량, 불량수량, 작업자, 작업시간, 메모
+      작업번호: _WO번호, 작업수량, 양품수량, 불량수량, 작업자, 메모
     });
     if (error) throw error;
 
@@ -178,7 +179,6 @@ async function 작업실적저장() {
     document.getElementById('입력실적_양품수량').value = '';
     document.getElementById('입력실적_불량수량').value = '';
     document.getElementById('입력실적_메모').value     = '';
-    document.getElementById('입력실적_작업시간').value = 지금시간();
 
     await 데이터로드();
     상세알림표시('작업실적이 등록되었습니다.', '성공');
@@ -360,12 +360,6 @@ function 이력렌더링() {
   }).join('');
 }
 
-/* ── 유틸 ── */
-function 지금시간() {
-  var d = new Date();
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-}
-
 function 상세알림표시(msg, type) {
   var box = document.getElementById('상세알림박스');
   if (!box) return;
@@ -376,11 +370,36 @@ function 상세알림표시(msg, type) {
   box._timer = setTimeout(function(){ box.style.display = 'none'; }, 4000);
 }
 
-/* ── Realtime 구독 ── */
+/* ── Realtime 구독 (WO번호 필터링, 채널 정리 포함) ── */
+var _채널목록 = [];
+
 function 실시간구독() {
-  ['작업', '작업실적', '불량', '출하'].forEach(function(tbl) {
-    수파베이스.channel('상세_' + tbl + '_' + Math.random())
-      .on('postgres_changes', { event: '*', schema: 'public', table: tbl }, 데이터로드)
+  // 기존 채널 정리
+  _채널목록.forEach(function(ch) { try { 수파베이스.removeChannel(ch); } catch(e){} });
+  _채널목록 = [];
+
+  ['작업실적', '불량', '출하'].forEach(function(tbl) {
+    var ch = 수파베이스
+      .channel('detail_' + tbl + '_' + _WO번호)
+      .on('postgres_changes',
+          { event: '*', schema: 'public', table: tbl,
+            filter: '작업번호=eq.' + _WO번호 },
+          function() { 데이터로드(); })
       .subscribe();
+    _채널목록.push(ch);
   });
+
+  // 작업 테이블 (상태 변경 감지)
+  var ch작업 = 수파베이스
+    .channel('detail_작업_' + _WO번호)
+    .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: '작업',
+          filter: '작업번호=eq.' + _WO번호 },
+        function() { 데이터로드(); })
+    .subscribe();
+  _채널목록.push(ch작업);
 }
+
+window.addEventListener('beforeunload', function() {
+  _채널목록.forEach(function(ch) { try { 수파베이스.removeChannel(ch); } catch(e){} });
+});
