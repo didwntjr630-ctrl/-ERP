@@ -369,7 +369,6 @@
   <!-- 탭 바 -->
   <div class="탭바">
     <button class="탭버튼" data-탭="작업실적" onclick="탭전환('작업실적')">작업실적</button>
-    <button class="탭버튼" data-탭="불량"    onclick="탭전환('불량')">불량</button>
     <button class="탭버튼" data-탭="출하"    onclick="탭전환('출하')">출하</button>
     <button class="탭버튼" data-탭="이력"    onclick="탭전환('이력')">이력</button>
   </div>
@@ -439,60 +438,6 @@
             </thead>
             <tbody id="실적목록바디">
               <tr><td colspan="6" class="빈목록안내">-</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ══════════ 불량 탭 ══════════ -->
-  <div id="탭_불량" class="탭내용">
-    <div class="내용패딩">
-
-      <div class="등록폼박스">
-        <div class="등록폼제목">불량 등록</div>
-        <div class="폼그리드 2열">
-          <div class="폼항목">
-            <label>불량유형</label>
-            <input type="text" id="입력불량_유형" placeholder="예: 표면불량, 치수불량"
-                   style="font-size:14px;font-weight:400;text-align:left;"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력불량_수량').focus()">
-          </div>
-          <div class="폼항목">
-            <label>불량수량 *</label>
-            <input type="number" id="입력불량_수량" placeholder="" min="0"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력불량_메모').focus()">
-          </div>
-        </div>
-        <div class="폼그리드 전체" style="margin-bottom:10px;">
-          <div class="폼항목">
-            <label>메모</label>
-            <input type="text" id="입력불량_메모" placeholder="불량 내용 (선택)"
-                   style="font-size:14px;font-weight:400;text-align:left;"
-                   onkeydown="if(event.key==='Enter')불량저장()">
-          </div>
-        </div>
-        <div class="등록버튼행">
-          <button id="불량저장버튼" class="버튼 빨강" onclick="불량저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
-        </div>
-      </div>
-
-      <div>
-        <div class="목록카드제목">불량 목록</div>
-        <div class="테이블감싸기">
-          <table>
-            <thead>
-              <tr>
-                <th>등록시간</th>
-                <th>불량유형</th>
-                <th style="color:#fca5a5;">불량수량</th>
-                <th>메모</th>
-              </tr>
-            </thead>
-            <tbody id="불량목록바디">
-              <tr><td colspan="4" class="빈목록안내">-</td></tr>
             </tbody>
           </table>
         </div>
