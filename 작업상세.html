@@ -228,13 +228,11 @@
       .수치항목_레이블 { font-size: 9px; margin-bottom: 2px; }
       .수치항목_값 { font-size: 15px; }
       .수치항목_단위 { font-size: 9px; }
-
       .진행바트랙 { height: 6px; }
       .진행률텍스트 { font-size: 12px; }
 
       /* ── 탭바 ── */
       .탭버튼 { padding: 11px 6px; font-size: 13px; font-weight: 700; }
-      .탭바 { top: 56px; }
 
       /* ── 탭 내용 ── */
       .내용패딩 { padding: 10px; }
@@ -243,61 +241,50 @@
       .등록폼박스 { padding: 10px; margin-bottom: 10px; }
       .등록폼제목 { font-size: 12px; margin-bottom: 10px; }
 
-      /* ── 폼 그리드 ──
-         기본 3열 → 첫 항목(작업수량) 전체너비 + 나머지 2열 */
-      .폼그리드:not([class~="2열"]):not(.전체) {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-      .폼그리드:not([class~="2열"]):not(.전체) > .폼항목:first-child {
-        grid-column: 1 / -1;
-      }
-      div[class~="2열"] { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-      .폼그리드.전체 { grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+      /* ── 폼 그리드: 모두 1열 (가장 단순하고 확실한 방법) ── */
+      .폼그리드 { grid-template-columns: 1fr !important; gap: 8px; margin-bottom: 8px; }
 
       /* ── 라벨 ── */
       .폼항목 { gap: 3px; }
       .폼항목 label { font-size: 10px; }
 
-      /* ── 일반 입력 ── */
+      /* ── 일반 텍스트/날짜/시간 입력 ── */
       .폼항목 input {
-        height: 40px;
+        height: 42px !important;
         font-size: 14px;
         padding: 8px 10px;
       }
 
-      /* ── 수량 입력: 크게 ── */
+      /* ── 수량(number) 입력: 크게 ── */
       .폼항목 input[type="number"] {
-        font-size: 24px;
-        height: 52px;
+        font-size: 26px !important;
+        height: 58px !important;
         font-weight: 700;
         text-align: center;
         padding: 6px;
       }
 
-      /* ── 자동계산(readonly) 수량: 조금 작게 ── */
+      /* ── 자동계산(readonly) 수량: 회색 + 중간 크기 ── */
       .폼항목 input[readonly][type="number"] {
-        font-size: 18px !important;
-        height: 44px !important;
-        color: #6B7280;
+        font-size: 16px !important;
+        height: 40px !important;
+        color: #9CA3AF;
+        background: #F3F4F6;
       }
 
       /* ── 등록 버튼 ── */
-      .등록버튼행 { margin-top: 6px; }
+      .등록버튼행 { margin-top: 8px; }
       .등록버튼행 button {
         width: 100% !important;
-        height: 48px !important;
+        height: 50px !important;
         font-size: 16px !important;
-        font-weight: 700;
-        border-radius: 8px;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
         padding: 0 !important;
       }
 
-      /* ── 테이블 ── */
+      /* ── 목록 테이블 ── */
       .목록카드제목 { font-size: 12px; margin-bottom: 8px; }
-      table { font-size: 11px; }
-      th, td { padding: 7px 4px; }
     }
   </style>
 </head>
