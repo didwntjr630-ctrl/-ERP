@@ -178,6 +178,19 @@ async function 작업실적저장() {
 
   if (!작업수량) { 상세알림표시('작업수량을 입력해주세요.', '오류'); return; }
 
+  // 입고수량 초과 검증
+  var 입고수량 = (_작업정보 && _작업정보.입고수량) || 0;
+  var 기존생산 = _작업실적목록.reduce(function(s, r){ return s + (r.작업수량 || 0); }, 0);
+  if (입고수량 > 0 && 기존생산 + 작업수량 > 입고수량) {
+    var 잔여 = 입고수량 - 기존생산;
+    상세알림표시(
+      '입고수량(' + 입고수량.toLocaleString() + ')을 초과합니다.\n' +
+      '현재 생산: ' + 기존생산.toLocaleString() + ' / 등록 가능 잔여: ' + Math.max(0, 잔여).toLocaleString(),
+      '오류'
+    );
+    return;
+  }
+
   var btn = document.getElementById('실적저장버튼');
   btn.disabled = true; btn.textContent = '저장 중...';
 
