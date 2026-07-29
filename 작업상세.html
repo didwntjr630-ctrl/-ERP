@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>작업 상세 - 삼양ERP</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── 상단 헤더 ── */
+    .상세헤더 {
+      background: #1a3a5c;
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .뒤로가기버튼 {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .뒤로가기버튼:hover { background: rgba(255,255,255,0.25); }
+    .헤더WO { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+    .헤더상태 {
+      margin-left: auto;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+      background: rgba(249,115,22,0.25);
+      color: #fed7aa;
+    }
+
+    /* ── 진행현황 카드 ── */
+    .진행현황카드 {
+      background: white;
+      border-radius: 0;
+      border-bottom: 1px solid #E5E7EB;
+      padding: 14px 16px;
+    }
+    .작업기본정보 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .작업기본정보_업체 { font-size: 14px; font-weight: 700; color: #111827; }
+    .작업기본정보_구분 { color: #D1D5DB; }
+    .작업기본정보_품목 { font-size: 14px; color: #6B7280; }
+    .작업기본정보_납기 { margin-left: auto; font-size: 11px; color: #9CA3AF; }
+
+    .수치그리드 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .수치항목 {
+      background: #F9FAFB;
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .수치항목_레이블 {
+      font-size: 10px;
+      font-weight: 700;
+      color: #9CA3AF;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .수치항목_값 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .수치항목_단위 { font-size: 10px; color: #9CA3AF; margin-left: 2px; }
+    .수치항목.입고 { border-left: 3px solid #374151; }
+    .수치항목.생산 { border-left: 3px solid #f97316; }
+    .수치항목.양품 { border-left: 3px solid #10b981; }
+    .수치항목.불량 { border-left: 3px solid #ef4444; }
+    .수치항목.출하 { border-left: 3px solid #3b82f6; }
+    .수치항목.잔량 { border-left: 3px solid #8b5cf6; }
+
+    .진행률행 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .진행바트랙 {
+      flex: 1;
+      height: 10px;
+      background: #F3F4F6;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #진행바 {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+    .진행률텍스트 { font-size: 13px; font-weight: 700; color: #374151; white-space: nowrap; }
+
+    /* ── 탭 내비게이션 ── */
+    .탭바 {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #E5E7EB;
+      position: sticky;
+      top: 60px;
+      z-index: 99;
+      overflow-x: auto;
+    }
+    .탭버튼 {
+      flex: 1;
+      min-width: 70px;
+      padding: 13px 8px;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      background: transparent;
+      color: #6B7280;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    /* ── 탭 내용 ── */
+    .탭내용 { display: none; }
+    .내용패딩 { padding: 16px; }
+
+    /* ── 등록 폼 박스 ── */
+    .등록폼박스 {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .등록폼제목 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .폼그리드 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .폼그리드.2열 { grid-template-columns: repeat(2, 1fr); }
+    .폼그리드.전체 { grid-template-columns: 1fr; }
+    .폼항목 { display: flex; flex-direction: column; gap: 4px; }
+    .폼항목 label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6B7280;
+      letter-spacing: 0.3px;
+    }
+    .폼항목 input {
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 600;
+      color: #111827;
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+    }
+    .폼항목 input:focus {
+      outline: none;
+      border-color: #F97316;
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+    }
+    .폼항목 input[type="number"] { font-size: 18px; text-align: center; font-weight: 700; }
+    .폼항목 input[readonly] { background: #F9FAFB; color: #9CA3AF; }
+    .등록버튼행 { display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* ── 목록 카드 ── */
+    .목록카드제목 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    /* 모바일 대응 */
+    @media (max-width: 480px) {
+      .폼그리드 { grid-template-columns: 1fr 1fr; }
+      .수치항목_값 { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더">
+      <span>접속 현황</span>
+      <button onclick="사이드바닫기()">✕</button>
+    </div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상세 헤더 (메뉴바 대신 별도) -->
+  <div class="상세헤더">
+    <button class="뒤로가기버튼" onclick="history.back()" title="목록으로">←</button>
+    <div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:2px;" id="시스템명_부제"></div>
+      <div class="헤더WO" id="WO번호표시">...</div>
+    </div>
+    <div class="헤더상태" id="현황_상태">진행중</div>
+  </div>
+
+  <!-- 진행현황 카드 -->
+  <div class="진행현황카드">
+    <div class="작업기본정보">
+      <div class="작업기본정보_업체" id="현황_업체">-</div>
+      <div class="작업기본정보_구분">|</div>
+      <div class="작업기본정보_품목" id="현황_품목">-</div>
+      <div class="작업기본정보_납기">납기 <span id="현황_납기일">-</span> · <span id="현황_담당자"></span></div>
+    </div>
+
+    <div class="수치그리드">
+      <div class="수치항목 입고">
+        <div class="수치항목_레이블">입고</div>
+        <div class="수치항목_값"><span id="현황_입고">-</span><span class="수치항목_단위">EA</span></div>
+      </div>
+      <div class="수치항목 생산">
+        <div class="수치항목_레이블">생산</div>
+        <div class="수치항목_값"><span id="현황_생산">-</span><span class="수치항목_단위">EA</span></div>
+      </div>
+      <div class="수치항목 양품">
+        <div class="수치항목_레이블">양품</div>
+        <div class="수치항목_값"><span id="현황_양품">-</span><span class="수치항목_단위">EA</span></div>
+      </div>
+      <div class="수치항목 불량">
+        <div class="수치항목_레이블">불량</div>
+        <div class="수치항목_값"><span id="현황_불량">-</span><span class="수치항목_단위">EA</span></div>
+      </div>
+      <div class="수치항목 출하">
+        <div class="수치항목_레이블">출하</div>
+        <div class="수치항목_값"><span id="현황_출하">-</span><span class="수치항목_단위">EA</span></div>
+      </div>
+      <div class="수치항목 잔량">
+        <div class="수치항목_레이블">잔량</div>
+        <div class="수치항목_값"><span id="현황_잔량">-</span><span class="수치항목_단위">EA</span></div>
+      </div>
+    </div>
+
+    <div class="진행률행">
+      <div class="진행바트랙"><div id="진행바"></div></div>
+      <div class="진행률텍스트" id="현황_진행률숫자">0%</div>
+    </div>
+  </div>
+
+  <!-- 탭 바 -->
+  <div class="탭바">
+    <button class="탭버튼" data-탭="작업실적" onclick="탭전환('작업실적')">작업실적</button>
+    <button class="탭버튼" data-탭="불량"    onclick="탭전환('불량')">불량</button>
+    <button class="탭버튼" data-탭="출하"    onclick="탭전환('출하')">출하</button>
+    <button class="탭버튼" data-탭="이력"    onclick="탭전환('이력')">이력</button>
+  </div>
+
+  <!-- 알림 -->
+  <div id="상세알림박스" class="알림" style="display:none;margin:12px 16px 0;"></div>
+
+  <!-- ══════════ 작업실적 탭 ══════════ -->
+  <div id="탭_작업실적" class="탭내용">
+    <div class="내용패딩">
+
+      <!-- 등록 폼 -->
+      <div class="등록폼박스">
+        <div class="등록폼제목">작업실적 등록</div>
+        <div class="폼그리드">
+          <div class="폼항목">
+            <label>작업수량 *</label>
+            <input type="number" id="입력실적_작업수량" placeholder="0" min="0"
+                   oninput="실적수량변경()"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력실적_불량수량').focus()">
+          </div>
+          <div class="폼항목">
+            <label>불량수량</label>
+            <input type="number" id="입력실적_불량수량" placeholder="0" min="0"
+                   oninput="실적수량변경()"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력실적_양품수량').focus()">
+          </div>
+          <div class="폼항목">
+            <label>양품수량 (자동)</label>
+            <input type="number" id="입력실적_양품수량" placeholder="0" min="0" readonly>
+          </div>
+        </div>
+        <div class="폼그리드 2열">
+          <div class="폼항목">
+            <label>작업자</label>
+            <input type="text" id="입력실적_작업자" placeholder="작업자명"
+                   style="font-size:14px;font-weight:500;text-align:left;">
+          </div>
+          <div class="폼항목">
+            <label>작업시간</label>
+            <input type="time" id="입력실적_작업시간" style="font-size:14px;font-weight:500;">
+          </div>
+        </div>
+        <div class="폼그리드 전체" style="margin-bottom:10px;">
+          <div class="폼항목">
+            <label>메모</label>
+            <input type="text" id="입력실적_메모" placeholder="특이사항 (선택)"
+                   style="font-size:14px;font-weight:400;text-align:left;"
+                   onkeydown="if(event.key==='Enter')작업실적저장()">
+          </div>
+        </div>
+        <div class="등록버튼행">
+          <button id="실적저장버튼" class="버튼 초록" onclick="작업실적저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
+        </div>
+      </div>
+
+      <!-- 목록 -->
+      <div>
+        <div class="목록카드제목">작업실적 목록</div>
+        <div class="테이블감싸기">
+          <table>
+            <thead>
+              <tr>
+                <th>시간</th>
+                <th style="color:#fed7aa;">작업</th>
+                <th style="color:#6ee7b7;">양품</th>
+                <th style="color:#fca5a5;">불량</th>
+                <th>작업자</th>
+                <th>메모</th>
+              </tr>
+            </thead>
+            <tbody id="실적목록바디">
+              <tr><td colspan="6" class="빈목록안내">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ 불량 탭 ══════════ -->
+  <div id="탭_불량" class="탭내용">
+    <div class="내용패딩">
+
+      <div class="등록폼박스">
+        <div class="등록폼제목">불량 등록</div>
+        <div class="폼그리드 2열">
+          <div class="폼항목">
+            <label>불량유형</label>
+            <input type="text" id="입력불량_유형" placeholder="예: 표면불량, 치수불량"
+                   style="font-size:14px;font-weight:400;text-align:left;"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력불량_수량').focus()">
+          </div>
+          <div class="폼항목">
+            <label>불량수량 *</label>
+            <input type="number" id="입력불량_수량" placeholder="0" min="0"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력불량_메모').focus()">
+          </div>
+        </div>
+        <div class="폼그리드 전체" style="margin-bottom:10px;">
+          <div class="폼항목">
+            <label>메모</label>
+            <input type="text" id="입력불량_메모" placeholder="불량 내용 (선택)"
+                   style="font-size:14px;font-weight:400;text-align:left;"
+                   onkeydown="if(event.key==='Enter')불량저장()">
+          </div>
+        </div>
+        <div class="등록버튼행">
+          <button id="불량저장버튼" class="버튼 빨강" onclick="불량저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="목록카드제목">불량 목록</div>
+        <div class="테이블감싸기">
+          <table>
+            <thead>
+              <tr>
+                <th>등록시간</th>
+                <th>불량유형</th>
+                <th style="color:#fca5a5;">불량수량</th>
+                <th>메모</th>
+              </tr>
+            </thead>
+            <tbody id="불량목록바디">
+              <tr><td colspan="4" class="빈목록안내">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ 출하 탭 ══════════ -->
+  <div id="탭_출하" class="탭내용">
+    <div class="내용패딩">
+
+      <div class="등록폼박스">
+        <div class="등록폼제목">출하 등록</div>
+        <div class="폼그리드 2열">
+          <div class="폼항목">
+            <label>출하수량 *</label>
+            <input type="number" id="입력출하_수량" placeholder="0" min="0"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력출하_출하일').focus()">
+          </div>
+          <div class="폼항목">
+            <label>출하일 *</label>
+            <input type="date" id="입력출하_출하일" style="font-size:14px;font-weight:500;">
+          </div>
+        </div>
+        <div class="폼그리드 전체" style="margin-bottom:10px;">
+          <div class="폼항목">
+            <label>메모</label>
+            <input type="text" id="입력출하_메모" placeholder="특이사항 (선택)"
+                   style="font-size:14px;font-weight:400;text-align:left;"
+                   onkeydown="if(event.key==='Enter')출하저장()">
+          </div>
+        </div>
+        <div class="등록버튼행">
+          <button id="출하저장버튼" class="버튼 파랑" onclick="출하저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="목록카드제목">출하 목록</div>
+        <div class="테이블감싸기">
+          <table>
+            <thead>
+              <tr>
+                <th>출하일</th>
+                <th style="color:#6ee7b7;">출하수량</th>
+                <th>메모</th>
+              </tr>
+            </thead>
+            <tbody id="출하목록바디">
+              <tr><td colspan="3" class="빈목록안내">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ 이력 탭 ══════════ -->
+  <div id="탭_이력" class="탭내용">
+    <div class="내용패딩">
+      <div class="목록카드제목">작업이력</div>
+      <div id="이력목록"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/작업상세.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    var _s = 현재세션();
+    if (_s) {
+      var 부제el = document.getElementById('시스템명_부제');
+      if (부제el) 부제el.textContent = APP_CONFIG.시스템명 + ' · ' + _s.직급 + ' ' + _s.사원명;
+    }
+  </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>
