@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>생산관리 - 삼양ERP</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── 통계 카드 ── */
+    .통계행 {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .통계카드 {
+      flex: 1;
+      min-width: 100px;
+      background: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      padding: 16px 20px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .통계카드:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
+    .통계카드.전체   { border-top: 3px solid #374151; }
+    .통계카드.진행중 { border-top: 3px solid #f97316; }
+    .통계카드.완료   { border-top: 3px solid #10b981; }
+    .통계카드_숫자 {
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      color: #111827;
+    }
+    .통계카드_레이블 {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9CA3AF;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* ── 목록 헤더 행 ── */
+    .목록헤더행 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    /* ── 상태 필터 버튼 ── */
+    .필터버튼 {
+      padding: 5px 16px;
+      border: 1px solid #D1D5DB;
+      border-radius: 20px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: white;
+      color: #374151;
+      font-weight: 500;
+    }
+    .필터버튼:hover { border-color: #374151; }
+    .필터그룹 { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ── 팝업 내부 폼 스타일 ── */
+    .팝업폼행 {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .팝업입력그룹 {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 140px;
+    }
+    .팝업입력그룹 label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6B7280;
+      letter-spacing: 0.3px;
+    }
+    .팝업입력그룹 input,
+    .팝업입력그룹 textarea {
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #111827;
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .팝업입력그룹 input:focus,
+    .팝업입력그룹 textarea:focus {
+      outline: none;
+      border-color: #F97316;
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+    }
+    .팝업입력그룹 textarea {
+      height: 60px;
+      resize: none;
+    }
+
+    /* ── QR 팝업 내용 ── */
+    .QR팝업본문 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 24px;
+    }
+    .QR팝업_WO { font-size: 16px; font-weight: 700; color: #1a3a5c; letter-spacing: 1px; }
+    .QR팝업_정보 { font-size: 13px; color: #555; text-align: center; }
+    #QR캔버스 img, #QR캔버스 canvas { display: block; }
+
+    /* ── 모바일 대응 ── */
+    @media (max-width: 640px) {
+      .통계카드_숫자 { font-size: 22px; }
+      .목록헤더행 { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더">
+      <span>접속 현황</span>
+      <button onclick="사이드바닫기()">✕</button>
+    </div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="활성">생산관리</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+
+    <!-- 알림 -->
+    <div id="생산알림박스" class="알림" style="display:none;"></div>
+
+    <!-- 통계 카드 -->
+    <div class="통계행">
+      <div class="통계카드 전체" onclick="상태필터변경('전체')">
+        <div class="통계카드_숫자" id="통계_전체">-</div>
+        <div class="통계카드_레이블">전체 작업</div>
+      </div>
+      <div class="통계카드 진행중" onclick="상태필터변경('진행중')">
+        <div class="통계카드_숫자" id="통계_진행중">-</div>
+        <div class="통계카드_레이블">진행중</div>
+      </div>
+      <div class="통계카드 완료" onclick="상태필터변경('완료')">
+        <div class="통계카드_숫자" id="통계_완료">-</div>
+        <div class="통계카드_레이블">완료</div>
+      </div>
+    </div>
+
+    <!-- 작업 목록 -->
+    <div class="카드">
+      <div class="목록헤더행">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div class="페이지제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">작업 목록</div>
+          <div class="필터그룹">
+            <button class="필터버튼" data-상태="전체"  onclick="상태필터변경('전체')">전체</button>
+            <button class="필터버튼" data-상태="진행중" onclick="상태필터변경('진행중')">진행중</button>
+            <button class="필터버튼" data-상태="완료"  onclick="상태필터변경('완료')">완료</button>
+          </div>
+        </div>
+        <button class="버튼 초록" onclick="입고등록팝업열기()" style="white-space:nowrap;">+ 입고 등록</button>
+      </div>
+
+      <div class="테이블감싸기">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;padding-left:14px;min-width:160px;">작업번호</th>
+              <th>업체</th>
+              <th>품목</th>
+              <th>입고수량</th>
+              <th>상태</th>
+              <th>납기일</th>
+              <th>담당자</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="작업목록바디">
+            <tr><td colspan="8" class="빈목록안내">데이터를 불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 입고 등록 팝업 ── -->
+  <div id="입고팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this)입고등록팝업닫기()">
+    <div class="팝업창" style="max-width:520px;width:94%;">
+      <div class="팝업헤더">
+        <span>입고 등록</span>
+        <button class="팝업닫기버튼" onclick="입고등록팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:20px 24px;">
+
+        <div class="팝업폼행">
+          <div class="팝업입력그룹" style="flex:1.2;">
+            <label>업체 *</label>
+            <input type="text" id="입력_업체" placeholder="고객사명 입력"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력_품목').focus()">
+          </div>
+          <div class="팝업입력그룹" style="flex:1.2;">
+            <label>품목 *</label>
+            <input type="text" id="입력_품목" placeholder="품목명 입력"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력_입고수량').focus()">
+          </div>
+          <div class="팝업입력그룹" style="flex:0 0 110px;">
+            <label>입고수량 *</label>
+            <input type="number" id="입력_입고수량" placeholder="0" min="0"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력_입고일').focus()">
+          </div>
+        </div>
+
+        <div class="팝업폼행">
+          <div class="팝업입력그룹">
+            <label>입고일 *</label>
+            <input type="date" id="입력_입고일"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력_납기일').focus()">
+          </div>
+          <div class="팝업입력그룹">
+            <label>납기일</label>
+            <input type="date" id="입력_납기일"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력_담당자').focus()">
+          </div>
+          <div class="팝업입력그룹">
+            <label>담당자</label>
+            <input type="text" id="입력_담당자" placeholder="담당자명"
+                   onkeydown="if(event.key==='Enter')document.getElementById('입력_메모').focus()">
+          </div>
+        </div>
+
+        <div class="팝업폼행">
+          <div class="팝업입력그룹" style="flex:1;">
+            <label>메모</label>
+            <textarea id="입력_메모" placeholder="특이사항 (선택)"></textarea>
+          </div>
+        </div>
+
+        <div class="팝업폼행">
+          <div class="팝업입력그룹" style="flex:1;">
+            <label>사진 첨부 (선택)</label>
+            <input type="file" id="입력_사진" accept="image/*" capture="environment"
+                   style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:white;cursor:pointer;width:100%;"
+                   onchange="사진미리보기()">
+            <div id="사진미리보기박스" style="display:none;margin-top:8px;">
+              <img id="사진미리보기이미지" style="max-width:100%;max-height:180px;border-radius:6px;border:1px solid #D1D5DB;object-fit:cover;display:block;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+          <button id="입고저장버튼" class="버튼 초록" onclick="입고저장()">저장</button>
+          <button class="버튼 회색" onclick="입고등록팝업닫기()">취소</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── QR 출력 팝업 ── -->
+  <div id="QR팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this)QR팝업닫기()">
+    <div class="팝업창" style="max-width:340px;width:90%;">
+      <div class="팝업헤더">
+        <span>QR 출력</span>
+        <button class="팝업닫기버튼" onclick="QR팝업닫기()">✕</button>
+      </div>
+      <div class="QR팝업본문">
+        <div id="QR캔버스" style="display:inline-block;padding:6px;border:2px solid #1a3a5c;border-radius:8px;background:white;"></div>
+        <div class="QR팝업_WO" id="QR팝업_WO번호"></div>
+        <div class="QR팝업_정보">
+          <div id="QR팝업_업체" style="font-weight:600;"></div>
+          <div id="QR팝업_품목" style="color:#888;margin-top:2px;"></div>
+          <div id="QR팝업_수량" style="color:#f97316;font-weight:700;margin-top:2px;"></div>
+        </div>
+      </div>
+      <div class="팝업하단" style="justify-content:center;gap:10px;">
+        <button class="버튼 파랑" onclick="QR인쇄()">인쇄</button>
+        <button class="버튼 회색" onclick="QR팝업닫기()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/생산관리.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+    document.title = APP_CONFIG.시스템명 + ' - 생산관리';
+    var _세션 = 현재세션();
+    if (_세션) {
+      document.getElementById('user-info').textContent = _세션.직급 + ' ' + _세션.사원명;
+    }
+  </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>
