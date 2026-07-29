@@ -265,7 +265,7 @@ function QR출력(WO번호) {
   document.getElementById('QR팝업_수량').textContent = 행 ? ((행.입고수량 || 0).toLocaleString() + ' EA') : '';
 
   var qrText = window.location.hostname === 'erp-red-five.vercel.app'
-    ? 'https://erp-red-five.vercel.app/작업상세.html?wo=' + encodeURIComponent(WO번호)
+    ? 'https://erp-red-five.vercel.app/' + encodeURIComponent('작업상세') + '.html?wo=' + encodeURIComponent(WO번호)
     : WO번호;
 
   var container = document.getElementById('QR캔버스');
@@ -274,9 +274,10 @@ function QR출력(WO번호) {
     text: qrText,
     width: 200,
     height: 200,
+    typeNumber: 10,
     colorDark: '#1a3a5c',
     colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.H
+    correctLevel: QRCode.CorrectLevel.L
   });
 
   overlay.style.display = 'flex';
