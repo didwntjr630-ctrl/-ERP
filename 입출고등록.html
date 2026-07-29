@@ -85,6 +85,7 @@
       gap: 5px;
       flex: 1;
       min-width: 140px;
+      max-width: 100%;
     }
     .팝업입력그룹 label {
       font-size: 11px;
@@ -138,7 +139,9 @@
 
       /* 입고 등록 팝업 폼: 1열로 */
       .팝업폼행 { flex-direction: column; gap: 8px; }
-      .팝업입력그룹 { min-width: unset !important; flex: unset !important; }
+      .팝업입력그룹 { min-width: 0 !important; max-width: 100% !important; flex: 1 1 100% !important; }
+      .팝업입력그룹 input,
+      .팝업입력그룹 textarea { width: 100% !important; max-width: 100% !important; }
     }
   </style>
 </head>
