@@ -5,11 +5,23 @@
   padding: 0;
 }
 
+/* 가로 스크롤 원천 차단 */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family: '맑은 고딕', 'Malgun Gothic', sans-serif;
   font-size: 14px;
   background-color: #F9FAFB;
   color: #111827;
+}
+
+/* 모든 이미지·미디어: 부모 너비 초과 금지 */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
 }
 
 /* ===== 사이드바 & 햄버거 ===== */
@@ -714,10 +726,12 @@ body {
 
 /* ===== 테이블 ===== */
 .테이블감싸기 {
+  /* overflow-x:auto를 overflow:hidden이 덮어쓰지 않도록 분리 기재 */
   overflow-x: auto;
+  overflow-y: visible;
   border-radius: 8px;
   border: 1px solid #E5E7EB;
-  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .테이블감싸기.스크롤 {
@@ -1195,8 +1209,16 @@ table tbody td:focus {
 
   /* ── 검색 카드 ── */
   .검색행 { gap: 8px; }
-  .검색항목 { min-width: calc(50% - 4px); flex: 1 1 calc(50% - 4px); }
-  .기간입력행 input[type="date"] { width: 112px; }
+  /* min-width 고정값 제거 → 자동 wrap */
+  .검색항목 { min-width: 0; flex: 1 1 140px; }
+  .입력그룹 { min-width: 0; }
+  .입력그룹.lot노 { min-width: 0; }
+  /* 날짜 입력: 고정폭 제거 */
+  .기간입력행 { flex-wrap: wrap; gap: 4px; }
+  .기간입력행 input[type="date"] { width: 100%; min-width: 0; max-width: 160px; }
+
+  /* ── 모든 폼 요소: 부모 너비 초과 금지 ── */
+  input, select, textarea, button { max-width: 100%; }
 
   /* ── 테이블 ── */
   table { font-size: 11px; }
