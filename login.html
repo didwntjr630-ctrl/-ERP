@@ -481,7 +481,8 @@
     document.getElementById('copyright').textContent = 'Copyright © ' + APP_CONFIG.회사명 + '. All Rights Reserved.  |  ' + APP_CONFIG.버전;
     document.title = APP_CONFIG.시스템명 + ' - 로그인';
 
-    if (현재세션()) location.href = 'main.html';
+    var _redirect = new URLSearchParams(location.search).get('redirect');
+    if (현재세션()) location.href = _redirect || 'main.html';
 
     function 에러표시(메시지) {
       document.getElementById('error-msg').textContent = 메시지;
@@ -508,7 +509,7 @@
       if (!결과.성공) { 에러표시(결과.메시지); return; }
 
       로그인처리(결과.사용자);
-      location.href = 결과.사용자['관리자여부'] ? 'admin.html' : 'main.html';
+      location.href = _redirect || (결과.사용자['관리자여부'] ? 'admin.html' : 'main.html');
     }
 
     function 초기화() {
