@@ -128,11 +128,17 @@
 
     /* ── 모바일 대응 ── */
     @media (max-width: 640px) {
-      .통계카드_숫자 { font-size: 22px; }
-      .통계카드{ padding: 12px 10px; }
-      .목록헤더행 { gap: 8px; }
+      .통계카드_숫자 { font-size: 20px; }
+      .통계카드 { padding: 10px 8px; }
+      .통계행 { gap: 8px; }
+      .목록헤더행 { gap: 8px; flex-direction: column; align-items: stretch; }
+      .목록헤더행 > div { flex-wrap: wrap; }
+      .목록헤더행 button { width: 100%; }
       .hide-mobile { display: none; }
-      .내용영역 { padding: 12px; }
+
+      /* 입고 등록 팝업 폼: 1열로 */
+      .팝업폼행 { flex-direction: column; gap: 8px; }
+      .팝업입력그룹 { min-width: unset !important; flex: unset !important; }
     }
   </style>
 </head>
