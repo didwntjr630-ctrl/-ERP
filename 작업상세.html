@@ -214,10 +214,60 @@
       border-bottom: 1px solid #F3F4F6;
     }
 
-    /* 모바일 대응 */
-    @media (max-width: 480px) {
-      .폼그리드 { grid-template-columns: 1fr 1fr; }
-      .수치항목_값 { font-size: 16px; }
+    /* ── 모바일 반응형 ── */
+    @media (max-width: 640px) {
+      /* 진행현황 */
+      .진행현황카드 { padding: 12px; }
+      .수치그리드{ gap: 6px; }
+      .수치항목 { padding: 8px 4px; }
+      .수치항목_값 { font-size: 17px; }
+      .수치항목_레이블 { font-size: 9px; }
+      .작업기본정보_납기 { display: none; }
+
+      /* 탭바 */
+      .탭버튼 { padding: 14px 6px; font-size: 14px; font-weight: 700; }
+
+      /* 탭 내용 패딩 */
+      .내용패딩 { padding: 12px; }
+
+      /* 등록폼 */
+      .등록폼박스 { padding: 12px; }
+      .등록폼제목 { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+
+      /* 폼 그리드: 3열→2열 */
+      .폼그리드 { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .폼그리드.전체 { grid-template-columns: 1fr; }
+
+      /* 입력 필드 */
+      .폼항목 input {
+        height: 48px;
+        font-size: 15px;
+        padding: 10px 12px;
+      }
+
+      /* 수량 입력: 특히 크게 */
+      .폼항목 input[type="number"] {
+        font-size: 28px;
+        height: 64px;
+        font-weight: 700;
+        text-align: center;
+        padding: 8px;
+      }
+
+      /* 등록 버튼 전체 너비 */
+      .등록버튼행 { margin-top: 4px; }
+      .등록버튼행 button {
+        flex: 1;
+        width: 100%;
+        height: 50px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      /* 테이블 */
+      table { font-size: 12px; }
+      th, td { padding: 8px 5px; }
+      .목록카드제목 { font-size: 13px; }
     }
   </style>
 </head>

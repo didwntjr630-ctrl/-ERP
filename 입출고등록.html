@@ -129,7 +129,10 @@
     /* ── 모바일 대응 ── */
     @media (max-width: 640px) {
       .통계카드_숫자 { font-size: 22px; }
+      .통계카드{ padding: 12px 10px; }
       .목록헤더행 { gap: 8px; }
+      .hide-mobile { display: none; }
+      .내용영역 { padding: 12px; }
     }
   </style>
 </head>
@@ -206,13 +209,13 @@
         <table>
           <thead>
             <tr>
-              <th style="text-align:left;padding-left:14px;min-width:160px;">작업번호</th>
+              <th style="text-align:left;padding-left:14px;min-width:140px;">작업번호</th>
               <th>업체</th>
               <th>품목</th>
-              <th>입고수량</th>
+              <th class="hide-mobile">입고수량</th>
               <th>상태</th>
-              <th>납기일</th>
-              <th>담당자</th>
+              <th class="hide-mobile">납기일</th>
+              <th class="hide-mobile">담당자</th>
               <th>관리</th>
             </tr>
           </thead>
