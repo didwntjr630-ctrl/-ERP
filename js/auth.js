@@ -144,7 +144,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function 세션체크() {
-  if (!현재세션()) { location.href = 'login.html'; return false; }
+  if (!현재세션()) {
+    location.href = 'login.html?redirect=' + encodeURIComponent(location.href);
+    return false;
+  }
   return true;
 }
 
