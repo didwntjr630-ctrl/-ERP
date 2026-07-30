@@ -8,7 +8,6 @@ var _작업실적목록 = [];
 var _출하목록 = [];
 var _현재탭 = '작업실적';
 var _편집실적id = null;
-var _편집출하id = null;
 
 /* ── 페이지 초기화 ── */
 document.addEventListener('DOMContentLoaded', function() {
@@ -27,9 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById('입력실적_작업자');
     if (el) el.value = 세션.직급 + ' ' + 세션.사원명;
   }
-
-  var 출하일el = document.getElementById('입력출하_출하일');
-  if (출하일el) 출하일el.value = new Date().toISOString().slice(0, 10);
 
   탭전환('작업실적');
   데이터로드();
@@ -75,8 +71,29 @@ function 진행현황렌더링() {
   document.getElementById('현황_품목').textContent    = _작업정보.품목 || '';
   document.getElementById('현황_납기일').textContent  = _작업정보.납기일 || '-';
   document.getElementById('현황_담당자').textContent  = _작업정보.담당자 || '';
-  document.getElementById('현황_상태').textContent    = 상태;
-  document.getElementById('현황_상태').style.color    = 상태 === '완료' ? '#27ae60' : '#f97316';
+
+  var badge = document.getElementById('현황_상태');
+  var 상태표시 = 상태 === '진행중' ? '입고' : 상태 === '출하대기' ? '진행중' : 상태 === '완료' ? '출하' : 상태;
+  badge.textContent = 상태표시;
+  if (상태 === '완료') {
+    badge.style.background = 'rgba(39,174,96,0.25)';
+    badge.style.color = '#6ee7b7';
+  } else if (상태 === '작업완료') {
+    badge.style.background = 'rgba(139,92,246,0.25)';
+    badge.style.color = '#c4b5fd';
+  } else if (상태 === '출하대기') {
+    badge.style.background = 'rgba(249,115,22,0.25)';
+    badge.style.color = '#fed7aa';
+  } else {
+    badge.style.background = 'rgba(107,114,128,0.25)';
+    badge.style.color = '#D1D5DB';
+  }
+
+  var 완료버튼 = document.getElementById('작업완료버튼');
+  if (완료버튼) 완료버튼.style.display = 상태 === '출하대기' ? '' : 'none';
+
+  var 폼입고el = document.getElementById('폼_입고수량값');
+  if (폼입고el) 폼입고el.textContent = 입고수량.toLocaleString();
 
   document.getElementById('현황_입고').textContent    = 입고수량.toLocaleString();
   document.getElementById('현황_생산').textContent    = 생산수량.toLocaleString();
@@ -122,8 +139,25 @@ function 탭전환(탭) {
 
 function 현재탭렌더링() {
   if      (_현재탭 === '작업실적') 작업실적목록렌더링();
-  else if (_현재탭 === '출하')    출하목록렌더링();
   else if (_현재탭 === '이력')    이력렌더링();
+}
+
+/* ══════════════════════════════════════
+   작업완료 처리
+══════════════════════════════════════ */
+async function 작업완료처리() {
+  if (!_작업정보 || _작업정보.상태 !== '출하대기') return;
+  상세확인모달표시('작업완료 처리 하시겠습니까?\n완료 후 출하관리에서 출하 확정이 가능합니다.', async function() {
+    try {
+      var { error } = await 수파베이스.from('작업').update({ 상태: '작업완료' }).eq('작업번호', _WO번호);
+      if (error) throw error;
+      await 데이터로드();
+      상세알림표시('작업완료 처리되었습니다.', '성공');
+    } catch(e) {
+      console.error(e);
+      상세알림표시('처리 오류: ' + (e.message || e), '오류');
+    }
+  });
 }
 
 /* ══════════════════════════════════════
@@ -280,8 +314,15 @@ function 작업실적수정취소() {
 async function 작업실적삭제(id) {
   상세확인모달표시('이 작업실적을 삭제하시겠습니까?', async function() {
     try {
+      // 마지막 실적 삭제 시 → 진행중 복귀
+      var 남은목록 = _작업실적목록.filter(function(r){ return r.id !== id; });
+      if (남은목록.length === 0 && _작업정보 && _작업정보.상태 === '출하대기') {
+        await 수파베이스.from('작업').update({ 상태: '진행중' }).eq('작업번호', _WO번호);
+      }
+
       var { error } = await 수파베이스.from('작업실적').delete().eq('id', id);
       if (error) throw error;
+
       if (_편집실적id === id) 작업실적수정취소();
       await 데이터로드();
       상세알림표시('작업실적이 삭제되었습니다.', '성공');
@@ -309,7 +350,6 @@ async function 작업실적저장() {
   var 입고수량 = (_작업정보 && _작업정보.입고수량) || 0;
 
   if (_편집실적id) {
-    // 수정 모드: 현재 편집 중인 항목 제외한 나머지 합계로 검증
     var 다른실적합 = _작업실적목록
       .filter(function(r){ return r.id !== _편집실적id; })
       .reduce(function(s, r){ return s + (r.작업수량 || 0); }, 0);
@@ -334,6 +374,7 @@ async function 작업실적저장() {
   }
 
   var btn = document.getElementById('실적저장버튼');
+  var 저장모드 = _편집실적id ? '수정' : '신규';
   btn.disabled = true; btn.textContent = '저장 중...';
 
   try {
@@ -350,9 +391,14 @@ async function 작업실적저장() {
     }
     if (error) throw error;
 
+    // 신규 저장 시: 진행중 → 출하대기 자동 전환
+    if (저장모드 === '신규' && _작업정보 && _작업정보.상태 === '진행중') {
+      await 수파베이스.from('작업').update({ 상태: '출하대기' }).eq('작업번호', _WO번호);
+    }
+
     작업실적수정취소();
     await 데이터로드();
-    상세알림표시(_편집실적id ? '작업실적이 수정되었습니다.' : '작업실적이 등록되었습니다.', '성공');
+    상세알림표시(저장모드 === '수정' ? '작업실적이 수정되었습니다.' : '작업실적이 등록되었습니다.', '성공');
     document.getElementById('입력실적_작업수량').focus();
   } catch(e) {
     console.error(e);
@@ -360,156 +406,6 @@ async function 작업실적저장() {
   } finally {
     btn.disabled = false;
     btn.textContent = _편집실적id ? '수정저장' : '등록';
-  }
-}
-
-/* ══════════════════════════════════════
-   출하 탭
-══════════════════════════════════════ */
-function 출하목록렌더링() {
-  var tbody = document.getElementById('출하목록바디');
-  if (!tbody) return;
-  if (!_출하목록.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="빈목록안내">등록된 출하가 없습니다.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = _출하목록.map(function(r) {
-    return '<tr>' +
-      '<td>' + (r.출하일||'-') + '</td>' +
-      '<td style="color:#27ae60;font-weight:700;">' + (r.출하수량||0).toLocaleString() + ' EA</td>' +
-      '<td style="color:#9CA3AF;font-size:12px;">' + (r.메모||'') + '</td>' +
-      '<td style="text-align:center;white-space:nowrap;">' +
-        '<button class="버튼 회색 소형" style="padding:0 8px;margin-right:3px;" ' +
-          'onclick="출하수정시작(' + r.id + ')">수정</button>' +
-        '<button class="버튼 빨강 소형" style="padding:0 8px;" ' +
-          'onclick="출하삭제(' + r.id + ')">삭제</button>' +
-      '</td>' +
-    '</tr>';
-  }).join('');
-}
-
-function 출하수정시작(id) {
-  var r = _출하목록.find(function(x){ return x.id === id; });
-  if (!r) return;
-  _편집출하id = id;
-  document.getElementById('입력출하_수량').value = r.출하수량 || '';
-  document.getElementById('입력출하_출하일').value = r.출하일 || '';
-  document.getElementById('입력출하_메모').value   = r.메모 || '';
-  document.getElementById('출하저장버튼').textContent = '수정저장';
-  document.getElementById('출하취소버튼').style.display = 'inline-flex';
-  var 제목el = document.querySelector('#탭_출하 .등록폼제목');
-  if (제목el) 제목el.textContent = '출하 수정';
-  document.getElementById('입력출하_수량').focus();
-}
-
-function 출하수정취소() {
-  _편집출하id = null;
-  document.getElementById('입력출하_수량').value = '';
-  document.getElementById('입력출하_출하일').value = new Date().toISOString().slice(0, 10);
-  document.getElementById('입력출하_메모').value   = '';
-  document.getElementById('출하저장버튼').textContent = '등록';
-  document.getElementById('출하취소버튼').style.display = 'none';
-  var 제목el = document.querySelector('#탭_출하 .등록폼제목');
-  if (제목el) 제목el.textContent = '출하 등록';
-}
-
-async function 출하삭제(id) {
-  상세확인모달표시('이 출하 기록을 삭제하시겠습니까?\n삭제 후 진행중 상태로 복귀합니다.', async function() {
-    try {
-      var { error } = await 수파베이스.from('출하').delete().eq('id', id);
-      if (error) throw error;
-      // 완료 상태인 작업은 출하 삭제 시 진행중으로 복귀
-      if (_작업정보 && _작업정보.상태 === '완료') {
-        await 수파베이스.from('작업').update({ 상태: '진행중' }).eq('작업번호', _WO번호);
-      }
-      if (_편집출하id === id) 출하수정취소();
-      await 데이터로드();
-      상세알림표시('출하 기록이 삭제되었습니다.', '성공');
-    } catch(e) {
-      console.error(e);
-      상세알림표시('삭제 오류: ' + (e.message || e), '오류');
-    }
-  });
-}
-
-async function 출하저장() {
-  var 출하수량 = parseInt(document.getElementById('입력출하_수량').value) || 0;
-  var 출하일   = document.getElementById('입력출하_출하일').value;
-  var 메모     = document.getElementById('입력출하_메모').value.trim();
-
-  if (!출하수량) { 상세알림표시('출하수량을 입력해주세요.', '오류'); return; }
-  if (!출하일)   { 상세알림표시('출하일을 입력해주세요.', '오류'); return; }
-
-  var 양품합계 = _작업실적목록.reduce(function(s, r){ return s + (r.양품수량 || 0); }, 0);
-
-  if (양품합계 === 0) {
-    상세알림표시('작업실적을 먼저 등록해주세요. (양품수량 없음)', '오류');
-    return;
-  }
-
-  var 기준출하합계; // 수정 vs 신규에 따라 다름
-  if (_편집출하id) {
-    기준출하합계 = _출하목록
-      .filter(function(r){ return r.id !== _편집출하id; })
-      .reduce(function(s, r){ return s + (r.출하수량 || 0); }, 0);
-  } else {
-    기준출하합계 = _출하목록.reduce(function(s, r){ return s + (r.출하수량 || 0); }, 0);
-  }
-
-  if (기준출하합계 + 출하수량 > 양품합계) {
-    var 잔여출하 = Math.max(0, 양품합계 - 기준출하합계);
-    상세알림표시(
-      '양품수량(' + 양품합계.toLocaleString() + ')을 초과합니다.\n출하 가능 잔여: ' + 잔여출하.toLocaleString(),
-      '오류'
-    );
-    return;
-  }
-
-  var 전체출하 = 기준출하합계 + 출하수량;
-  var 입고수량 = _작업정보 ? (_작업정보.입고수량 || 0) : 0;
-
-  var btn = document.getElementById('출하저장버튼');
-  btn.disabled = true; btn.textContent = '저장 중...';
-
-  try {
-    var payload = { 출하수량: 출하수량, 출하일: 출하일 || null, 메모: 메모 };
-    var error;
-
-    if (_편집출하id) {
-      var res = await 수파베이스.from('출하').update(payload).eq('id', _편집출하id);
-      error = res.error;
-    } else {
-      payload.작업번호 = _WO번호;
-      var res = await 수파베이스.from('출하').insert(payload);
-      error = res.error;
-    }
-    if (error) throw error;
-
-    // 전량 출하 시 완료 처리 (수정 모드에서도 재계산)
-    var 재계산출하합계 = _출하목록
-      .filter(function(r){ return r.id !== _편집출하id; })
-      .reduce(function(s, r){ return s + (r.출하수량 || 0); }, 0) + 출하수량;
-
-    if (재계산출하합계 >= 입고수량 && _작업정보.상태 !== '완료') {
-      await 수파베이스.from('작업').update({ 상태: '완료' }).eq('작업번호', _WO번호);
-    } else if (재계산출하합계 < 입고수량 && _작업정보.상태 === '완료') {
-      await 수파베이스.from('작업').update({ 상태: '진행중' }).eq('작업번호', _WO번호);
-    }
-
-    출하수정취소();
-    await 데이터로드();
-    상세알림표시(
-      재계산출하합계 >= 입고수량
-        ? '전량 출하 완료! 작업이 [완료] 처리되었습니다.'
-        : (_편집출하id ? '출하가 수정되었습니다.' : '출하가 등록되었습니다.'),
-      '성공'
-    );
-  } catch(e) {
-    console.error(e);
-    상세알림표시('저장 오류: ' + (e.message || e), '오류');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = _편집출하id ? '수정저장' : '등록';
   }
 }
 
@@ -531,7 +427,7 @@ function 이력렌더링() {
       작업자: r.작업자||'' });
   });
   _출하목록.forEach(function(r) {
-    이력.push({ 시간: new Date(r.created_at), 유형: '출하등록',
+    이력.push({ 시간: new Date(r.created_at), 유형: '출하확정',
       내용: (r.출하수량||0).toLocaleString() + ' EA' +
             (r.출하일 ? ' (' + r.출하일 + ')' : ''),
       작업자: '' });
@@ -546,7 +442,7 @@ function 이력렌더링() {
     return;
   }
 
-  var 유형색 = { '입고등록': '#2a6496', '작업실적': '#f97316', '출하등록': '#27ae60' };
+  var 유형색 = { '입고등록': '#2a6496', '작업실적': '#f97316', '출하확정': '#27ae60' };
 
   container.innerHTML = 이력.map(function(r) {
     var 시간str = r.시간.toLocaleString('ko-KR', {
