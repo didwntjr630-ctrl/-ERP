@@ -73,16 +73,17 @@ function 진행현황렌더링() {
   document.getElementById('현황_담당자').textContent  = _작업정보.담당자 || '';
 
   var badge = document.getElementById('현황_상태');
-  badge.textContent = 상태;
+  var 상태표시 = 상태 === '진행중' ? '입고' : 상태 === '출하대기' ? '진행중' : 상태;
+  badge.textContent = 상태표시;
   if (상태 === '완료') {
     badge.style.background = 'rgba(39,174,96,0.25)';
     badge.style.color = '#6ee7b7';
   } else if (상태 === '출하대기') {
-    badge.style.background = 'rgba(59,130,246,0.25)';
-    badge.style.color = '#93c5fd';
-  } else {
     badge.style.background = 'rgba(249,115,22,0.25)';
     badge.style.color = '#fed7aa';
+  } else {
+    badge.style.background = 'rgba(107,114,128,0.25)';
+    badge.style.color = '#D1D5DB';
   }
 
   var 폼입고el = document.getElementById('폼_입고수량값');

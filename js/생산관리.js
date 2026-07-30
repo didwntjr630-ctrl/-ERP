@@ -43,21 +43,25 @@ async function 작업목록로드() {
 
 /* ── 통계 카드 업데이트 ── */
 function 통계업데이트() {
-  var 진행중 = _작업목록.filter(function(r){ return r.상태 === '진행중'; }).length;
-  var 완료 = _작업목록.filter(function(r){ return r.상태 === '완료'; }).length;
-  var el전체 = document.getElementById('통계_전체');
+  var 입고   = _작업목록.filter(function(r){ return r.상태 === '진행중'; }).length;
+  var 진행중 = _작업목록.filter(function(r){ return r.상태 === '출하대기'; }).length;
+  var 완료   = _작업목록.filter(function(r){ return r.상태 === '완료'; }).length;
+  var el전체   = document.getElementById('통계_전체');
+  var el입고   = document.getElementById('통계_입고');
   var el진행중 = document.getElementById('통계_진행중');
-  var el완료 = document.getElementById('통계_완료');
-  if (el전체) el전체.textContent = _작업목록.length;
+  var el완료   = document.getElementById('통계_완료');
+  if (el전체)   el전체.textContent   = _작업목록.length;
+  if (el입고)   el입고.textContent   = 입고;
   if (el진행중) el진행중.textContent = 진행중;
-  if (el완료) el완료.textContent = 완료;
+  if (el완료)   el완료.textContent   = 완료;
 }
 
 /* ── 목록 렌더링 ── */
 function 작업목록렌더링() {
+  var _DB상태 = { '입고': '진행중', '진행중': '출하대기', '완료': '완료' };
   var filtered = _현재상태필터 === '전체'
     ? _작업목록.slice()
-    : _작업목록.filter(function(r){ return r.상태 === _현재상태필터; });
+    : _작업목록.filter(function(r){ return r.상태 === (_DB상태[_현재상태필터] || _현재상태필터); });
 
   if (_필터_시작일) {
     filtered = filtered.filter(function(r){ return r.입고일 && r.입고일 >= _필터_시작일; });
@@ -84,8 +88,9 @@ function 작업목록렌더링() {
   tbody.innerHTML = filtered.map(function(r) {
     var 납기d = r.납기일 ? new Date(r.납기일) : null;
     var 납기임박 = 납기d && r.상태 !== '완료' && (납기d - 오늘) / (1000 * 60 * 60 * 24) <= 3;
-    var 상태색 = r.상태 === '완료' ? '#27ae60' : '#f97316';
-    var 상태배경 = r.상태 === '완료' ? '#eafaf1' : '#fff7ed';
+    var 상태표시 = r.상태 === '진행중' ? '입고' : r.상태 === '출하대기' ? '진행중' : r.상태;
+    var 상태색   = r.상태 === '완료' ? '#27ae60' : r.상태 === '출하대기' ? '#f97316' : '#6B7280';
+    var 상태배경 = r.상태 === '완료' ? '#eafaf1' : r.상태 === '출하대기' ? '#fff7ed' : '#F3F4F6';
     var 납기표시 = r.납기일 ? r.납기일 : '-';
 
     var 사진아이콘 = r.사진url
@@ -104,7 +109,7 @@ function 작업목록렌더링() {
       '<td>' +
         '<span style="background:' + 상태배경 + ';color:' + 상태색 + ';' +
           'padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;">' +
-          r.상태 +
+          상태표시 +
         '</span>' +
       '</td>' +
       '<td class="hide-mobile"' + (납기임박 ? ' style="color:#c0392b;font-weight:700;"' : '') + '>' +
