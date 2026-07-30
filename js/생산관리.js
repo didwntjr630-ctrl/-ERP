@@ -158,10 +158,10 @@ function 작업목록렌더링() {
       '<td class="hide-mobile">' + (r.담당자 || '-') + '</td>' +
       '<td style="text-align:center;">' +
         '<div style="display:flex;gap:4px;justify-content:center;">' +
-          '<button class="버튼 파랑 소형" style="padding:0 10px;" ' +
-            'onclick="event.stopPropagation(); 수정버튼클릭(\'' + r.작업번호 + '\')">수정</button>' +
           '<button class="버튼 회색 소형" style="padding:0 10px;" ' +
             'onclick="event.stopPropagation(); QR출력(\'' + r.작업번호 + '\')">QR</button>' +
+          '<button class="버튼 파랑 소형" style="padding:0 10px;" ' +
+            'onclick="event.stopPropagation(); 수정버튼클릭(\'' + r.작업번호 + '\')">수정</button>' +
           '<button class="버튼 빨강 소형" style="padding:0 10px;" ' +
             'onclick="event.stopPropagation(); 작업삭제(\'' + r.작업번호 + '\')">삭제</button>' +
         '</div>' +
@@ -255,7 +255,7 @@ function 입고폼초기화() {
   _수정모드 = false;
   _수정WO   = null;
 
-  ['입력_업체','입력_품목','입력_납기일','입력_메모'].forEach(function(id){
+  ['입력_업체','입력_품목','입력_납기일'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.value = '';
   });
   ['입력_입고수량','입력_출고수량'].forEach(function(id){
@@ -268,8 +268,6 @@ function 입고폼초기화() {
   if (담당자el) 담당자el.value = 세션 ? (세션.직급 + ' ' + 세션.사원명) : '';
   var WO표시el = document.getElementById('입력_WO표시');
   if (WO표시el) WO표시el.value = '';
-  var 사진el = document.getElementById('입력_사진'); if (사진el) 사진el.value = '';
-  var 박스 = document.getElementById('사진미리보기박스'); if (박스) 박스.style.display = 'none';
 
   ['입력업체_드롭다운','품명자동완성_드롭다운'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.style.display = 'none';
@@ -317,7 +315,7 @@ async function 입고저장() {
   var 입고일   = document.getElementById('입력_입고일').value;
   var 납기일   = document.getElementById('입력_납기일').value;
   var 담당자   = document.getElementById('입력_담당자').value.trim();
-  var 메모     = document.getElementById('입력_메모').value.trim();
+  var 메모     = '';
 
   if (!업체)     { 생산알림표시('업체를 입력해주세요.', '오류'); return; }
   if (!품목)     { 생산알림표시('품목을 입력해주세요.', '오류'); return; }
@@ -331,18 +329,6 @@ async function 입고저장() {
     var WO = await WO번호생성();
 
     var 사진url = null;
-    var 사진파일 = document.getElementById('입력_사진').files[0];
-    if (사진파일) {
-      var 확장자 = 사진파일.name.split('.').pop() || 'jpg';
-      var 경로 = WO + '.' + 확장자;
-      var { data: upData, error: upError } = await 수파베이스.storage
-        .from('work-photos')
-        .upload(경로, 사진파일, { contentType: 사진파일.type, upsert: true });
-      if (!upError) {
-        var { data: urlData } = 수파베이스.storage.from('work-photos').getPublicUrl(upData.path);
-        사진url = urlData.publicUrl;
-      }
-    }
 
     var 출고수량 = parseInt(document.getElementById('입력_출고수량').value) || 0;
     var { error } = await 수파베이스.from('작업').insert({
@@ -371,7 +357,7 @@ async function _수정저장() {
   var 입고일   = document.getElementById('입력_입고일').value;
   var 납기일   = document.getElementById('입력_납기일').value;
   var 담당자   = document.getElementById('입력_담당자').value.trim();
-  var 메모     = document.getElementById('입력_메모').value.trim();
+  var 메모     = '';
 
   if (!업체)     { 생산알림표시('업체를 입력해주세요.', '오류'); return; }
   if (!품목)     { 생산알림표시('품목을 입력해주세요.', '오류'); return; }

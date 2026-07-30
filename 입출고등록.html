@@ -216,7 +216,7 @@
 
       <!-- Row 1: 품명 | 일자 | WO No -->
       <div class="팝업폼행">
-        <div class="팝업입력그룹" style="flex:2;position:relative;">
+        <div class="팝업입력그룹" style="flex:1;position:relative;">
           <label>품명 (품명 또는 품번)</label>
           <div class="검색입력행">
             <input type="text" id="입력_품목" placeholder="품목명 검색" autocomplete="off"
@@ -231,7 +231,7 @@
           <label>일자</label>
           <input type="date" id="입력_입고일" onkeydown="일자엔터처리(event)">
         </div>
-        <div class="팝업입력그룹">
+        <div class="팝업입력그룹" style="flex:2;">
           <label>WO No.</label>
           <input type="text" id="입력_WO표시" placeholder="저장 시 자동 생성" readonly
                  style="background:#f9fafb;color:#6B7280;font-size:12px;letter-spacing:0.3px;">
@@ -277,29 +277,11 @@
         </div>
       </div>
 
-      <!-- Row 3: 납기일 | 메모 -->
-      <div class="팝업폼행">
-        <div class="팝업입력그룹">
-          <label>납기일</label>
-          <input type="date" id="입력_납기일" onkeydown="다음셀이동(event,'입력_메모')">
-        </div>
-        <div class="팝업입력그룹" style="flex:3;">
-          <label>메모</label>
-          <input type="text" id="입력_메모" placeholder="특이사항 (선택)"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('입력_사진').focus();}">
-        </div>
-      </div>
-
-      <!-- Row 4: 사진 + 담당자 + 저장/초기화 (우측 하단) -->
+      <!-- Row 3: 납기일 | 담당자 | 저장/초기화 -->
       <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
         <div class="팝업입력그룹">
-          <label>사진 첨부 (선택)</label>
-          <input type="file" id="입력_사진" accept="image/*" capture="environment"
-                 style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:white;cursor:pointer;"
-                 onchange="사진미리보기()">
-          <div id="사진미리보기박스" style="display:none;margin-top:8px;">
-            <img id="사진미리보기이미지" style="max-width:100%;max-height:140px;border-radius:6px;border:1px solid #D1D5DB;object-fit:cover;display:block;">
-          </div>
+          <label>납기일</label>
+          <input type="date" id="입력_납기일" onkeydown="다음셀이동(event,'입력_담당자')">
         </div>
         <div class="팝업입력그룹" style="flex:1.2;">
           <label>담당자</label>
