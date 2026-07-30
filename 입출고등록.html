@@ -206,55 +206,155 @@
       </div>
     </div>
 
-    <!-- 생산 조회 카드 -->
-    <div class="카드 검색카드">
-      <div class="검색카드제목">생산 조회</div>
-      <div class="검색행">
-        <div class="검색항목 검색항목_기간">
-          <label>입고일</label>
-          <div class="기간입력행">
-            <input type="date" id="필터_시작일">
-            <span class="기간구분">~</span>
-            <input type="date" id="필터_종료일">
+    <!-- ── 입고 등록 (인라인 폼) ── -->
+    <div class="카드" id="입고등록카드">
+      <div class="목록헤더행" style="margin-bottom:14px;">
+        <div class="페이지제목" id="입고폼제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">입고 등록</div>
+        <button id="수정취소버튼" class="버튼 회색" onclick="입고폼초기화()" style="display:none;font-size:12px;">취소</button>
+      </div>
+
+
+      <!-- Row 1: 품명 | 일자 | WO No -->
+      <div class="팝업폼행">
+        <div class="팝업입력그룹" style="flex:2;position:relative;">
+          <label>품명 (품명 또는 품번)</label>
+          <div class="검색입력행">
+            <input type="text" id="입력_품목" placeholder="품목명 검색" autocomplete="off"
+                   oninput="품명자동완성표시(this.value)"
+                   onkeydown="품명키처리(event)"
+                   onfocus="if(this.value)품명자동완성표시(this.value)">
+            <button class="돋보기버튼 검색용" onclick="품명조회팝업열기()" title="품목 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+          </div>
+          <div id="품명자동완성_드롭다운" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);z-index:500;max-height:220px;overflow-y:auto;margin-top:2px;"></div>
+        </div>
+        <div class="팝업입력그룹">
+          <label>일자</label>
+          <input type="date" id="입력_입고일" onkeydown="일자엔터처리(event)">
+        </div>
+        <div class="팝업입력그룹">
+          <label>WO No.</label>
+          <input type="text" id="입력_WO표시" placeholder="저장 시 자동 생성" readonly
+                 style="background:#f9fafb;color:#6B7280;font-size:12px;letter-spacing:0.3px;">
+        </div>
+      </div>
+
+      <!-- Row 2: 출발공정 | 입고수량 → 도착공정 | 출고수량 -->
+      <div style="display:flex;gap:14px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="팝업입력그룹" style="flex:2;position:relative;">
+          <label>출발 공정 (코드/이름 입력 또는 더블클릭)</label>
+          <div class="검색입력행">
+            <input type="text" id="입력_업체" placeholder="업체 코드 또는 업체명" autocomplete="off"
+                   oninput="입력업체자동완성표시(this.value)"
+                   onkeydown="입력업체키처리(event)"
+                   onfocus="if(this.value)입력업체자동완성표시(this.value)"
+                   ondblclick="업체조회팝업열기('입력_업체')">
+            <button class="돋보기버튼 검색용" onclick="업체조회팝업열기('입력_업체')" title="업체 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+          </div>
+          <div id="입력업체_드롭다운" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);z-index:500;max-height:200px;overflow-y:auto;margin-top:2px;"></div>
+        </div>
+        <div class="팝업입력그룹" style="flex:0 0 auto;">
+          <label>입고수량</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="입력_입고수량" placeholder="0" min="0" style="width:90px;"
+                   oninput="출고수량자동기입(this.value)"
+                   onkeydown="다음셀이동(event,'입력_출고수량')">
+            <span style="color:#6B7280;font-size:13px;font-weight:600;white-space:nowrap;">EA</span>
           </div>
         </div>
-        <div class="검색항목">
-          <label>업체</label>
-          <input type="text" id="필터_업체" placeholder="업체명 검색" onkeydown="if(event.key==='Enter')필터조회()">
+        <div style="align-self:flex-end;padding-bottom:9px;font-size:22px;font-weight:700;color:#f97316;">→</div>
+        <div class="팝업입력그룹" style="flex:2;">
+          <label>도착 공정</label>
+          <input type="text" id="입력_도착공정" value="(주)삼양이엔지" readonly
+                 style="background:#f0f9ff;color:#1a3a5c;font-weight:600;border-color:#bfdbfe;">
         </div>
-        <div class="검색항목">
-          <label>작업번호</label>
-          <input type="text" id="필터_작업번호" placeholder="WO번호 검색" onkeydown="if(event.key==='Enter')필터조회()">
+        <div class="팝업입력그룹" style="flex:0 0 auto;">
+          <label>출고수량</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="입력_출고수량" placeholder="0" min="0" style="width:90px;"
+                   onkeydown="다음셀이동(event,'입력_납기일')">
+            <span style="color:#6B7280;font-size:13px;font-weight:600;white-space:nowrap;">EA</span>
+          </div>
         </div>
-        <div class="검색항목">
+      </div>
+
+      <!-- Row 3: 납기일 | 메모 -->
+      <div class="팝업폼행">
+        <div class="팝업입력그룹">
+          <label>납기일</label>
+          <input type="date" id="입력_납기일" onkeydown="다음셀이동(event,'입력_메모')">
+        </div>
+        <div class="팝업입력그룹" style="flex:3;">
+          <label>메모</label>
+          <input type="text" id="입력_메모" placeholder="특이사항 (선택)"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('입력_사진').focus();}">
+        </div>
+      </div>
+
+      <!-- Row 4: 사진 + 담당자 + 저장/초기화 (우측 하단) -->
+      <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
+        <div class="팝업입력그룹">
+          <label>사진 첨부 (선택)</label>
+          <input type="file" id="입력_사진" accept="image/*" capture="environment"
+                 style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:white;cursor:pointer;"
+                 onchange="사진미리보기()">
+          <div id="사진미리보기박스" style="display:none;margin-top:8px;">
+            <img id="사진미리보기이미지" style="max-width:100%;max-height:140px;border-radius:6px;border:1px solid #D1D5DB;object-fit:cover;display:block;">
+          </div>
+        </div>
+        <div class="팝업입력그룹" style="flex:1.2;">
           <label>담당자</label>
-          <select id="필터_담당자" onchange="필터조회()">
-            <option value="">전체</option>
-          </select>
+          <div class="검색입력행">
+            <input type="text" id="입력_담당자" placeholder="클릭하여 선택" readonly
+                   onclick="담당자조회팝업열기('입력_담당자')" style="cursor:pointer;background:white;">
+            <button class="돋보기버튼 검색용" onclick="담당자조회팝업열기('입력_담당자')" title="담당자 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+          </div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="display:flex;gap:8px;padding-bottom:1px;align-self:flex-end;">
+          <button id="입고저장버튼" class="버튼 초록" onclick="입고저장()">저장</button>
+          <button class="버튼 회색" onclick="입고폼초기화()">초기화</button>
         </div>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
-        <button class="버튼 파랑" onclick="필터조회()">조회</button>
-        <button class="버튼 회색" onclick="전체보기()">전체보기</button>
-      </div>
-      <div id="검색결과안내" class="검색결과안내"></div>
     </div>
 
-    <!-- 작업 목록 -->
+    <!-- ── 작업 목록 ── -->
     <div class="카드">
-      <div class="목록헤더행">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div class="페이지제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">작업 목록</div>
-        <button class="버튼 초록" onclick="입고등록팝업열기()" style="white-space:nowrap;">+ 입고 등록</button>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input type="date" id="필터_시작일" onchange="필터조회()" style="border:1px solid #D1D5DB;border-radius:6px;padding:5px 8px;font-size:13px;font-family:inherit;height:32px;">
+          <span style="color:#9CA3AF;font-size:12px;">~</span>
+          <input type="date" id="필터_종료일" onchange="필터조회()" style="border:1px solid #D1D5DB;border-radius:6px;padding:5px 8px;font-size:13px;font-family:inherit;height:32px;">
+          <button class="버튼 회색 소형" onclick="이번달필터()" style="height:32px;padding:0 12px;white-space:nowrap;">이번달</button>
+          <div style="position:relative;">
+            <div class="검색입력행">
+              <input type="text" id="필터_업체" placeholder="업체 검색" autocomplete="off"
+                     oninput="업체자동완성표시(this.value)" onkeydown="업체입력키처리(event)"
+                     onfocus="if(this.value)업체자동완성표시(this.value)"
+                     style="width:120px;border:1px solid #D1D5DB;padding:5px 8px;font-size:13px;font-family:inherit;height:32px;border-radius:6px 0 0 6px;border-right:none;">
+              <button class="돋보기버튼 검색용" onclick="업체조회팝업열기('필터_업체')" title="업체 조회" style="border-radius:0 6px 6px 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+            </div>
+            <div id="업체자동완성_드롭다운" style="display:none;position:absolute;top:100%;left:0;min-width:200px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);z-index:500;max-height:220px;overflow-y:auto;margin-top:2px;"></div>
+          </div>
+          <select id="필터_담당자" onchange="필터조회()" style="border:1px solid #D1D5DB;border-radius:6px;padding:0 8px;font-size:13px;font-family:inherit;background:white;height:32px;">
+            <option value="">전체 담당자</option>
+          </select>
+          <input type="text" id="필터_작업번호" placeholder="WO번호" onkeydown="if(event.key==='Enter')필터조회()" oninput="필터조회()"
+                 style="width:100px;border:1px solid #D1D5DB;border-radius:6px;padding:5px 8px;font-size:13px;font-family:inherit;height:32px;">
+          <button class="버튼 회색 소형" onclick="전체보기()" style="height:32px;padding:0 12px;white-space:nowrap;">전체보기</button>
+        </div>
       </div>
+      <div id="검색결과안내" class="검색결과안내" style="margin-bottom:8px;"></div>
 
       <div class="테이블감싸기">
         <table>
           <thead>
             <tr>
-              <th style="text-align:left;padding-left:14px;min-width:140px;">작업번호</th>
+              <th style="text-align:left;padding-left:14px;min-width:130px;">작업번호</th>
               <th>업체</th>
               <th>품목</th>
               <th class="hide-mobile">입고수량</th>
+              <th class="hide-mobile">입고일</th>
               <th>상태</th>
               <th class="hide-mobile">납기일</th>
               <th class="hide-mobile">담당자</th>
@@ -262,84 +362,12 @@
             </tr>
           </thead>
           <tbody id="작업목록바디">
-            <tr><td colspan="8" class="빈목록안내">데이터를 불러오는 중...</td></tr>
+            <tr><td colspan="9" class="빈목록안내">데이터를 불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-  </div>
-
-  <!-- ── 입고 등록 팝업 ── -->
-  <div id="입고팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this)입고등록팝업닫기()">
-    <div class="팝업창" style="max-width:520px;width:94%;">
-      <div class="팝업헤더">
-        <span>입고 등록</span>
-        <button class="팝업닫기버튼" onclick="입고등록팝업닫기()">✕</button>
-      </div>
-      <div class="팝업내용" style="padding:20px 24px;">
-
-        <div class="팝업폼행">
-          <div class="팝업입력그룹" style="flex:1.2;">
-            <label>업체 *</label>
-            <input type="text" id="입력_업체" placeholder="고객사명 입력"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력_품목').focus()">
-          </div>
-          <div class="팝업입력그룹" style="flex:1.2;">
-            <label>품목 *</label>
-            <input type="text" id="입력_품목" placeholder="품목명 입력"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력_입고수량').focus()">
-          </div>
-          <div class="팝업입력그룹" style="flex:0 0 110px;">
-            <label>입고수량 *</label>
-            <input type="number" id="입력_입고수량" placeholder="0" min="0"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력_입고일').focus()">
-          </div>
-        </div>
-
-        <div class="팝업폼행">
-          <div class="팝업입력그룹">
-            <label>입고일 *</label>
-            <input type="date" id="입력_입고일"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력_납기일').focus()">
-          </div>
-          <div class="팝업입력그룹">
-            <label>납기일</label>
-            <input type="date" id="입력_납기일"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력_담당자').focus()">
-          </div>
-          <div class="팝업입력그룹">
-            <label>담당자</label>
-            <input type="text" id="입력_담당자" placeholder="담당자명"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력_메모').focus()">
-          </div>
-        </div>
-
-        <div class="팝업폼행">
-          <div class="팝업입력그룹" style="flex:1;">
-            <label>메모</label>
-            <textarea id="입력_메모" placeholder="특이사항 (선택)"></textarea>
-          </div>
-        </div>
-
-        <div class="팝업폼행">
-          <div class="팝업입력그룹" style="flex:1;">
-            <label>사진 첨부 (선택)</label>
-            <input type="file" id="입력_사진" accept="image/*" capture="environment"
-                   style="border:1px solid #D1D5DB;border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;background:white;cursor:pointer;width:100%;"
-                   onchange="사진미리보기()">
-            <div id="사진미리보기박스" style="display:none;margin-top:8px;">
-              <img id="사진미리보기이미지" style="max-width:100%;max-height:180px;border-radius:6px;border:1px solid #D1D5DB;object-fit:cover;display:block;">
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
-          <button id="입고저장버튼" class="버튼 초록" onclick="입고저장()">저장</button>
-          <button class="버튼 회색" onclick="입고등록팝업닫기()">취소</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ── QR 출력 팝업 ── -->
@@ -386,6 +414,91 @@
   <div id="사진크게보기_오버레이" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;
        align-items:center;justify-content:center;cursor:zoom-out;" onclick="사진크게보기닫기()">
     <img id="사진크게보기_이미지" style="max-width:94vw;max-height:90vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+  </div>
+
+  <!-- ── 품명 조회 팝업 ── -->
+  <div id="품명조회팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this)품명조회팝업닫기()">
+    <div class="팝업창" style="max-width:460px;width:94%;">
+      <div class="팝업헤더">
+        <span>품명 조회</span>
+        <button class="팝업닫기버튼" onclick="품명조회팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:16px 20px 8px;">
+        <input type="text" id="품명조회_검색" class="팝업검색입력" placeholder="품명 검색..." oninput="품명조회팝업검색필터()">
+        <div class="팝업테이블감싸기" style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr><th>품명</th></tr>
+            </thead>
+            <tbody id="품명조회팝업_바디">
+              <tr><td class="빈목록안내">불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;padding:10px 20px 16px;">
+        <button class="버튼 회색" onclick="품명조회팝업닫기()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 담당자 조회 팝업 ── -->
+  <div id="담당자조회팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this)담당자조회팝업닫기()">
+    <div class="팝업창" style="max-width:480px;width:94%;">
+      <div class="팝업헤더">
+        <span>담당자 조회</span>
+        <button class="팝업닫기버튼" onclick="담당자조회팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:16px 20px 8px;">
+        <input type="text" id="담당자조회_검색" class="팝업검색입력" placeholder="이름·직급·코드 검색..." oninput="담당자조회팝업검색필터()">
+        <div class="팝업테이블감싸기" style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:70px;text-align:center;">코드</th>
+                <th style="width:80px;text-align:center;">직급</th>
+                <th>이름</th>
+              </tr>
+            </thead>
+            <tbody id="담당자조회팝업_바디">
+              <tr><td colspan="3" class="빈목록안내">불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;padding:10px 20px 16px;">
+        <button class="버튼 회색" onclick="담당자조회팝업닫기()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 업체 조회 팝업 ── -->
+  <div id="업체조회팝업_오버레이" class="팝업오버레이" style="display:none;" onclick="if(event.target===this)업체조회팝업닫기()">
+    <div class="팝업창" style="max-width:380px;width:94%;">
+      <div class="팝업헤더">
+        <span>업체 조회</span>
+        <button class="팝업닫기버튼" onclick="업체조회팝업닫기()">✕</button>
+      </div>
+      <div class="팝업내용" style="padding:16px 20px 8px;">
+        <input type="text" id="업체조회_검색" class="팝업검색입력" placeholder="코드·업체명 검색..." oninput="업체조회팝업검색필터()">
+        <div class="팝업테이블감싸기" style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:60px;text-align:center;">코드</th>
+                <th>업체명</th>
+              </tr>
+            </thead>
+            <tbody id="업체조회팝업_바디">
+              <tr><td colspan="2" class="빈목록안내">불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;padding:10px 20px 16px;">
+        <button class="버튼 회색" onclick="업체조회팝업닫기()">닫기</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
