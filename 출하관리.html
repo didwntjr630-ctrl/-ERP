@@ -38,32 +38,6 @@
     .헤더제목 { font-size: 15px; font-weight: 700; }
     .헤더부제 { font-size: 10px; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
 
-    /* ── 필터 바 ── */
-    .필터바 {
-      background: white;
-      border-bottom: 1px solid #E5E7EB;
-      padding: 10px 16px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .필터바 input {
-      border: 1px solid #D1D5DB;
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 13px;
-      font-family: inherit;
-      color: #374151;
-      height: 34px;
-    }
-    .필터바 input:focus {
-      outline: none;
-      border-color: #F97316;
-    }
-    .필터바 input[type="date"] { width: 136px; }
-    .필터바 input[type="text"] { width: 120px; }
-
     /* ── 탭 ── */
     .탭바 {
       display: flex;
@@ -225,14 +199,30 @@
                 padding:3px 12px;border-radius:20px;font-weight:700;">출하확정</div>
   </div>
 
-  <!-- 필터 바 -->
-  <div class="필터바">
-    <input type="date" id="필터_시작일" placeholder="시작일">
-    <span style="font-size:12px;color:#9CA3AF;">~</span>
-    <input type="date" id="필터_종료일" placeholder="종료일">
-    <input type="text" id="필터_업체" placeholder="업체명">
-    <button class="버튼 주황 소형" onclick="필터조회()" style="padding:0 14px;height:34px;">조회</button>
-    <button class="버튼 회색 소형" onclick="필터초기화()" style="padding:0 10px;height:34px;">초기화</button>
+  <!-- 검색 조건 카드 -->
+  <div style="padding:12px 16px 0;">
+    <div class="카드 검색카드">
+      <div class="검색카드제목">출하 조회</div>
+      <div class="검색행">
+        <div class="검색항목 검색항목_기간">
+          <label>조회 기간</label>
+          <div class="기간입력행">
+            <input type="date" id="필터_시작일">
+            <span class="기간구분">~</span>
+            <input type="date" id="필터_종료일">
+          </div>
+        </div>
+        <div class="검색항목">
+          <label>업체</label>
+          <input type="text" id="필터_업체" placeholder="업체명 검색" onkeydown="if(event.key==='Enter')필터조회()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+        <button class="버튼 파랑" onclick="필터조회()">조회</button>
+        <button class="버튼 회색" onclick="필터초기화()">초기화</button>
+      </div>
+      <div id="검색결과안내" class="검색결과안내"></div>
+    </div>
   </div>
 
   <!-- 탭 -->

@@ -77,6 +77,18 @@ function 탭전환(탭) {
 function 목록렌더링() {
   if (_현재탭 === '대기') 대기목록렌더링();
   else                    완료목록렌더링();
+  _검색결과안내업데이트();
+}
+
+function _검색결과안내업데이트() {
+  var el = document.getElementById('검색결과안내');
+  if (!el) return;
+  var 대기 = _작업목록.filter(function(w){ return w.상태 === '작업완료'; });
+  var 완료 = _작업목록.filter(function(w){ return w.상태 === '완료'; });
+  var 대기필터 = 필터적용(대기.slice()).length;
+  var 완료필터 = 필터적용(완료.slice()).length;
+  el.innerHTML = '작업완료 <span class="결과강조">' + 대기필터 + '건</span>' +
+                 ' &nbsp;·&nbsp; 완료 <span class="결과강조">' + 완료필터 + '건</span>';
 }
 
 /* ── 출하대기 목록 ── */

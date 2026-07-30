@@ -206,6 +206,30 @@
       </div>
     </div>
 
+    <!-- 생산 조회 카드 -->
+    <div class="카드 검색카드">
+      <div class="검색카드제목">생산 조회</div>
+      <div class="검색행">
+        <div class="검색항목 검색항목_기간">
+          <label>입고일</label>
+          <div class="기간입력행">
+            <input type="date" id="필터_시작일">
+            <span class="기간구분">~</span>
+            <input type="date" id="필터_종료일">
+          </div>
+        </div>
+        <div class="검색항목">
+          <label>업체</label>
+          <input type="text" id="필터_업체" placeholder="업체명 검색" onkeydown="if(event.key==='Enter')필터조회()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+        <button class="버튼 파랑" onclick="필터조회()">조회</button>
+        <button class="버튼 회색" onclick="필터초기화()">초기화</button>
+      </div>
+      <div id="검색결과안내" class="검색결과안내"></div>
+    </div>
+
     <!-- 작업 목록 -->
     <div class="카드">
       <div class="목록헤더행">
@@ -219,27 +243,6 @@
           </div>
         </div>
         <button class="버튼 초록" onclick="입고등록팝업열기()" style="white-space:nowrap;">+ 입고 등록</button>
-      </div>
-
-      <!-- 검색 필터 -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;padding:12px 14px;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.3px;">입고일</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input type="date" id="필터_시작일" style="height:32px;font-size:13px;border:1px solid #D1D5DB;border-radius:6px;padding:0 8px;background:white;cursor:pointer;">
-            <span style="color:#9CA3AF;font-size:12px;">~</span>
-            <input type="date" id="필터_종료일" style="height:32px;font-size:13px;border:1px solid #D1D5DB;border-radius:6px;padding:0 8px;background:white;cursor:pointer;">
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label style="font-size:11px;font-weight:600;color:#6B7280;letter-spacing:0.3px;">업체</label>
-          <input type="text" id="필터_업체" placeholder="업체명 검색" style="height:32px;font-size:13px;border:1px solid #D1D5DB;border-radius:6px;padding:0 10px;background:white;min-width:150px;"
-                 onkeydown="if(event.key==='Enter')필터조회()">
-        </div>
-        <div style="display:flex;gap:6px;padding-bottom:1px;">
-          <button class="버튼 파랑" style="height:32px;padding:0 16px;font-size:13px;" onclick="필터조회()">조회</button>
-          <button class="버튼 회색" style="height:32px;padding:0 12px;font-size:13px;" onclick="필터초기화()">초기화</button>
-        </div>
       </div>
 
       <div class="테이블감싸기">

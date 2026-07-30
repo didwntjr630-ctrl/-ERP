@@ -76,6 +76,8 @@ function 작업목록렌더링() {
   var tbody = document.getElementById('작업목록바디');
   if (!tbody) return;
 
+  _검색결과안내업데이트();
+
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="빈목록안내">등록된 작업이 없습니다.</td></tr>';
     return;
@@ -125,6 +127,26 @@ function 작업목록렌더링() {
       '</td>' +
     '</tr>';
   }).join('');
+}
+
+/* ── 검색결과 안내 업데이트 ── */
+function _검색결과안내업데이트() {
+  var el = document.getElementById('검색결과안내');
+  if (!el) return;
+  var _DB상태 = { '입고': '진행중', '진행중': '출하대기', '작업완료': '작업완료', '출하': '완료' };
+  var db값 = _DB상태[_현재상태필터] || _현재상태필터;
+  var 총건수 = _작업목록.filter(function(r){ return r.상태 === db값; }).length;
+  var 필터건수 = 총건수;
+  if (_필터_시작일 || _필터_종료일 || _필터_업체) {
+    var filtered = _작업목록.filter(function(r){ return r.상태 === db값; });
+    if (_필터_시작일) filtered = filtered.filter(function(r){ return r.입고일 && r.입고일 >= _필터_시작일; });
+    if (_필터_종료일) filtered = filtered.filter(function(r){ return r.입고일 && r.입고일 <= _필터_종료일; });
+    if (_필터_업체)   filtered = filtered.filter(function(r){ return (r.업체||'').toLowerCase().indexOf(_필터_업체.toLowerCase()) >= 0; });
+    필터건수 = filtered.length;
+  }
+  var 라벨 = _현재상태필터;
+  el.innerHTML = 라벨 + ' <span class="결과강조">' + 필터건수 + '건</span>' +
+    (필터건수 !== 총건수 ? ' / 전체 ' + 총건수 + '건' : '');
 }
 
 /* ── 날짜·업체 필터 ── */
