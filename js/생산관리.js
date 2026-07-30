@@ -158,10 +158,10 @@ function 작업목록렌더링() {
       '<td class="hide-mobile">' + (r.담당자 || '-') + '</td>' +
       '<td style="text-align:center;">' +
         '<div style="display:flex;gap:4px;justify-content:center;">' +
-          '<button class="버튼 파랑 소형" style="padding:0 10px;" ' +
-            'onclick="event.stopPropagation(); 수정버튼클릭(\'' + r.작업번호 + '\')">수정</button>' +
           '<button class="버튼 회색 소형" style="padding:0 10px;" ' +
             'onclick="event.stopPropagation(); QR출력(\'' + r.작업번호 + '\')">QR</button>' +
+          '<button class="버튼 파랑 소형" style="padding:0 10px;" ' +
+            'onclick="event.stopPropagation(); 수정버튼클릭(\'' + r.작업번호 + '\')">수정</button>' +
           '<button class="버튼 빨강 소형" style="padding:0 10px;" ' +
             'onclick="event.stopPropagation(); 작업삭제(\'' + r.작업번호 + '\')">삭제</button>' +
         '</div>' +
