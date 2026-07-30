@@ -73,11 +73,14 @@ function 진행현황렌더링() {
   document.getElementById('현황_담당자').textContent  = _작업정보.담당자 || '';
 
   var badge = document.getElementById('현황_상태');
-  var 상태표시 = 상태 === '진행중' ? '입고' : 상태 === '출하대기' ? '진행중' : 상태;
+  var 상태표시 = 상태 === '진행중' ? '입고' : 상태 === '출하대기' ? '진행중' : 상태 === '완료' ? '출하' : 상태;
   badge.textContent = 상태표시;
   if (상태 === '완료') {
     badge.style.background = 'rgba(39,174,96,0.25)';
     badge.style.color = '#6ee7b7';
+  } else if (상태 === '작업완료') {
+    badge.style.background = 'rgba(139,92,246,0.25)';
+    badge.style.color = '#c4b5fd';
   } else if (상태 === '출하대기') {
     badge.style.background = 'rgba(249,115,22,0.25)';
     badge.style.color = '#fed7aa';
@@ -85,6 +88,9 @@ function 진행현황렌더링() {
     badge.style.background = 'rgba(107,114,128,0.25)';
     badge.style.color = '#D1D5DB';
   }
+
+  var 완료버튼 = document.getElementById('작업완료버튼');
+  if (완료버튼) 완료버튼.style.display = 상태 === '출하대기' ? '' : 'none';
 
   var 폼입고el = document.getElementById('폼_입고수량값');
   if (폼입고el) 폼입고el.textContent = 입고수량.toLocaleString();
@@ -134,6 +140,24 @@ function 탭전환(탭) {
 function 현재탭렌더링() {
   if      (_현재탭 === '작업실적') 작업실적목록렌더링();
   else if (_현재탭 === '이력')    이력렌더링();
+}
+
+/* ══════════════════════════════════════
+   작업완료 처리
+══════════════════════════════════════ */
+async function 작업완료처리() {
+  if (!_작업정보 || _작업정보.상태 !== '출하대기') return;
+  상세확인모달표시('작업완료 처리 하시겠습니까?\n완료 후 출하관리에서 출하 확정이 가능합니다.', async function() {
+    try {
+      var { error } = await 수파베이스.from('작업').update({ 상태: '작업완료' }).eq('작업번호', _WO번호);
+      if (error) throw error;
+      await 데이터로드();
+      상세알림표시('작업완료 처리되었습니다.', '성공');
+    } catch(e) {
+      console.error(e);
+      상세알림표시('처리 오류: ' + (e.message || e), '오류');
+    }
+  });
 }
 
 /* ══════════════════════════════════════

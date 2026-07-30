@@ -28,10 +28,11 @@
       transition: box-shadow 0.15s, border-color 0.15s;
     }
     .통계카드:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
-    .통계카드.전체   { border-top: 3px solid #374151; }
-    .통계카드.입고   { border-top: 3px solid #6B7280; }
-    .통계카드.진행중 { border-top: 3px solid #f97316; }
-    .통계카드.완료   { border-top: 3px solid #10b981; }
+    .통계카드.전체    { border-top: 3px solid #374151; }
+    .통계카드.입고    { border-top: 3px solid #6B7280; }
+    .통계카드.진행중  { border-top: 3px solid #f97316; }
+    .통계카드.작업완료 { border-top: 3px solid #8b5cf6; }
+    .통계카드.출하    { border-top: 3px solid #10b981; }
     .통계카드_숫자 {
       font-size: 28px;
       font-weight: 700;
@@ -195,9 +196,13 @@
         <div class="통계카드_숫자" id="통계_진행중">-</div>
         <div class="통계카드_레이블">진행중</div>
       </div>
-      <div class="통계카드 완료" onclick="상태필터변경('완료')">
-        <div class="통계카드_숫자" id="통계_완료">-</div>
-        <div class="통계카드_레이블">완료</div>
+      <div class="통계카드 작업완료" onclick="상태필터변경('작업완료')">
+        <div class="통계카드_숫자" id="통계_작업완료">-</div>
+        <div class="통계카드_레이블">작업완료</div>
+      </div>
+      <div class="통계카드 출하" onclick="상태필터변경('출하')">
+        <div class="통계카드_숫자" id="통계_출하">-</div>
+        <div class="통계카드_레이블">출하</div>
       </div>
     </div>
 
@@ -207,9 +212,10 @@
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
           <div class="페이지제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">작업 목록</div>
           <div class="필터그룹">
-            <button class="필터버튼" data-상태="입고"  onclick="상태필터변경('입고')">입고</button>
-            <button class="필터버튼" data-상태="진행중" onclick="상태필터변경('진행중')">진행중</button>
-            <button class="필터버튼" data-상태="완료"  onclick="상태필터변경('완료')">완료</button>
+            <button class="필터버튼" data-상태="입고"    onclick="상태필터변경('입고')">입고</button>
+            <button class="필터버튼" data-상태="진행중"  onclick="상태필터변경('진행중')">진행중</button>
+            <button class="필터버튼" data-상태="작업완료" onclick="상태필터변경('작업완료')">작업완료</button>
+            <button class="필터버튼" data-상태="출하"    onclick="상태필터변경('출하')">출하</button>
           </div>
         </div>
         <button class="버튼 초록" onclick="입고등록팝업열기()" style="white-space:nowrap;">+ 입고 등록</button>

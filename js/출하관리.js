@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function 데이터로드() {
   var r1 = await 수파베이스.from('작업')
     .select('*')
-    .in('상태', ['출하대기', '완료'])
+    .in('상태', ['작업완료', '완료'])
     .order('created_at', { ascending: false });
 
   _작업목록 = r1.data || [];
@@ -84,7 +84,7 @@ function 대기목록렌더링() {
   var tbody = document.getElementById('대기목록바디');
   if (!tbody) return;
 
-  var 목록 = _작업목록.filter(function(w){ return w.상태 === '출하대기'; });
+  var 목록 = _작업목록.filter(function(w){ return w.상태 === '작업완료'; });
   목록 = 필터적용(목록);
 
   if (!목록.length) {

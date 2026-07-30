@@ -43,20 +43,23 @@ async function 작업목록로드() {
 
 /* ── 통계 카드 업데이트 ── */
 function 통계업데이트() {
-  var 입고   = _작업목록.filter(function(r){ return r.상태 === '진행중'; }).length;
-  var 진행중 = _작업목록.filter(function(r){ return r.상태 === '출하대기'; }).length;
-  var 완료   = _작업목록.filter(function(r){ return r.상태 === '완료'; }).length;
-  var el입고   = document.getElementById('통계_입고');
-  var el진행중 = document.getElementById('통계_진행중');
-  var el완료   = document.getElementById('통계_완료');
-  if (el입고)   el입고.textContent   = 입고;
-  if (el진행중) el진행중.textContent = 진행중;
-  if (el완료)   el완료.textContent   = 완료;
+  var 입고     = _작업목록.filter(function(r){ return r.상태 === '진행중'; }).length;
+  var 진행중   = _작업목록.filter(function(r){ return r.상태 === '출하대기'; }).length;
+  var 작업완료 = _작업목록.filter(function(r){ return r.상태 === '작업완료'; }).length;
+  var 출하     = _작업목록.filter(function(r){ return r.상태 === '완료'; }).length;
+  var el입고     = document.getElementById('통계_입고');
+  var el진행중   = document.getElementById('통계_진행중');
+  var el작업완료 = document.getElementById('통계_작업완료');
+  var el출하     = document.getElementById('통계_출하');
+  if (el입고)     el입고.textContent     = 입고;
+  if (el진행중)   el진행중.textContent   = 진행중;
+  if (el작업완료) el작업완료.textContent = 작업완료;
+  if (el출하)     el출하.textContent     = 출하;
 }
 
 /* ── 목록 렌더링 ── */
 function 작업목록렌더링() {
-  var _DB상태 = { '입고': '진행중', '진행중': '출하대기', '완료': '완료' };
+  var _DB상태 = { '입고': '진행중', '진행중': '출하대기', '작업완료': '작업완료', '출하': '완료' };
   var filtered = _작업목록.filter(function(r){ return r.상태 === (_DB상태[_현재상태필터] || _현재상태필터); });
 
   if (_필터_시작일) {
@@ -84,9 +87,9 @@ function 작업목록렌더링() {
   tbody.innerHTML = filtered.map(function(r) {
     var 납기d = r.납기일 ? new Date(r.납기일) : null;
     var 납기임박 = 납기d && r.상태 !== '완료' && (납기d - 오늘) / (1000 * 60 * 60 * 24) <= 3;
-    var 상태표시 = r.상태 === '진행중' ? '입고' : r.상태 === '출하대기' ? '진행중' : r.상태;
-    var 상태색   = r.상태 === '완료' ? '#27ae60' : r.상태 === '출하대기' ? '#f97316' : '#6B7280';
-    var 상태배경 = r.상태 === '완료' ? '#eafaf1' : r.상태 === '출하대기' ? '#fff7ed' : '#F3F4F6';
+    var 상태표시 = r.상태 === '진행중' ? '입고' : r.상태 === '출하대기' ? '진행중' : r.상태 === '완료' ? '출하' : r.상태;
+    var 상태색   = r.상태 === '완료' ? '#27ae60' : r.상태 === '작업완료' ? '#8b5cf6' : r.상태 === '출하대기' ? '#f97316' : '#6B7280';
+    var 상태배경 = r.상태 === '완료' ? '#eafaf1' : r.상태 === '작업완료' ? '#f5f3ff' : r.상태 === '출하대기' ? '#fff7ed' : '#F3F4F6';
     var 납기표시 = r.납기일 ? r.납기일 : '-';
 
     var 사진아이콘 = r.사진url

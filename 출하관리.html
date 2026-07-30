@@ -237,7 +237,7 @@
 
   <!-- 탭 -->
   <div class="탭바">
-    <button class="탭버튼" data-탭="대기" onclick="탭전환('대기')">출하대기</button>
+    <button class="탭버튼" data-탭="대기" onclick="탭전환('대기')">작업완료</button>
     <button class="탭버튼" data-탭="완료" onclick="탭전환('완료')">완료</button>
   </div>
 
@@ -395,7 +395,7 @@
     var _원본대기 = 대기목록렌더링;
     대기목록렌더링 = function() {
       _원본대기();
-      var 대기목록 = _작업목록.filter(function(w){ return w.상태 === '출하대기'; });
+      var 대기목록 = _작업목록.filter(function(w){ return w.상태 === '작업완료'; });
       var 잔여합 = 대기목록.reduce(function(s, w){
         var 양품 = _실적맵[w.작업번호] || 0;
         var 기출하 = _출하맵[w.작업번호] || 0;
