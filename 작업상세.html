@@ -447,26 +447,18 @@
             <label>불량수량</label>
             <input type="number" id="입력실적_불량수량" placeholder="" min="0"
                    oninput="실적수량변경()"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력실적_작업자').focus()">
+                   onkeydown="if(event.key==='Enter')작업실적저장()">
           </div>
           <div class="폼항목">
             <label>양품수량 (자동)</label>
             <input type="number" id="입력실적_양품수량" placeholder="" min="0" readonly>
           </div>
         </div>
-        <div class="폼그리드 전체">
-          <div class="폼항목">
-            <label>작업자</label>
-            <input type="text" id="입력실적_작업자" placeholder="작업자명"
-                   style="font-size:14px;font-weight:500;text-align:left;">
-          </div>
-        </div>
         <div class="폼그리드 전체" style="margin-bottom:10px;">
           <div class="폼항목">
-            <label>메모</label>
-            <input type="text" id="입력실적_메모" placeholder="특이사항 (선택)"
-                   style="font-size:14px;font-weight:400;text-align:left;"
-                   onkeydown="if(event.key==='Enter')작업실적저장()">
+            <label>작업자</label>
+            <input type="text" id="입력실적_작업자" value="생산" readonly
+                   style="font-size:14px;font-weight:500;text-align:left;background:#F9FAFB;color:#6B7280;">
           </div>
         </div>
         <div class="등록버튼행" style="gap:8px;">
@@ -487,12 +479,11 @@
                 <th style="color:#6ee7b7;">양품</th>
                 <th style="color:#fca5a5;">불량</th>
                 <th>작업자</th>
-                <th>메모</th>
                 <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody id="실적목록바디">
-              <tr><td colspan="6" class="빈목록안내">-</td></tr>
+              <tr><td colspan="5" class="빈목록안내">-</td></tr>
             </tbody>
           </table>
         </div>

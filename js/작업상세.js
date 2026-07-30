@@ -21,11 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('WO번호표시').textContent = _WO번호;
   document.title = _WO번호 + ' - 삼양ERP';
 
-  var 세션 = 현재세션();
-  if (세션) {
-    var el = document.getElementById('입력실적_작업자');
-    if (el) el.value = 세션.직급 + ' ' + 세션.사원명;
-  }
+  var el = document.getElementById('입력실적_작업자');
+  if (el) el.value = '생산';
 
   탭전환('작업실적');
   데이터로드();
@@ -63,7 +60,7 @@ function 진행현황렌더링() {
   var 양품수량 = _작업실적목록.reduce(function(s, r){ return s + (r.양품수량 || 0); }, 0);
   var 불량수량 = _작업실적목록.reduce(function(s, r){ return s + (r.불량수량 || 0); }, 0);
   var 출하수량 = _출하목록.reduce(function(s, r){ return s + (r.출하수량 || 0); }, 0);
-  var 잔량 = 입고수량 - 출하수량;
+  var 잔량 = Math.max(0, 입고수량 - 생산수량);
   var 진행률 = 입고수량 > 0 ? Math.min(100, Math.round((생산수량 / 입고수량) * 100)) : 0;
   var 상태 = _작업정보.상태 || '진행중';
 
@@ -90,7 +87,7 @@ function 진행현황렌더링() {
   }
 
   var 완료버튼 = document.getElementById('작업완료버튼');
-  if (완료버튼) 완료버튼.style.display = 상태 === '출하대기' ? '' : 'none';
+  if (완료버튼) 완료버튼.style.display = (상태 === '출하대기' && 잔량 <= 0) ? '' : 'none';
 
   var 폼입고el = document.getElementById('폼_입고수량값');
   if (폼입고el) 폼입고el.textContent = 입고수량.toLocaleString();
@@ -257,7 +254,7 @@ function 작업실적목록렌더링() {
   var tbody = document.getElementById('실적목록바디');
   if (!tbody) return;
   if (!_작업실적목록.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="빈목록안내">등록된 작업실적이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="빈목록안내">등록된 작업실적이 없습니다.</td></tr>';
     return;
   }
   tbody.innerHTML = _작업실적목록.map(function(r) {
@@ -269,7 +266,6 @@ function 작업실적목록렌더링() {
       '<td style="color:#27ae60;">' + (r.양품수량||0).toLocaleString() + '</td>' +
       '<td style="color:#e74c3c;">' + (r.불량수량||0).toLocaleString() + '</td>' +
       '<td>' + (r.작업자||'-') + '</td>' +
-      '<td style="color:#9CA3AF;font-size:12px;">' + (r.메모||'') + '</td>' +
       '<td style="text-align:center;white-space:nowrap;">' +
         '<button class="버튼 회색 소형" style="padding:0 8px;margin-right:3px;" ' +
           'onclick="작업실적수정시작(' + r.id + ')">수정</button>' +
@@ -287,8 +283,6 @@ function 작업실적수정시작(id) {
   document.getElementById('입력실적_작업수량').value = r.작업수량 || '';
   document.getElementById('입력실적_불량수량').value = r.불량수량 || '';
   document.getElementById('입력실적_양품수량').value = r.양품수량 || '';
-  document.getElementById('입력실적_작업자').value   = r.작업자 || '';
-  document.getElementById('입력실적_메모').value     = r.메모 || '';
   document.getElementById('실적저장버튼').textContent = '수정저장';
   document.getElementById('실적취소버튼').style.display = 'inline-flex';
   var 제목el = document.querySelector('#탭_작업실적 .등록폼제목');
@@ -301,10 +295,6 @@ function 작업실적수정취소() {
   document.getElementById('입력실적_작업수량').value = '';
   document.getElementById('입력실적_불량수량').value = '';
   document.getElementById('입력실적_양품수량').value = '';
-  document.getElementById('입력실적_메모').value     = '';
-  var 세션 = 현재세션();
-  var 작업자el = document.getElementById('입력실적_작업자');
-  if (작업자el && 세션) 작업자el.value = 세션.직급 + ' ' + 세션.사원명;
   document.getElementById('실적저장버튼').textContent = '등록';
   document.getElementById('실적취소버튼').style.display = 'none';
   var 제목el = document.querySelector('#탭_작업실적 .등록폼제목');
@@ -337,8 +327,7 @@ async function 작업실적저장() {
   var 작업수량 = parseInt(document.getElementById('입력실적_작업수량').value) || 0;
   var 양품수량 = parseInt(document.getElementById('입력실적_양품수량').value) || 0;
   var 불량수량 = parseInt(document.getElementById('입력실적_불량수량').value) || 0;
-  var 작업자   = document.getElementById('입력실적_작업자').value.trim();
-  var 메모     = document.getElementById('입력실적_메모').value.trim();
+  var 작업자   = '생산';
 
   if (!작업수량) { 상세알림표시('작업수량을 입력해주세요.', '오류'); return; }
 
@@ -378,7 +367,7 @@ async function 작업실적저장() {
   btn.disabled = true; btn.textContent = '저장 중...';
 
   try {
-    var payload = { 작업수량: 작업수량, 양품수량: 양품수량, 불량수량: 불량수량, 작업자: 작업자, 메모: 메모 };
+    var payload = { 작업수량: 작업수량, 양품수량: 양품수량, 불량수량: 불량수량, 작업자: 작업자 };
     var error;
 
     if (_편집실적id) {
