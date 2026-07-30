@@ -153,7 +153,7 @@ function 작업목록렌더링() {
         '</span>' +
       '</td>' +
       '<td class="hide-mobile"' + (납기임박 ? ' style="color:#c0392b;font-weight:700;"' : '') + '>' +
-        납기표시 + (납기임박 ? ' !' : '') +
+        납기표시 +
       '</td>' +
       '<td class="hide-mobile">' + (r.담당자 || '-') + '</td>' +
       '<td style="text-align:center;">' +
