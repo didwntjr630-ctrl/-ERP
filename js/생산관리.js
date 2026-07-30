@@ -3,10 +3,11 @@
    ===================================================== */
 
 var _작업목록 = [];
-var _현재상태필터 = '';   // '' = 전체
+var _현재상태필터 = '';   // '' = 전체 (통계카드 클릭 시 사용)
 var _필터_시작일  = '';
 var _필터_종료일  = '';
 var _필터_업체    = '';
+var _필터_작업번호 = '';
 var _필터_담당자  = '';
 
 /* ── WO 번호 자동 생성 ── */
@@ -89,6 +90,10 @@ function 작업목록렌더링() {
     var 키워드 = _필터_업체.toLowerCase();
     filtered = filtered.filter(function(r){ return (r.업체 || '').toLowerCase().indexOf(키워드) >= 0; });
   }
+  if (_필터_작업번호) {
+    var wo키워드 = _필터_작업번호.toLowerCase();
+    filtered = filtered.filter(function(r){ return (r.작업번호 || '').toLowerCase().indexOf(wo키워드) >= 0; });
+  }
   if (_필터_담당자) {
     filtered = filtered.filter(function(r){ return (r.담당자 || '') === _필터_담당자; });
   }
@@ -158,10 +163,11 @@ function _검색결과안내업데이트() {
     ? _작업목록.filter(function(r){ return r.상태 === (_DB상태[_현재상태필터] || _현재상태필터); })
     : _작업목록;
   var 필터목록 = 기준목록;
-  if (_필터_시작일) 필터목록 = 필터목록.filter(function(r){ return r.입고일 && r.입고일 >= _필터_시작일; });
-  if (_필터_종료일) 필터목록 = 필터목록.filter(function(r){ return r.입고일 && r.입고일 <= _필터_종료일; });
-  if (_필터_업체)   필터목록 = 필터목록.filter(function(r){ return (r.업체||'').toLowerCase().indexOf(_필터_업체.toLowerCase()) >= 0; });
-  if (_필터_담당자) 필터목록 = 필터목록.filter(function(r){ return (r.담당자||'') === _필터_담당자; });
+  if (_필터_시작일)   필터목록 = 필터목록.filter(function(r){ return r.입고일 && r.입고일 >= _필터_시작일; });
+  if (_필터_종료일)   필터목록 = 필터목록.filter(function(r){ return r.입고일 && r.입고일 <= _필터_종료일; });
+  if (_필터_업체)     필터목록 = 필터목록.filter(function(r){ return (r.업체||'').toLowerCase().indexOf(_필터_업체.toLowerCase()) >= 0; });
+  if (_필터_작업번호) 필터목록 = 필터목록.filter(function(r){ return (r.작업번호||'').toLowerCase().indexOf(_필터_작업번호.toLowerCase()) >= 0; });
+  if (_필터_담당자)   필터목록 = 필터목록.filter(function(r){ return (r.담당자||'') === _필터_담당자; });
   var 라벨 = _현재상태필터 || '전체';
   el.innerHTML = 라벨 + ' <span class="결과강조">' + 필터목록.length + '건</span>' +
     (필터목록.length !== 기준목록.length ? ' / ' + 라벨 + ' 합계 ' + 기준목록.length + '건' : '');
@@ -169,22 +175,20 @@ function _검색결과안내업데이트() {
 
 /* ── 필터 조회 / 전체보기 ── */
 function 필터조회() {
-  _필터_시작일 = (document.getElementById('필터_시작일') || {}).value || '';
-  _필터_종료일 = (document.getElementById('필터_종료일') || {}).value || '';
-  _필터_업체   = ((document.getElementById('필터_업체') || {}).value || '').trim();
-  var 상태el    = document.getElementById('필터_상태');
-  _현재상태필터 = 상태el ? 상태el.value : _현재상태필터;
-  var 담당자el  = document.getElementById('필터_담당자');
-  _필터_담당자  = 담당자el ? 담당자el.value : '';
+  _필터_시작일   = (document.getElementById('필터_시작일') || {}).value || '';
+  _필터_종료일   = (document.getElementById('필터_종료일') || {}).value || '';
+  _필터_업체     = ((document.getElementById('필터_업체') || {}).value || '').trim();
+  _필터_작업번호 = ((document.getElementById('필터_작업번호') || {}).value || '').trim();
+  var 담당자el   = document.getElementById('필터_담당자');
+  _필터_담당자   = 담당자el ? 담당자el.value : '';
   작업목록렌더링();
 }
 
 function 전체보기() {
-  _필터_시작일 = ''; _필터_종료일 = ''; _필터_업체 = ''; _필터_담당자 = ''; _현재상태필터 = '';
-  ['필터_시작일','필터_종료일','필터_업체'].forEach(function(id){
+  _필터_시작일 = ''; _필터_종료일 = ''; _필터_업체 = ''; _필터_작업번호 = ''; _필터_담당자 = ''; _현재상태필터 = '';
+  ['필터_시작일','필터_종료일','필터_업체','필터_작업번호'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.value = '';
   });
-  var 상태el = document.getElementById('필터_상태'); if (상태el) 상태el.value = '';
   var 담당자el = document.getElementById('필터_담당자'); if (담당자el) 담당자el.value = '';
   작업목록렌더링();
 }
@@ -206,8 +210,6 @@ function 사진크게보기닫기() {
 /* ── 상태 필터 (통계 카드 클릭 시) ── */
 function 상태필터변경(상태) {
   _현재상태필터 = 상태;
-  var 상태el = document.getElementById('필터_상태');
-  if (상태el) 상태el.value = 상태;
   작업목록렌더링();
 }
 
