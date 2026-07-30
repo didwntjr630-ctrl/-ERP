@@ -222,10 +222,26 @@
           <label>업체</label>
           <input type="text" id="필터_업체" placeholder="업체명 검색" onkeydown="if(event.key==='Enter')필터조회()">
         </div>
+        <div class="검색항목">
+          <label>상태</label>
+          <select id="필터_상태" onchange="필터조회()">
+            <option value="">전체</option>
+            <option value="입고">입고</option>
+            <option value="진행중">진행중</option>
+            <option value="작업완료">작업완료</option>
+            <option value="출하">출하</option>
+          </select>
+        </div>
+        <div class="검색항목">
+          <label>담당자</label>
+          <select id="필터_담당자" onchange="필터조회()">
+            <option value="">전체</option>
+          </select>
+        </div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
         <button class="버튼 파랑" onclick="필터조회()">조회</button>
-        <button class="버튼 회색" onclick="필터초기화()">초기화</button>
+        <button class="버튼 회색" onclick="전체보기()">전체보기</button>
       </div>
       <div id="검색결과안내" class="검색결과안내"></div>
     </div>
@@ -233,15 +249,7 @@
     <!-- 작업 목록 -->
     <div class="카드">
       <div class="목록헤더행">
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-          <div class="페이지제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">작업 목록</div>
-          <div class="필터그룹">
-            <button class="필터버튼" data-상태="입고"    onclick="상태필터변경('입고')">입고</button>
-            <button class="필터버튼" data-상태="진행중"  onclick="상태필터변경('진행중')">진행중</button>
-            <button class="필터버튼" data-상태="작업완료" onclick="상태필터변경('작업완료')">작업완료</button>
-            <button class="필터버튼" data-상태="출하"    onclick="상태필터변경('출하')">출하</button>
-          </div>
-        </div>
+        <div class="페이지제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">작업 목록</div>
         <button class="버튼 초록" onclick="입고등록팝업열기()" style="white-space:nowrap;">+ 입고 등록</button>
       </div>
 

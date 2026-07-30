@@ -11,6 +11,7 @@ var _확정WO  = null;
 var _필터업체   = '';
 var _필터시작일 = '';
 var _필터종료일 = '';
+var _필터담당자 = '';
 
 /* ── 초기화 ── */
 document.addEventListener('DOMContentLoaded', function() {
@@ -21,6 +22,19 @@ document.addEventListener('DOMContentLoaded', function() {
   데이터로드();
   실시간구독();
 });
+
+/* ── 담당자 목록 갱신 ── */
+function 담당자목록업데이트() {
+  var el = document.getElementById('필터_담당자');
+  if (!el) return;
+  var seen = {};
+  _작업목록.forEach(function(w){ if (w.담당자) seen[w.담당자] = true; });
+  var 목록 = Object.keys(seen).sort();
+  var 현재값 = el.value;
+  el.innerHTML = '<option value="">전체</option>' +
+    목록.map(function(d){ return '<option value="' + d + '">' + d + '</option>'; }).join('');
+  if (현재값) el.value = 현재값;
+}
 
 /* ── 데이터 로드 ── */
 async function 데이터로드() {
@@ -53,6 +67,7 @@ async function 데이터로드() {
     _출하맵[r.작업번호] = (_출하맵[r.작업번호] || 0) + (r.출하수량 || 0);
   });
 
+  담당자목록업데이트();
   목록렌더링();
 }
 
@@ -156,6 +171,7 @@ function 필터적용(목록) {
   if (_필터업체)   목록 = 목록.filter(function(w){ return (w.업체||'').includes(_필터업체); });
   if (_필터시작일) 목록 = 목록.filter(function(w){ return (w.입고일||'') >= _필터시작일; });
   if (_필터종료일) 목록 = 목록.filter(function(w){ return (w.입고일||'') <= _필터종료일; });
+  if (_필터담당자) 목록 = 목록.filter(function(w){ return (w.담당자||'') === _필터담당자; });
   return 목록;
 }
 
@@ -163,11 +179,22 @@ function 필터조회() {
   _필터업체   = document.getElementById('필터_업체').value.trim();
   _필터시작일 = document.getElementById('필터_시작일').value;
   _필터종료일 = document.getElementById('필터_종료일').value;
+  var 담당자el = document.getElementById('필터_담당자');
+  _필터담당자 = 담당자el ? 담당자el.value : '';
+  목록렌더링();
+}
+
+function 출하전체보기() {
+  _필터업체 = ''; _필터시작일 = ''; _필터종료일 = ''; _필터담당자 = '';
+  document.getElementById('필터_업체').value   = '';
+  document.getElementById('필터_시작일').value = '';
+  document.getElementById('필터_종료일').value = '';
+  var 담당자el = document.getElementById('필터_담당자'); if (담당자el) 담당자el.value = '';
   목록렌더링();
 }
 
 function 필터초기화() {
-  _필터업체 = ''; _필터시작일 = ''; _필터종료일 = '';
+  _필터업체 = ''; _필터시작일 = ''; _필터종료일 = ''; _필터담당자 = '';
   document.getElementById('필터_업체').value    = '';
   document.getElementById('필터_시작일').value  = '';
   document.getElementById('필터_종료일').value  = '';
