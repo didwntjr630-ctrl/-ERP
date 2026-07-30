@@ -411,7 +411,6 @@
   <!-- 탭 바 -->
   <div class="탭바">
     <button class="탭버튼" data-탭="작업실적" onclick="탭전환('작업실적')">작업실적</button>
-    <button class="탭버튼" data-탭="출하"    onclick="탭전환('출하')">출하</button>
     <button class="탭버튼" data-탭="이력"    onclick="탭전환('이력')">이력</button>
   </div>
 
@@ -425,6 +424,13 @@
       <!-- 등록 폼 -->
       <div class="등록폼박스">
         <div class="등록폼제목">작업실적 등록</div>
+        <!-- 입고수량 참조 (수정불가) -->
+        <div style="display:flex;align-items:center;gap:8px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:8px 14px;margin-bottom:12px;">
+          <span style="font-size:11px;font-weight:700;color:#6B7280;letter-spacing:0.3px;">입고수량</span>
+          <span id="폼_입고수량값" style="font-size:20px;font-weight:700;color:#374151;font-variant-numeric:tabular-nums;line-height:1;">-</span>
+          <span style="font-size:11px;color:#9CA3AF;">EA</span>
+          <span style="margin-left:auto;font-size:10px;color:#B0B7C3;background:#E5E7EB;padding:2px 7px;border-radius:20px;">🔒 수정불가</span>
+        </div>
         <div class="폼그리드">
           <div class="폼항목">
             <label>작업수량 *</label>
@@ -482,59 +488,6 @@
             </thead>
             <tbody id="실적목록바디">
               <tr><td colspan="6" class="빈목록안내">-</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ══════════ 출하 탭 ══════════ -->
-  <div id="탭_출하" class="탭내용">
-    <div class="내용패딩">
-
-      <div class="등록폼박스">
-        <div class="등록폼제목">출하 등록</div>
-        <div class="폼그리드 2열">
-          <div class="폼항목">
-            <label>출하수량 *</label>
-            <input type="number" id="입력출하_수량" placeholder="" min="0"
-                   onkeydown="if(event.key==='Enter')document.getElementById('입력출하_출하일').focus()">
-          </div>
-          <div class="폼항목">
-            <label>출하일 *</label>
-            <input type="date" id="입력출하_출하일" style="font-size:14px;font-weight:500;">
-          </div>
-        </div>
-        <div class="폼그리드 전체" style="margin-bottom:10px;">
-          <div class="폼항목">
-            <label>메모</label>
-            <input type="text" id="입력출하_메모" placeholder="특이사항 (선택)"
-                   style="font-size:14px;font-weight:400;text-align:left;"
-                   onkeydown="if(event.key==='Enter')출하저장()">
-          </div>
-        </div>
-        <div class="등록버튼행" style="gap:8px;">
-          <button id="출하저장버튼" class="버튼 파랑" onclick="출하저장()" style="padding:0 28px;height:40px;font-size:14px;">등록</button>
-          <button id="출하취소버튼" class="버튼 회색" onclick="출하수정취소()" style="display:none;padding:0 20px;height:40px;font-size:14px;">취소</button>
-        </div>
-      </div>
-
-      <div>
-        <div class="목록카드제목">출하 목록</div>
-        <div class="테이블감싸기">
-          <table>
-            <thead>
-              <tr>
-                <th>출하일</th>
-                <th style="color:#6ee7b7;">출하수량</th>
-                <th>메모</th>
-                <th style="width:80px;"></th>
-              </tr>
-            </thead>
-            <tbody id="출하목록바디">
-              <tr><td colspan="3" class="빈목록안내">-</td></tr>
             </tbody>
           </table>
         </div>

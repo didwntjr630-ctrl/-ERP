@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>출하 관리 - 삼양ERP</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── 헤더 ── */
+    .상세헤더 {
+      background: #1a3a5c;
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .뒤로가기버튼 {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      font-size: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .뒤로가기버튼:hover { background: rgba(255,255,255,0.25); }
+    .헤더제목 { font-size: 15px; font-weight: 700; }
+    .헤더부제 { font-size: 10px; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
+
+    /* ── 필터 바 ── */
+    .필터바 {
+      background: white;
+      border-bottom: 1px solid #E5E7EB;
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .필터바 input {
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #374151;
+      height: 34px;
+    }
+    .필터바 input:focus {
+      outline: none;
+      border-color: #F97316;
+    }
+    .필터바 input[type="date"] { width: 136px; }
+    .필터바 input[type="text"] { width: 120px; }
+
+    /* ── 탭 ── */
+    .탭바 {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #E5E7EB;
+      position: sticky;
+      top: 60px;
+      z-index: 99;
+    }
+    .탭버튼 {
+      flex: 1;
+      padding: 13px 8px;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      background: transparent;
+      color: #6B7280;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    /* ── 탭 내용 ── */
+    .탭내용 { display: none; }
+    .내용패딩 { padding: 16px; }
+
+    /* ── 통계 요약 ── */
+    .요약카드 {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .요약항목 {
+      flex: 1;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .요약항목_레이블 { font-size: 10px; font-weight: 700; color: #9CA3AF; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .요약항목_값 { font-size: 20px; font-weight: 700; color: #374151; font-variant-numeric: tabular-nums; }
+
+    /* ── 테이블 ── */
+    .목록카드제목 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    /* ── 확정 모달 ── */
+    .확정모달 {
+      background: white;
+      border-radius: 14px;
+      width: 340px;
+      max-width: 94vw;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .확정모달_헤더 {
+      background: linear-gradient(180deg, #1a3a5c, #14304d);
+      color: white;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .확정모달_제목 { font-size: 14px; font-weight: 700; }
+    .확정모달_닫기 {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .확정모달_닫기:hover { color: white; background: rgba(255,255,255,0.1); }
+    .확정모달_바디 { padding: 16px 18px; }
+    .확정모달_WO { font-size: 12px; color: #9CA3AF; margin-bottom: 2px; }
+    .확정모달_업체품목 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 14px; }
+
+    .확정수치행 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .확정수치 {
+      background: #F9FAFB;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .확정수치_레이블 { font-size: 10px; font-weight: 700; color: #9CA3AF; letter-spacing: 0.3px; margin-bottom: 3px; }
+    .확정수치_값 { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .확정입력행 { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .확정입력행 label { font-size: 11px; font-weight: 700; color: #6B7280; }
+    .확정입력행 input {
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 16px;
+      font-family: inherit;
+      font-weight: 700;
+      color: #111827;
+      width: 100%;
+    }
+    .확정입력행 input:focus {
+      outline: none;
+      border-color: #F97316;
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+    }
+    .확정입력행 input[type="number"] { text-align: center; font-size: 22px; }
+    .확정모달_하단 {
+      padding: 0 18px 16px;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 640px) {
+      .필터바 { padding: 8px 12px; gap: 6px; }
+      .필터바 input[type="date"] { width: 130px; }
+      .필터바 input[type="text"] { width: 100px; }
+      .내용패딩 { padding: 10px; }
+      .요약카드 { gap: 6px; }
+      .요약항목 { padding: 8px 6px; }
+      .요약항목_값 { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더">
+      <span>접속 현황</span>
+      <button onclick="사이드바닫기()">✕</button>
+    </div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 헤더 -->
+  <div class="상세헤더">
+    <button class="뒤로가기버튼" onclick="history.back()" title="메인으로">←</button>
+    <div>
+      <div class="헤더부제" id="시스템명_부제"></div>
+      <div class="헤더제목">출하 관리</div>
+    </div>
+    <div style="margin-left:auto;font-size:12px;background:rgba(59,130,246,0.25);color:#93c5fd;
+                padding:3px 12px;border-radius:20px;font-weight:700;">출하확정</div>
+  </div>
+
+  <!-- 필터 바 -->
+  <div class="필터바">
+    <input type="date" id="필터_시작일" placeholder="시작일">
+    <span style="font-size:12px;color:#9CA3AF;">~</span>
+    <input type="date" id="필터_종료일" placeholder="종료일">
+    <input type="text" id="필터_업체" placeholder="업체명">
+    <button class="버튼 주황 소형" onclick="필터조회()" style="padding:0 14px;height:34px;">조회</button>
+    <button class="버튼 회색 소형" onclick="필터초기화()" style="padding:0 10px;height:34px;">초기화</button>
+  </div>
+
+  <!-- 탭 -->
+  <div class="탭바">
+    <button class="탭버튼" data-탭="대기" onclick="탭전환('대기')">출하대기</button>
+    <button class="탭버튼" data-탭="완료" onclick="탭전환('완료')">완료</button>
+  </div>
+
+  <!-- 알림 -->
+  <div id="알림박스" class="알림" style="display:none;margin:12px 16px 0;"></div>
+
+  <!-- ══════════ 출하대기 탭 ══════════ -->
+  <div id="탭_대기" class="탭내용">
+    <div class="내용패딩">
+
+      <!-- 요약 -->
+      <div class="요약카드">
+        <div class="요약항목">
+          <div class="요약항목_레이블">대기 건수</div>
+          <div class="요약항목_값" id="요약_대기건수">-</div>
+        </div>
+        <div class="요약항목">
+          <div class="요약항목_레이블">총 잔여 EA</div>
+          <div class="요약항목_값" id="요약_잔여합계" style="color:#f97316;">-</div>
+        </div>
+      </div>
+
+      <!-- 목록 -->
+      <div class="목록카드제목">출하 대기 목록</div>
+      <div class="테이블감싸기">
+        <table>
+          <thead>
+            <tr>
+              <th>WO번호</th>
+              <th>업체</th>
+              <th>품목</th>
+              <th style="color:#6ee7b7;text-align:right;">양품</th>
+              <th style="color:#93c5fd;text-align:right;">기출하</th>
+              <th style="color:#fed7aa;text-align:right;">잔여</th>
+              <th>납기일</th>
+              <th style="width:90px;"></th>
+            </tr>
+          </thead>
+          <tbody id="대기목록바디">
+            <tr><td colspan="8" class="빈목록안내">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ 완료 탭 ══════════ -->
+  <div id="탭_완료" class="탭내용">
+    <div class="내용패딩">
+
+      <!-- 요약 -->
+      <div class="요약카드">
+        <div class="요약항목">
+          <div class="요약항목_레이블">완료 건수</div>
+          <div class="요약항목_값" id="요약_완료건수">-</div>
+        </div>
+        <div class="요약항목">
+          <div class="요약항목_레이블">총 출하 EA</div>
+          <div class="요약항목_값" id="요약_출하합계" style="color:#10b981;">-</div>
+        </div>
+      </div>
+
+      <!-- 목록 -->
+      <div class="목록카드제목">출하 완료 목록</div>
+      <div class="테이블감싸기">
+        <table>
+          <thead>
+            <tr>
+              <th>WO번호</th>
+              <th>업체</th>
+              <th>품목</th>
+              <th style="color:#6ee7b7;text-align:right;">총출하</th>
+              <th>납기일</th>
+            </tr>
+          </thead>
+          <tbody id="완료목록바디">
+            <tr><td colspan="5" class="빈목록안내">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ 출하확정 모달 ══════════ -->
+  <div id="확정모달_오버레이" class="팝업오버레이" style="display:none;">
+    <div class="확정모달">
+      <div class="확정모달_헤더">
+        <span class="확정모달_제목">출하 확정</span>
+        <button class="확정모달_닫기" onclick="확정모달닫기()">✕</button>
+      </div>
+      <div class="확정모달_바디">
+        <div class="확정모달_WO" id="확정_WO번호">WO-XXXXXXXX-000</div>
+        <div class="확정모달_업체품목" id="확정_업체품목">-</div>
+
+        <div class="확정수치행">
+          <div class="확정수치">
+            <div class="확정수치_레이블">양품</div>
+            <div class="확정수치_값" id="확정_양품표시" style="color:#10b981;">-</div>
+          </div>
+          <div class="확정수치">
+            <div class="확정수치_레이블">기출하</div>
+            <div class="확정수치_값" id="확정_기출하표시" style="color:#3b82f6;">-</div>
+          </div>
+          <div class="확정수치">
+            <div class="확정수치_레이블">잔여</div>
+            <div class="확정수치_값" id="확정_잔여표시" style="color:#f97316;">-</div>
+          </div>
+        </div>
+
+        <div class="확정입력행">
+          <label>출하수량 *</label>
+          <input type="number" id="확정_수량" placeholder="0" min="1"
+                 onkeydown="if(event.key==='Enter')document.getElementById('확정_출하일').focus()">
+        </div>
+        <div class="확정입력행">
+          <label>출하일 *</label>
+          <input type="date" id="확정_출하일"
+                 onkeydown="if(event.key==='Enter')document.getElementById('확정_메모').focus()">
+        </div>
+        <div class="확정입력행">
+          <label>메모</label>
+          <input type="text" id="확정_메모" placeholder="특이사항 (선택)"
+                 style="font-size:14px;font-weight:500;"
+                 onkeydown="if(event.key==='Enter')출하확정저장()">
+        </div>
+      </div>
+      <div class="확정모달_하단">
+        <button id="확정저장버튼" class="버튼 초록" onclick="출하확정저장()"
+                style="padding:0 24px;height:40px;font-size:14px;">출하 확정</button>
+        <button class="버튼 회색" onclick="확정모달닫기()"
+                style="padding:0 18px;height:40px;font-size:14px;">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/출하관리.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.title = '출하 관리 - ' + APP_CONFIG.시스템명;
+    var _s = 현재세션();
+    if (_s) {
+      var 부제el = document.getElementById('시스템명_부제');
+      if (부제el) 부제el.textContent = APP_CONFIG.시스템명 + ' · ' + _s.직급 + ' ' + _s.사원명;
+    }
+
+    // 목록 렌더링 후 요약 갱신 (오버라이드)
+    var _원본대기 = 대기목록렌더링;
+    대기목록렌더링 = function() {
+      _원본대기();
+      var 대기목록 = _작업목록.filter(function(w){ return w.상태 === '출하대기'; });
+      var 잔여합 = 대기목록.reduce(function(s, w){
+        var 양품 = _실적맵[w.작업번호] || 0;
+        var 기출하 = _출하맵[w.작업번호] || 0;
+        return s + Math.max(0, 양품 - 기출하);
+      }, 0);
+      document.getElementById('요약_대기건수').textContent = 대기목록.length;
+      document.getElementById('요약_잔여합계').textContent = 잔여합.toLocaleString();
+    };
+
+    var _원본완료 = 완료목록렌더링;
+    완료목록렌더링 = function() {
+      _원본완료();
+      var 완료목록 = _작업목록.filter(function(w){ return w.상태 === '완료'; });
+      var 출하합 = 완료목록.reduce(function(s, w){
+        return s + (_출하맵[w.작업번호] || 0);
+      }, 0);
+      document.getElementById('요약_완료건수').textContent = 완료목록.length;
+      document.getElementById('요약_출하합계').textContent = 출하합.toLocaleString();
+    };
+  </script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>
