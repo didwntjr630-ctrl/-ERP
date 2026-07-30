@@ -187,10 +187,6 @@
 
     <!-- 통계 카드 -->
     <div class="통계행">
-      <div class="통계카드 전체" onclick="상태필터변경('전체')">
-        <div class="통계카드_숫자" id="통계_전체">-</div>
-        <div class="통계카드_레이블">전체 작업</div>
-      </div>
       <div class="통계카드 입고" onclick="상태필터변경('입고')">
         <div class="통계카드_숫자" id="통계_입고">-</div>
         <div class="통계카드_레이블">입고</div>
@@ -211,7 +207,6 @@
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
           <div class="페이지제목" style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px;">작업 목록</div>
           <div class="필터그룹">
-            <button class="필터버튼" data-상태="전체"  onclick="상태필터변경('전체')">전체</button>
             <button class="필터버튼" data-상태="입고"  onclick="상태필터변경('입고')">입고</button>
             <button class="필터버튼" data-상태="진행중" onclick="상태필터변경('진행중')">진행중</button>
             <button class="필터버튼" data-상태="완료"  onclick="상태필터변경('완료')">완료</button>

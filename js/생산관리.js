@@ -3,7 +3,7 @@
    ===================================================== */
 
 var _작업목록 = [];
-var _현재상태필터 = '전체';
+var _현재상태필터 = '입고';
 var _필터_시작일 = '';
 var _필터_종료일 = '';
 var _필터_업체   = '';
@@ -46,11 +46,9 @@ function 통계업데이트() {
   var 입고   = _작업목록.filter(function(r){ return r.상태 === '진행중'; }).length;
   var 진행중 = _작업목록.filter(function(r){ return r.상태 === '출하대기'; }).length;
   var 완료   = _작업목록.filter(function(r){ return r.상태 === '완료'; }).length;
-  var el전체   = document.getElementById('통계_전체');
   var el입고   = document.getElementById('통계_입고');
   var el진행중 = document.getElementById('통계_진행중');
   var el완료   = document.getElementById('통계_완료');
-  if (el전체)   el전체.textContent   = _작업목록.length;
   if (el입고)   el입고.textContent   = 입고;
   if (el진행중) el진행중.textContent = 진행중;
   if (el완료)   el완료.textContent   = 완료;
@@ -59,9 +57,7 @@ function 통계업데이트() {
 /* ── 목록 렌더링 ── */
 function 작업목록렌더링() {
   var _DB상태 = { '입고': '진행중', '진행중': '출하대기', '완료': '완료' };
-  var filtered = _현재상태필터 === '전체'
-    ? _작업목록.slice()
-    : _작업목록.filter(function(r){ return r.상태 === (_DB상태[_현재상태필터] || _현재상태필터); });
+  var filtered = _작업목록.filter(function(r){ return r.상태 === (_DB상태[_현재상태필터] || _현재상태필터); });
 
   if (_필터_시작일) {
     filtered = filtered.filter(function(r){ return r.입고일 && r.입고일 >= _필터_시작일; });
@@ -494,7 +490,7 @@ function 생산관리실시간구독() {
 
 /* ── 페이지 초기화 ── */
 document.addEventListener('DOMContentLoaded', function() {
-  상태필터변경('전체');
+  상태필터변경('입고');
   작업목록로드();
   생산관리실시간구독();
 });
