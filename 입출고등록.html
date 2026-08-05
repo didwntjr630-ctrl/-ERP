@@ -257,7 +257,7 @@
           <div style="display:flex;align-items:center;gap:6px;">
             <input type="number" id="입력_입고수량" placeholder="0" min="0" style="width:90px;"
                    oninput="출고수량자동기입(this.value)"
-                   onkeydown="다음셀이동(event,'입력_출고수량')">
+                   onkeydown="다음셀이동(event,'입력_납기일')">
             <span style="color:#6B7280;font-size:13px;font-weight:600;white-space:nowrap;">EA</span>
           </div>
         </div>
@@ -270,8 +270,7 @@
         <div class="팝업입력그룹" style="flex:0 0 auto;">
           <label>출고수량</label>
           <div style="display:flex;align-items:center;gap:6px;">
-            <input type="number" id="입력_출고수량" placeholder="0" min="0" style="width:90px;"
-                   onkeydown="다음셀이동(event,'입력_납기일')">
+            <input type="number" id="입력_출고수량" placeholder="0" min="0" style="width:90px;background:#f9fafb;color:#6B7280;" readonly>
             <span style="color:#6B7280;font-size:13px;font-weight:600;white-space:nowrap;">EA</span>
           </div>
         </div>
