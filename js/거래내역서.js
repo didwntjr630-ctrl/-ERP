@@ -71,13 +71,14 @@ function 거래내역서출력_업체(목록, 수신) {
       var 공급가 = 단가 * 수량;
       총수량 += 수량;
       총공급가 += 공급가;
-      var 규격 = 규격결정(h.품명);
+      var 완료공정표시 = !!(h.도착공정 && (h.도착공정.includes('보은') || h.도착공정.includes('두산')));
+      var 규격 = 완료공정표시 ? 규격결정(h.품명) : '';
       행HTML +=
         '<tr>' +
         '<td style="text-align:center;">' + (번호++) + '</td>' +
         '<td style="text-align:center;">' + (i === 0 ? 표시날짜 : '') + '</td>' +
         '<td>' + (h.품명 || '') + '</td>' +
-        '<td style="text-align:center;">' + APP_CONFIG.매출고정값.완료공정 + '</td>' +
+        '<td style="text-align:center;">' + (완료공정표시 ? APP_CONFIG.매출고정값.완료공정 : '') + '</td>' +
         '<td style="text-align:center;">' + 규격 + '</td>' +
         '<td style="text-align:right;">' + 단가.toLocaleString() + '</td>' +
         '<td style="text-align:right;">' + 수량.toLocaleString() + '</td>' +
