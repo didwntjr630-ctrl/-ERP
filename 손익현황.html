@@ -465,6 +465,7 @@
   <script src="js/presence.js"></script>
   <script src="js/chat.js"></script>
   <script>
+  (function() {
     세션체크();
     var _세션 = 현재세션();
     if (!_세션) { location.href = 'main.html'; return; }
@@ -507,9 +508,11 @@
     }
 
     /* ── 유틸 ── */
-    function 공급가액(품명, 수량) {
-      var p = 품목목록.find(function(p) { return p.품명 === 품명; });
-      return (p ? (p.단가 || 0) : 0) * (Number(수량) || 0);
+    function 공급가액(품명, 수량, 저장단가) {
+      var 단가 = (저장단가 && Number(저장단가) > 0)
+        ? Number(저장단가)
+        : (function() { var p = 품목목록.find(function(p) { return p.품명 === 품명; }); return p ? (p.단가 || 0) : 0; })();
+      return 단가 * (Number(수량) || 0);
     }
 
     function 월키(년, 월) {
@@ -604,7 +607,7 @@
         var k = (r.출고일자 || '').slice(0, 7);
         if (!k) return;
         if (!월별합계[k]) { 월별합계[k] = 0; 월별건수[k] = 0; }
-        월별합계[k] += 공급가액(r.품명, r.출고수량);
+        월별합계[k] += 공급가액(r.품명, r.출고수량, r.단가);
         월별건수[k]++;
       });
       수기데이터.forEach(function(r) {
@@ -1033,7 +1036,7 @@
       전체데이터.filter(function(r) {
         return (r.출고일자 || '').startsWith(기준키);
       }).forEach(function(r) {
-        var g = 공급가액(r.품명, r.출고수량);
+        var g = 공급가액(r.품명, r.출고수량, r.단가);
         if (!품목합계[r.품명]) 품목합계[r.품명] = 0;
         품목합계[r.품명] += g;
       });
@@ -1156,7 +1159,7 @@
         라벨.push(d + '일');
 
         var 당일 = 전체데이터.filter(function(r) { return r.출고일자 === 날짜str; })
-          .reduce(function(s, r) { return s + 공급가액(r.품명, r.출고수량); }, 0);
+          .reduce(function(s, r) { return s + 공급가액(r.품명, r.출고수량, r.단가); }, 0);
         수기데이터.filter(function(r) { return (r.월 || '') === 기준키; }).forEach(function(r) {
           // 수기항목은 월 전체에 분산 표시 — 마지막날에만 합산
           if (d === 기준오늘날) 당일 += (Number(r.금액) || 0);
@@ -1311,7 +1314,7 @@
       전체데이터.filter(function(r) {
         return (r.출고일자 || '').startsWith(기준키);
       }).forEach(function(r) {
-        var g = 공급가액(r.품명, r.출고수량);
+        var g = 공급가액(r.품명, r.출고수량, r.단가);
         if (!품목합계[r.품명]) { 품목합계[r.품명] = 0; 품목수량[r.품명] = 0; }
         품목합계[r.품명] += g;
         품목수량[r.품명] += (Number(r.출고수량) || 0);
@@ -1438,6 +1441,7 @@
 
     /* ── 시작 ── */
     데이터로드();
+  })();
   </script>
 </body>
 </html>
