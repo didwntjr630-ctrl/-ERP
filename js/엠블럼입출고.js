@@ -12,6 +12,7 @@ var _lot수동모드    = false;
 var 현재표시목록    = [];
 var 폼임시저장키    = 'erp_엠블럼폼임시저장';
 var _리얼타임타이머 = null;
+var _품명히스토리    = [];
 
 var 폼입력순서 = ['품명','출고일자','단가','입고수량','도착공정','출고수량','불량수량','담당자입력'];
 var 공정순서   = APP_CONFIG.공정목록;
@@ -58,6 +59,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   공정뷰선택('출하검사2');
   폼임시저장복원();
+
+  /* 이전 입력 품명 히스토리 (Supabase 백그라운드 로드) */
+  수파베이스.from(엠블럼_테이블).select('품명').then(function(res) {
+    if (!res.data) return;
+    var 기존Set = {};
+    엠블럼_품목목록.forEach(function(p) { 기존Set[p.품명] = true; });
+    var seen = {};
+    _품명히스토리 = res.data
+      .map(function(r) { return (r.품명 || '').trim(); })
+      .filter(function(품명) {
+        if (!품명 || 기존Set[품명] || seen[품명]) return false;
+        seen[품명] = true;
+        return true;
+      });
+  });
 
   /* Realtime 구독 — 다른 PC 변경 사항 자동 반영 */
   수파베이스.channel('엠블럼입출고실시간')
@@ -398,11 +414,16 @@ function 품명입력시() {
   document.getElementById('품명품번표시').textContent = '';
   var 검색어  = document.getElementById('품명').value.trim();
   var 드롭다운 = document.getElementById('품명드롭다운');
-  if (!검색어) { 드롭다운닫기(); return; }
+  if (검색어.length < 3) { 드롭다운닫기(); return; }
 
+  var 소문자 = 검색어.toLowerCase();
   var 결과 = 엠블럼_품목검색(검색어);
+  var 히스토리결과 = _품명히스토리.filter(function(품명) {
+    return 품명.toLowerCase().includes(소문자);
+  });
+
   드롭다운.innerHTML = '';
-  if (결과.length === 0) {
+  if (결과.length === 0 && 히스토리결과.length === 0) {
     var li = document.createElement('li');
     li.className = '자동완성_없음';
     li.textContent = '일치하는 품목이 없습니다.';
@@ -414,6 +435,21 @@ function 품명입력시() {
       li.innerHTML = '<span class="자동완성_품명">' + 품목.품명 + '</span>' +
                      '<span class="자동완성_품번">[' + 품목.품번 + ']</span>';
       li.addEventListener('mousedown', function(e) { e.preventDefault(); 품목선택(품목); });
+      드롭다운.appendChild(li);
+    });
+    히스토리결과.forEach(function(품명) {
+      var li = document.createElement('li');
+      li.className = '자동완성_항목';
+      li.innerHTML = '<span class="자동완성_품명">' + 품명 + '</span>' +
+                     '<span class="자동완성_품번" style="color:#aaa;">이전입력</span>';
+      li.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        document.getElementById('품명').value = 품명;
+        document.getElementById('품명품번표시').textContent = '';
+        선택된품목 = null;
+        드롭다운닫기();
+        폼임시저장();
+      });
       드롭다운.appendChild(li);
     });
   }
