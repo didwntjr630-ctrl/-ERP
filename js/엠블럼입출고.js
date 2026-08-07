@@ -1,24 +1,21 @@
 /* ===================================================
-   엠블럼입출고.js  —  localStorage 버전
-   _테스트.html 과 기능/디자인 동일, Supabase 미사용
+   엠블럼입출고.js — 출하검사2 전용 (Supabase 버전)
    =================================================== */
 
-var 수정중인id          = null;
-var 선택된품목          = null;
-var 선택된담당자        = null;
-var 현재작업공정        = null;
-var 출발공정목록        = [];
-var 도착공정목록        = [];
-var 확정된id목록        = new Set();
-var _lot수동모드        = false;
-var 현재표시목록        = [];
-var 폼임시저장키        = 'erp_엠블럼폼임시저장';
-var 확정저장소키        = 'samyang_확정목록';
+var 수정중인id      = null;
+var 선택된품목      = null;
+var 선택된담당자    = null;
+var 현재작업공정    = null;
+var 출발공정목록    = [];
+var 도착공정목록    = [];
+var _lot수동모드    = false;
+var 현재표시목록    = [];
+var 폼임시저장키    = 'erp_엠블럼폼임시저장';
+var _리얼타임타이머 = null;
 
 var 폼입력순서 = ['품명','출고일자','단가','입고수량','도착공정','출고수량','불량수량','담당자입력'];
 var 공정순서   = APP_CONFIG.공정목록;
 
-/* 출하검사2는 출하검사와 동일 동작 — 별도 공정명으로만 구분 */
 function 출하검사계열(공정) {
   return 공정 === '출하검사' || 공정 === '출하검사2';
 }
@@ -42,13 +39,12 @@ var 출하검사2_거래처목록 = [
    페이지 로드
 ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
-  확정id목록불러오기();
   오늘날짜세팅();
   검색기간기본값세팅();
   담당자검색옵션채우기();
   엑셀날짜이번달();
 
-  // 업체 셀렉터 초기화
+  /* 업체 셀렉터 초기화 */
   (function() {
     var sel = document.getElementById('엑셀업체');
     if (!sel) return;
@@ -63,6 +59,19 @@ document.addEventListener('DOMContentLoaded', function() {
   공정뷰선택('출하검사2');
   폼임시저장복원();
 
+  /* Realtime 구독 — 다른 PC 변경 사항 자동 반영 */
+  수파베이스.channel('엠블럼입출고실시간')
+    .on('postgres_changes', { event: '*', schema: 'public', table: '엠블럼입출고' }, function() {
+      clearTimeout(_리얼타임타이머);
+      _리얼타임타이머= setTimeout(function() {
+        var 포커스 = document.activeElement;
+        if (포커스 && 포커스.closest && 포커스.closest('#폼카드')) return;
+        공정필터목록갱신();
+        출하현황요약();
+      }, 400);
+    })
+    .subscribe();
+
   document.addEventListener('click', function(e) {
     var 감싸기 = document.getElementById('품명감싸기');
     if (감싸기 && !감싸기.contains(e.target)) 드롭다운닫기();
@@ -75,19 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
   });
 });
-
-/* ══════════════════════════════════════════
-   확정 목록 (localStorage)
-══════════════════════════════════════════ */
-function 확정id목록불러오기() {
-  var raw = localStorage.getItem(확정저장소키);
-  if (!raw) { 확정된id목록 = new Set(); return; }
-  try { 확정된id목록 = new Set(JSON.parse(raw)); } catch(e) { 확정된id목록 = new Set(); }
-}
-
-function 확정id목록저장() {
-  localStorage.setItem(확정저장소키, JSON.stringify(Array.from(확정된id목록)));
-}
 
 /* ══════════════════════════════════════════
    날짜
@@ -163,12 +159,14 @@ function lot번호포맷(input) {
 }
 
 /* ══════════════════════════════════════════
-   폼 임시저장
+   폼 임시저장 (sessionStorage — 페이지 새로고침 대비)
 ══════════════════════════════════════════ */
 function 폼임시저장() {
   if (수정중인id) return;
   var d = {
     품명:       document.getElementById('품명').value,
+    출고일자:   document.getElementById('출고일자').value,
+    단가:       document.getElementById('단가').value,
     출발공정:   document.getElementById('출발공정').value,
     도착공정:   document.getElementById('도착공정').value,
     입고수량:   document.getElementById('입고수량').value,
@@ -190,6 +188,8 @@ function 폼임시저장복원() {
     선택된품목 = 엠블럼_품목목록.find(function(p) { return p.품명 === d.품명; }) || null;
     if (선택된품목) document.getElementById('품명품번표시').textContent = '품번: ' + 선택된품목.품번;
   }
+  if (d.출고일자) document.getElementById('출고일자').value = d.출고일자;
+  if (d.단가)     document.getElementById('단가').value     = d.단가;
   if (d.출발공정) document.getElementById('출발공정').value = d.출발공정;
   if (d.도착공정) document.getElementById('도착공정').value = d.도착공정;
   if (d.입고수량) document.getElementById('입고수량').value = d.입고수량;
@@ -243,14 +243,12 @@ function 공정뷰선택(공정) {
     document.getElementById('검색_공정').value = '';
   }
 
-  // 출하현황 제목 변경
   document.querySelectorAll('.카드 .페이지제목').forEach(function(el) {
     if (el.textContent.trim() === '출하 현황' || el.textContent.trim() === '코팅 출하 현황') {
       el.textContent = (공정 === '공정검사') ? '코팅 출하 현황' : '출하 현황';
     }
   });
 
-  // 엑셀 업체 셀렉터 갱신
   var 업체sel = document.getElementById('엑셀업체');
   if (업체sel) {
     업체sel.innerHTML = '';
@@ -356,8 +354,8 @@ function 공정팝업열기(구분) {
 /* ══════════════════════════════════════════
    목록 갱신
 ══════════════════════════════════════════ */
-function 공정필터목록갱신() {
-  var 전체 = 엠블럼_데이터불러오기();
+async function 공정필터목록갱신() {
+  var 전체 = await 엠블럼_데이터불러오기();
   var 결과;
 
   if (!현재작업공정) {
@@ -379,10 +377,11 @@ function 공정필터목록갱신() {
 
   var 안내 = document.getElementById('검색결과안내');
   if (현재작업공정) {
+    var 표시이름 = 현재작업공정 === '출하검사2' ? '출하검사' : 현재작업공정;
     var 미처리 = 결과.filter(function(h) { return h.완료여부 === false; }).length;
     var 완료 = 결과.length - 미처리;
     안내.innerHTML =
-      '<b>' + 현재작업공정 + '</b> — 완료: <span class="결과강조">' + 완료 + '건</span>' +
+      '<b>' + 표시이름 + '</b> — 완료: <span class="결과강조">' + 완료 + '건</span>' +
       (미처리 > 0 ? ' / <span style="color:#e67e22;font-weight:bold;">미처리: ' + 미처리 + '건</span>' : '');
   } else {
     안내.innerHTML = '';
@@ -445,7 +444,7 @@ function 담당자선택(항목) {
 /* ══════════════════════════════════════════
    저장 / 수정 / 삭제
 ══════════════════════════════════════════ */
-function 저장하기() {
+async function 저장하기() {
   var 품명값 = document.getElementById('품명').value.trim();
   var 입고값 = document.getElementById('입고수량').value.trim();
   var 출고값 = document.getElementById('출고수량').value.trim();
@@ -464,13 +463,14 @@ function 저장하기() {
 
   var 검사공정 = 출하공정검사계열(현재작업공정);
   var 미입력 = [];
-  if (!품명값 || (!선택된품목 && !자유입력모드))        미입력.push('품명');
+  if (!품명값 || (!선택된품목 && !자유입력모드)) 미입력.push('품명');
   if (!일자값 || !/^\d{4}-\d{2}-\d{2}$/.test(일자값)) 미입력.push('일자 (YYYY-MM-DD)');
   if (!출발값)                                         미입력.push('출발 공정');
   if (!입고값)                                         미입력.push('입고수량');
   if (!도착값)                                         미입력.push('도착 공정');
   if (!출고값)                                         미입력.push('출고수량');
   if (!선택된담당자 && !검사공정)                      미입력.push('담당자');
+  if (검사공정 && 단가값 === 0)                        미입력.push('단가 (0원 입력 불가)');
 
   if (미입력.length > 0) { 알림모달표시(미입력); return; }
 
@@ -494,58 +494,63 @@ function 저장하기() {
     담당자:     선택된담당자 ? (선택된담당자.직급 + ' ' + 선택된담당자.이름) : '',
     담당자코드: 선택된담당자 ? 선택된담당자.코드 : '',
     단가:       단가값,
-    완료여부:   true
+    완료여부:   true,
+    매출확정:   false
   };
 
-  if (수정중인id !== null) {
-    var 이전기록  = 엠블럼_데이터하나가져오기(수정중인id);
-    var 이전미완료 = 이전기록 && 이전기록.완료여부 === false;
-    if (확정된id목록.has(수정중인id)) { 확정된id목록.delete(수정중인id); 확정id목록저장(); }
-    엠블럼_데이터수정(수정중인id, 새항목);
-    if (이전미완료 && 도착값 && 공정순서.includes(도착값)) {
-      다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
-      알림표시('등록 완료! ' + 도착값 + '에 자동 전달되었습니다.', '성공');
+  try {
+    if (수정중인id !== null) {
+      var 이전기록  = await 엠블럼_데이터하나가져오기(수정중인id);
+      var 이전미완료 = 이전기록 && 이전기록.완료여부 === false;
+      await 엠블럼_데이터수정(수정중인id, 새항목);
+      if (이전미완료 && 도착값 && 공정순서.includes(도착값)) {
+        await 다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
+        알림표시('등록 완료! ' + 도착값 + '에 자동 전달되었습니다.', '성공');
+      } else {
+        알림표시('수정되었습니다.', '성공');
+      }
+      수정중인id = null;
+      document.getElementById('저장버튼').textContent = '저장';
+      document.getElementById('저장버튼').className   = '버튼 초록';
+      폼카드제거수정강조();
     } else {
-      알림표시('수정되었습니다.', '성공');
+      await 엠블럼_데이터저장(새항목);
+      if (도착값 && 공정순서.includes(도착값)) {
+        await 다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
+        알림표시(기록공정 + ' 저장 완료 → ' + 도착값 + '에 자동 전달', '성공');
+      } else {
+        알림표시(기록공정 + ' 기록이 저장되었습니다.', '성공');
+      }
     }
-    수정중인id = null;
-    document.getElementById('저장버튼').textContent = '저장';
-    document.getElementById('저장버튼').className   = '버튼 초록';
-    폼카드제거수정강조();
-  } else {
-    엠블럼_데이터저장(새항목);
-    if (도착값 && 공정순서.includes(도착값)) {
-      다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
-      알림표시(기록공정 + ' 저장 완료 → ' + 도착값 + '에 자동 전달', '성공');
-    } else {
-      알림표시(기록공정 + ' 기록이 저장되었습니다.', '성공');
-    }
+    폼임시저장초기화();
+    폼초기화(true);
+    document.getElementById('품명').focus();
+    공정필터목록갱신();
+    출하현황요약();
+  } catch(err) {
+    알림표시('저장 실패: ' + (err.message || err), '오류');
+    console.error(err);
   }
-
-  폼임시저장초기화();
-  폼초기화(true);
-  document.getElementById('품명').focus();
-  공정필터목록갱신();
-  출하현황요약();
 }
 
-function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자) {
-  var 전체 = 엠블럼_데이터불러오기();
+async function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자) {
+  var 전체 = await 엠블럼_데이터불러오기();
   var 이미있음 = 전체.some(function(h) {
     return (h.lot번호||'').trim() === lot && h.공정 === 도착공정 && h.완료여부 === false;
   });
   if (이미있음) return;
-  엠블럼_데이터저장({
+  await 엠블럼_데이터저장({
     품명: 품목.품명, 품번: 품목.품번,
     공정: 도착공정, 출발공정: 원출발공정,
     입고수량: 출고수량, 도착공정: '', 출고수량: 0, 불량수량: 0, 잔량: 출고수량,
-    출고일자: 일자, lot번호: lot, 담당자: '', 담당자코드: '', 완료여부: false
+    출고일자: 일자, lot번호: lot, 담당자: '', 담당자코드: '', 완료여부: false, 매출확정: false
   });
 }
 
 function 수정하기(id) {
-  if (확정된id목록.has(id)) {
-    확인모달표시('확정된 항목입니다.\n수정 저장 시 확정이 취소됩니다.\n계속하시겠습니까?', function() {
+  var 항목 = 현재표시목록.find(function(h) { return h.id === id; });
+  if (항목 && 항목.매출확정) {
+    확인모달표시('매출 확정된 항목입니다.\n수정 저장 시 매출 확정이 취소됩니다.\n계속하시겠습니까?', function() {
       수정폼채우기(id);
     });
     return;
@@ -553,8 +558,8 @@ function 수정하기(id) {
   수정폼채우기(id);
 }
 
-function 수정폼채우기(id) {
-  var 항목 = 엠블럼_데이터하나가져오기(id);
+async function 수정폼채우기(id) {
+  var 항목 = await 엠블럼_데이터하나가져오기(id);
   if (!항목) { 알림표시('이미 삭제된 항목입니다.', '오류'); 공정필터목록갱신(); return; }
 
   document.getElementById('품명').value = 항목.품명;
@@ -593,13 +598,16 @@ function 수정폼채우기(id) {
 }
 
 function 삭제하기(id) {
-  확인모달표시('정말 삭제할까요? 되돌릴 수 없습니다.', function() {
-    엠블럼_데이터삭제(id);
-    if (확정된id목록.has(id)) { 확정된id목록.delete(id); 확정id목록저장(); }
-    폼초기화();
-    알림표시('삭제되었습니다.', '성공');
-    공정필터목록갱신();
-    출하현황요약();
+  확인모달표시('정말 삭제할까요? 되돌릴 수 없습니다.', async function() {
+    try {
+      await 엠블럼_데이터삭제(id);
+      폼초기화();
+      알림표시('삭제되었습니다.', '성공');
+      공정필터목록갱신();
+      출하현황요약();
+    } catch(err) {
+      알림표시('삭제 실패: ' + (err.message || err), '오류');
+    }
   });
 }
 
@@ -615,7 +623,6 @@ function 폼초기화(일자유지) {
   document.getElementById('불량수량').value            = '';
   var _lotEl = document.getElementById('lot번호'); if (_lotEl) _lotEl.value = '';
 
-  var 검사공정 = 출하공정검사계열(현재작업공정);
   document.getElementById('출발공정').value = 현재작업공정 === '출하검사'  ? APP_CONFIG.출하검사옵션.출발공정[0] :
                                               현재작업공정 === '출하검사2' ? '(주)삼양이엔지' :
                                               현재작업공정 === '공정검사'  ? APP_CONFIG.공정검사옵션.출발공정[0] :
@@ -660,23 +667,24 @@ function 목록테이블그리기(목록) {
   if (전체체크) 전체체크.checked = false;
 
   if (목록.length === 0) {
+    var 표시이름 = 현재작업공정 === '출하검사2' ? '출하검사' : 현재작업공정;
     바디.innerHTML = '<tr><td colspan="14" class="빈목록안내">' +
-      (현재작업공정 ? 현재작업공정 + ' 관련 데이터가 없습니다.' : '데이터가 없습니다.') +
+      (현재작업공정 ? 표시이름 + ' 관련 데이터가 없습니다.' : '데이터가 없습니다.') +
       '</td></tr>';
     return;
   }
 
   목록.forEach(function(항목) {
     var 미완료   = 항목.완료여부 === false;
-    var 이미확정 = 확정된id목록.has(항목.id);
+    var 이미확정 = 항목.매출확정 === true;
     var 입고 = Number(항목.입고수량) || 0;
     var 출고 = Number(항목.출고수량) || 0;
     var 불량 = Number(항목.불량수량) || 0;
     var 잔  = 입고 - 출고 - 불량;
 
     var 행 = document.createElement('tr');
-    if (이미확정)       행.style.cssText = 'background:#f0f0f0;color:#aaa;';
-    else if (미완료)    행.style.cssText = 'background:#fff8e1;';
+    if (이미확정)    행.style.cssText = 'background:#f0f0f0;color:#aaa;';
+    else if (미완료) 행.style.cssText = 'background:#fff8e1;';
 
     var 도착셀 = 미완료
       ? '<span style="background:#f39c12;color:white;font-size:10px;padding:2px 6px;border-radius:3px;">미처리</span>'
@@ -717,11 +725,11 @@ function 목록테이블그리기(목록) {
 /* ══════════════════════════════════════════
    출하 현황 (출하검사 + 출하검사2 통합 집계)
 ══════════════════════════════════════════ */
-function 출하현황요약() {
+async function 출하현황요약() {
   var 기준공정목록 = 현재작업공정 === '공정검사' ? ['공정검사'] :
                      출하검사계열(현재작업공정)     ? [현재작업공정] :
                                                      ['출하검사', '출하검사2'];
-  var 전체 = 엠블럼_데이터불러오기();
+  var 전체 = await 엠블럼_데이터불러오기();
   var 품명필터   = document.getElementById('출하현황_품명필터').value;
   var 납품처필터 = document.getElementById('출하현황_납품처필터').value;
   var 월필터     = document.getElementById('출하현황_월필터').value;
@@ -789,9 +797,13 @@ function 출하현황품목조회팝업열기() {
 }
 
 function 출하현황납품처조회팝업열기() {
+  /* 출하검사2는 자체 거래처 목록 사용 */
+  var 납품처데이터 = 현재작업공정 === '출하검사2'
+    ? 출하검사2_거래처목록
+    : APP_CONFIG.납품처목록;
   조회팝업열기({
     제목: '납품처 조회', 검색힌트: '납품처명 검색...',
-    데이터: APP_CONFIG.납품처목록,
+    데이터: 납품처데이터,
     열목록: [{ 제목: '코드', 필드: '코드' }, { 제목: '납품처명', 필드: '업체명' }],
     선택시: function(항목) { document.getElementById('출하현황_납품처필터').value = 항목.업체명; 출하현황요약(); }
   });
@@ -826,14 +838,15 @@ function 담당자검색옵션채우기() {
 
 function 엔터검색(e) { if (e.key === 'Enter') 검색조회(); }
 
-function 검색조회() {
-  var 결과 = 엠블럼_데이터불러오기();
+async function 검색조회() {
+  var 전체 = await 엠블럼_데이터불러오기();
   var 시작 = document.getElementById('검색_시작일').value;
   var 종료 = document.getElementById('검색_종료일').value;
   var 품명 = document.getElementById('검색_품명').value.trim().toLowerCase();
   var 공정 = document.getElementById('검색_공정').value;
   var 담당 = document.getElementById('검색_담당자').value;
 
+  var 결과 = 전체;
   if (시작) 결과 = 결과.filter(function(h) { return (h.출고일자||'') >= 시작; });
   if (종료) 결과 = 결과.filter(function(h) { return (h.출고일자||'') <= 종료; });
   if (품명) 결과 = 결과.filter(function(h) {
@@ -876,8 +889,8 @@ function 검색_품목팝업열기() {
 /* ══════════════════════════════════════════
    LOT 팝업
 ══════════════════════════════════════════ */
-function lot팝업열기() {
-  var 전체 = 엠블럼_데이터불러오기();
+async function lot팝업열기() {
+  var 전체 = await 엠블럼_데이터불러오기();
 
   if (현재작업공정) {
     var 미처리 = 전체.filter(function(h) {
@@ -914,22 +927,24 @@ function lot팝업열기() {
     if (h.완료여부 !== false) { lot맵[lot].출고합 += Number(h.출고수량) || 0; lot맵[lot].불량합 += Number(h.불량수량) || 0; }
   });
 
+  var lot목록 = Object.values(lot맵).map(function(d) {
+    return { lot번호: d.lot번호, 품명: d.품명, 현재위치: d.현재위치||'-', 재고수량: d.입고합-d.출고합-d.불량합 };
+  });
+
   조회팝업열기({
     제목: 'LOT 번호 조회', 검색힌트: 'LOT 또는 품명 검색...',
-    데이터: Object.values(lot맵).map(function(d) {
-      return { lot번호: d.lot번호, 품명: d.품명, 현재위치: d.현재위치||'-', 재고수량: d.입고합-d.출고합-d.불량합 };
-    }),
+    데이터: lot목록,
     열목록: [
       { 제목: 'LOT 번호',  필드: 'lot번호'  },
       { 제목: '품명',      필드: '품명'     },
       { 제목: '현재 위치', 필드: '현재위치' },
       { 제목: '재고수량',  필드: '재고수량' }
     ],
-    선택시: function(항목) { lot선택시(항목); }
+    선택시: function(항목) { lot선택시(항목, 전체); }
   });
 }
 
-function lot선택시(lot데이터) {
+function lot선택시(lot데이터, 전체데이터) {
   var _lotEl3 = document.getElementById('lot번호'); if (_lotEl3) _lotEl3.value = lot데이터.lot번호;
   var 품목 = 엠블럼_품목목록.find(function(p) { return p.품명 === lot데이터.품명; });
   if (품목) 품목선택(품목);
@@ -943,7 +958,7 @@ function lot선택시(lot데이터) {
   }
   잔량미리보기();
 
-  var 관련 = 엠블럼_데이터불러오기().filter(function(h) {
+  var 관련 = (전체데이터 || []).filter(function(h) {
     return (h.lot번호||'').trim() === lot데이터.lot번호;
   });
   목록테이블그리기(관련);
@@ -1076,16 +1091,15 @@ function 전체선택토글() {
   document.querySelectorAll('.행선택체크').forEach(function(c) { c.checked = 전체체크.checked; });
 }
 
-function 확정처리() {
+async function 확정처리() {
   var 선택ids = Array.from(document.querySelectorAll('.행선택체크:checked'))
                      .map(function(c) { return Number(c.value); });
   if (선택ids.length === 0) { 알림표시('확정할 항목을 선택해주세요.', '오류'); return; }
   확인모달표시(선택ids.length + '건을 확정하고 매출관리로 전송하시겠습니까?', async function() {
-    var 전체 = 엠블럼_데이터불러오기();
-    // 이미 매출확정된 항목(매출확정:true)은 재전송 방지
-    var 미전송항목 = 선택ids.map(function(id) {
-      return 전체.find(function(x) { return x.id === id; });
-    }).filter(function(h) { return h && !h.매출확정; });
+    /* 현재 표시 목록에서 미전송 항목만 추출 */
+    var 미전송항목 = 현재표시목록.filter(function(h) {
+      return 선택ids.includes(h.id) && !h.매출확정;
+    });
 
     if (미전송항목.length === 0) {
       알림표시('선택한 항목이 이미 모두 매출관리로 전송되었습니다.', '오류');
@@ -1108,18 +1122,20 @@ function 확정처리() {
       };
     });
 
-    var result = await 수파베이스.from('매출기록').insert(매출행들);
-    if (result.error) { 알림표시('매출 전송 실패: ' + result.error.message, '오류'); return; }
+    try {
+      var result = await 수파베이스.from('매출기록').insert(매출행들);
+      if (result.error) { 알림표시('매출 전송 실패: ' + result.error.message, '오류'); return; }
 
-    // 전송 성공 → localStorage에 매출확정 마킹 (재전송 방지)
-    확정id목록불러오기();
-    미전송항목.forEach(function(h) {
-      엠블럼_데이터수정(h.id, { 매출확정: true });
-      확정된id목록.add(h.id);
-    });
-    확정id목록저장();
-    알림표시(미전송항목.length + '건이 확정되어 매출관리로 전송되었습니다.', '성공');
-    공정필터목록갱신();
+      /* Supabase 레코드에 매출확정 마킹 */
+      await Promise.all(미전송항목.map(function(h) {
+        return 엠블럼_데이터수정(h.id, { 매출확정: true });
+      }));
+      알림표시(미전송항목.length + '건이 확정되어 매출관리로 전송되었습니다.', '성공');
+      공정필터목록갱신();
+    } catch(err) {
+      알림표시('확정 처리 중 오류: ' + (err.message || err), '오류');
+      console.error(err);
+    }
   });
 }
 
@@ -1172,7 +1188,7 @@ async function 출하검사_엑셀다운로드() {
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '생성 중...'; }
 
   try {
-    var 전체 = 엠블럼_데이터불러오기();
+    var 전체 = await 엠블럼_데이터불러오기();
     var 공정 = 현재작업공정 || '출하검사';
     var 전체필터 = 전체.filter(function(h) { return h.공정 === 공정 && h.도착공정 === 선택업체; });
 
