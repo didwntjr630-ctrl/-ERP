@@ -173,8 +173,7 @@
       </div>
       <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px;">
         <button class="버튼 초록" style="padding:0 18px; height:34px; font-size:13px;" onclick="거래내역서출력()">엑셀 출력</button>
-        <input id="카카오톡방선택" type="text" placeholder="톡방 이름 입력" style="display:none; height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit; width:110px;">
-        <button id="카카오발송버튼" class="버튼 노랑" style="display:none; padding:0 18px; height:34px; font-size:13px;" onclick="카카오이미지발송()">카카오 발송</button>
+        <button id="카카오발송버튼" class="버튼 노랑" style="display:none; padding:0 18px; height:34px; font-size:13px;" onclick="보고서캡처()">보고서 캡처</button>
         <select id="메일수신처선택" style="height:34px; padding:0 10px; font-size:13px; border:1px solid #c0cfe0; border-radius:4px; font-family:inherit;"></select>
         <button class="버튼 파랑" style="padding:0 18px; height:34px; font-size:13px;" onclick="매출메일발송()">메일 발송</button>
       </div>
@@ -274,7 +273,6 @@
     var 세션 = 현재세션();
     if (세션) {
       document.getElementById('user-info').textContent = 세션.직급 + ' ' + 세션.사원명;
-      document.getElementById('카카오톡방선택').style.display = '';
       document.getElementById('카카오발송버튼').style.display = '';
     }
 
@@ -651,11 +649,9 @@
       });
     }
 
-    async function 카카오이미지발송() {
+    async function 보고서캡처() {
       var 목록 = 현재필터데이터;
-      if (!목록 || 목록.length === 0) { 알림표시('먼저 조회 후 발송하세요.', '오류'); return; }
-      var 선택톡방 = document.getElementById('카카오톡방선택').value;
-      if (!선택톡방) { 알림표시('보낼 카카오 톡방을 선택하세요.', '오류'); return; }
+      if (!목록 || 목록.length === 0) { 알림표시('먼저 조회 후 캡처하세요.', '오류'); return; }
 
       // 이메일과 동일한 HTML 리포트를 숨김 div에 렌더링
       var 시작일 = document.getElementById('검색_시작일').value;
@@ -749,13 +745,9 @@
       wrap.innerHTML = reportHTML;
       document.body.appendChild(wrap);
 
-      알림표시('이미지 생성 중...', '성공');
+      알림표시('보고서 이미지 생성 중...', '성공');
 
       try {
-        // 1단계: 방 이름 마커 먼저 복사 (user gesture context 유지)
-        await navigator.clipboard.writeText('[ERP_KAKAO_IMG:' + 선택톡방 + ']');
-
-        // 2단계: ClipboardItem에 Promise 직접 전달 → user gesture context 안에서 write 호출
         await navigator.clipboard.write([
           new ClipboardItem({
             'image/png': html2canvas(wrap.firstChild, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
@@ -766,10 +758,10 @@
           })
         ]);
 
-        알림표시('이미지 전송 중 → ' + 선택톡방, '성공');
+        알림표시('클립보드에 복사됨 — 카카오톡에 Ctrl+V로 붙여넣기 하세요.', '성공');
       } catch(e) {
         if (wrap.parentNode) document.body.removeChild(wrap);
-        알림표시('클립보드 오류: ' + e.message, '오류');
+        알림표시('캡처 오류: ' + e.message, '오류');
       }
     }
 
