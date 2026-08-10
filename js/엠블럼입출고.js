@@ -1109,6 +1109,7 @@ async function 확정처리() {
 
     var 매출행들 = 미전송항목.map(function(h) {
       return {
+        입출고id: h.id,
         품명:     h.품명,
         품번:     h.품번 || '',
         출발공정: h.출발공정 || '',
@@ -1123,6 +1124,10 @@ async function 확정처리() {
     });
 
     try {
+      /* 재확정 시 기존 매출기록 제거 (중복 방지) */
+      var 입출고ids = 미전송항목.map(function(h) { return h.id; });
+      await 수파베이스.from('매출기록').delete().in('입출고id', 입출고ids);
+
       var result = await 수파베이스.from('매출기록').insert(매출행들);
       if (result.error) { 알림표시('매출 전송 실패: ' + result.error.message, '오류'); return; }
 
