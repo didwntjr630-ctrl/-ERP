@@ -212,11 +212,82 @@ function 오늘날짜세팅() {
 
 /* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
 function 입고수량변경() {
-  if (현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
+  if (현재작업공정 === '공정검사') {
+    불량합계갱신();
+  } else if (현재작업공정 === '출하검사') {
     var v = document.getElementById('입고수량').value;
     document.getElementById('출고수량').value = v;
   }
   잔량미리보기();
+}
+
+/* ══════════════════════════════════════════
+   공정검사 불량 입력 (코드별 내역)
+══════════════════════════════════════════ */
+var 현재불량내역 = [];
+
+function 불량코드팝업열기() {
+  조회팝업열기({
+    제목: '불량코드도움', 검색힌트: '불량코드 또는 불량명 검색...',
+    데이터: 불량코드목록,
+    열목록: [{ 제목: '불량코드', 필드: '코드' }, { 제목: '불량명', 필드: '명' }],
+    선택시: function(항목) { 불량내역추가(항목); }
+  });
+}
+
+function 불량내역추가(코드항목) {
+  var 기존 = 현재불량내역.find(function(r) { return r.명 === 코드항목.명; });
+  if (!기존) 현재불량내역.push({ 코드: 코드항목.코드 || '', 명: 코드항목.명, 수량: 0 });
+  불량내역그리기();
+}
+
+function 불량내역수량변경(idx, value) {
+  현재불량내역[idx].수량 = Number(String(value).replace(/,/g, '')) || 0;
+  불량합계갱신();
+}
+
+function 불량내역삭제(idx) {
+  현재불량내역.splice(idx, 1);
+  불량내역그리기();
+}
+
+function 불량내역그리기() {
+  var 바디 = document.getElementById('불량내역바디');
+  if (!바디) return;
+  if (!현재불량내역.length) {
+    바디.innerHTML = '<tr><td colspan="4" class="빈목록안내">더블클릭하여 불량을 추가하세요.</td></tr>';
+  } else {
+    바디.innerHTML = '';
+    현재불량내역.forEach(function(r, idx) {
+      var 행 = document.createElement('tr');
+      행.innerHTML =
+        '<td>' + (r.코드 || '-') + '</td>' +
+        '<td>' + r.명 + '</td>' +
+        '<td><input type="number" min="0" value="' + (r.수량 || 0) + '" ' +
+          'style="width:90px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;" ' +
+          'oninput="불량내역수량변경(' + idx + ',this.value)"></td>' +
+        '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="불량내역삭제(' + idx + ')">삭제</button></td>';
+      바디.appendChild(행);
+    });
+  }
+  불량합계갱신();
+}
+
+function 불량합계갱신() {
+  var 총불량 = 현재불량내역.reduce(function(s, r) { return s + (Number(r.수량) || 0); }, 0);
+  var el = document.getElementById('총불량표시');
+  if (el) {
+    el.textContent = 총불량 > 0 ? 총불량 : '-';
+    el.style.color = 총불량 > 0 ? '#e67e22' : '#888';
+    el.style.fontWeight = 총불량 > 0 ? 'bold' : 'normal';
+  }
+  if (현재작업공정 === '공정검사') {
+    document.getElementById('불량수량').value = 총불량;
+    var 입고 = Number(document.getElementById('입고수량').value) || 0;
+    document.getElementById('출고수량').value = Math.max(0, 입고 - 총불량);
+  }
+  잔량미리보기();
+  폼임시저장();
 }
 
 /* ── 잔량 미리보기 (입고 - 출고 - 불량) ── */
@@ -304,6 +375,15 @@ function 출하검사폼전환(공정) {
   var 검사공정 = 공정 === '출하검사' || 공정 === '공정검사';
   document.getElementById('불량수량그룹').style.display = 검사공정 ? 'none' : '';
   document.getElementById('잔량그룹').style.display     = 검사공정 ? 'none' : '';
+
+  var 공정검사불량행 = document.getElementById('공정검사불량행');
+  var 출고el = document.getElementById('출고수량');
+  if (공정검사불량행) 공정검사불량행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
+  if (출고el) {
+    출고el.readOnly = (공정 === '공정검사');
+    출고el.style.background = (공정 === '공정검사') ? '#f3f4f6' : '';
+  }
+
   var 출발el = document.getElementById('출발공정');
   if (공정 === '출하검사') {
     출발el.value    = APP_CONFIG.출하검사옵션.출발공정[0];
@@ -549,6 +629,7 @@ async function 저장하기() {
     'lot번호':  lot값,
     담당자:     선택된담당자 ? (선택된담당자.직급 + ' ' + 선택된담당자.이름) : '',
     담당자코드: 선택된담당자 ? 선택된담당자.코드 : '',
+    불량내역:   현재작업공정 === '공정검사' ? 현재불량내역 : [],
     완료여부:   true
   };
 
@@ -665,6 +746,8 @@ async function 수정폼채우기(id, 확정됨) {
   document.getElementById('입고수량').value = 항목.입고수량 || 0;
   document.getElementById('출고수량').value = 공정처리모드 ? '' : (항목.출고수량 || 0);
   document.getElementById('불량수량').value = 공정처리모드 ? '' : (항목.불량수량 || 0);
+  현재불량내역 = 공정처리모드 ? [] : (항목.불량내역 || []);
+  불량내역그리기();
   document.getElementById('출고일자').value = 항목.출고일자 || '';
   document.getElementById('lot번호').value  = 항목['lot번호']  || '';
   document.getElementById('출발공정').value = 공정처리모드 ? 현재작업공정 : (항목.출발공정 || '');
@@ -715,6 +798,8 @@ function 폼초기화(일자유지) {
   선택된담당자 = null;
   document.getElementById('품명').value               = '';
   document.getElementById('품명품번표시').textContent  = '';
+  현재불량내역 = [];
+  불량내역그리기();
   document.getElementById('입고수량').value            = '';
   document.getElementById('출고수량').value            = '';
   document.getElementById('불량수량').value            = '';
