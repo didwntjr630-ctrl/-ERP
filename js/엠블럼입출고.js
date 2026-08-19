@@ -173,7 +173,7 @@ function 불량내역그리기() {
       '<td><input type="number" min="0" value="' + (r.수량 || 0) + '" id="불량수량입력_' + idx + '" ' +
         'style="width:90px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;" ' +
         'oninput="불량내역수량변경(' + idx + ',this.value)" ' +
-        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"></td>' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();불량코드팝업열기();}"></td>' +
       '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="불량내역삭제(' + idx + ')">삭제</button></td>';
     바디.appendChild(행);
   });
@@ -365,6 +365,13 @@ function 출하검사폼전환(공정) {
   if (출고el) {
     출고el.readOnly = (공정 === '공정검사');
     출고el.style.background = (공정 === '공정검사') ? '#f3f4f6' : '';
+  }
+
+  var 담당자그룹 = document.getElementById('담당자그룹');
+  var 담당자저장행 = document.getElementById('담당자저장행');
+  if (담당자그룹) {
+    if (공정 === '공정검사' && 공정검사불량행) 공정검사불량행.appendChild(담당자그룹);
+    else if (담당자저장행) 담당자저장행.insertBefore(담당자그룹, 담당자저장행.firstChild);
   }
 
   var 출발el = document.getElementById('출발공정');
