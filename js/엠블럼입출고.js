@@ -137,8 +137,18 @@ function 불량코드팝업열기() {
 
 function 불량내역추가(코드항목) {
   var 기존 = 현재불량내역.find(function(r) { return r.명 === 코드항목.명; });
-  if (!기존) 현재불량내역.push({ 코드: 코드항목.코드 || '', 명: 코드항목.명, 수량: 0 });
+  var idx;
+  if (기존) {
+    idx = 현재불량내역.indexOf(기존);
+  } else {
+    현재불량내역.push({ 코드: 코드항목.코드 || '', 명: 코드항목.명, 수량: 0 });
+    idx = 현재불량내역.length - 1;
+  }
   불량내역그리기();
+  setTimeout(function() {
+    var 입력 = document.getElementById('불량수량입력_' + idx);
+    if (입력) { 입력.focus(); 입력.select(); }
+  }, 50);
 }
 
 function 불량내역수량변경(idx, value) {
@@ -154,22 +164,26 @@ function 불량내역삭제(idx) {
 function 불량내역그리기() {
   var 바디 = document.getElementById('불량내역바디');
   if (!바디) return;
-  if (!현재불량내역.length) {
-    바디.innerHTML = '<tr><td colspan="4" class="빈목록안내">더블클릭하여 불량을 추가하세요.</td></tr>';
-  } else {
-    바디.innerHTML = '';
-    현재불량내역.forEach(function(r, idx) {
-      var 행 = document.createElement('tr');
-      행.innerHTML =
-        '<td>' + (r.코드 || '-') + '</td>' +
-        '<td>' + r.명 + '</td>' +
-        '<td><input type="number" min="0" value="' + (r.수량 || 0) + '" ' +
-          'style="width:90px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;" ' +
-          'oninput="불량내역수량변경(' + idx + ',this.value)"></td>' +
-        '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="불량내역삭제(' + idx + ')">삭제</button></td>';
-      바디.appendChild(행);
-    });
-  }
+  바디.innerHTML = '';
+  현재불량내역.forEach(function(r, idx) {
+    var 행 = document.createElement('tr');
+    행.innerHTML =
+      '<td>' + (r.코드 || '-') + '</td>' +
+      '<td>' + r.명 + '</td>' +
+      '<td><input type="number" min="0" value="' + (r.수량 || 0) + '" id="불량수량입력_' + idx + '" ' +
+        'style="width:90px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;" ' +
+        'oninput="불량내역수량변경(' + idx + ',this.value)" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"></td>' +
+      '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="불량내역삭제(' + idx + ')">삭제</button></td>';
+    바디.appendChild(행);
+  });
+
+  var 빈행 = document.createElement('tr');
+  빈행.innerHTML =
+    '<td colspan="2" style="color:#aaa; cursor:pointer;" ondblclick="불량코드팝업열기()">더블클릭하여 불량 코드 선택</td>' +
+    '<td></td><td></td>';
+  바디.appendChild(빈행);
+
   불량합계갱신();
 }
 
