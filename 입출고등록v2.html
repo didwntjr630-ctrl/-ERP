@@ -209,7 +209,8 @@
         <div class="입력그룹" style="flex:0 0 120px;">
           <label for="A급수량">A급 수량</label>
           <div class="수량행">
-            <input type="number" id="A급수량" placeholder="0" min="0" oninput="폼임시저장()">
+            <input type="number" id="A급수량" placeholder="0" min="0" oninput="폼임시저장()"
+                   onkeydown="폼엔터핸들러(event,'A급수량')">
             <span class="단위">EA</span>
           </div>
         </div>

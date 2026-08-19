@@ -1494,6 +1494,16 @@ function 폼엔터핸들러(event, 현재id) {
     return;
   }
 
+  // 공정검사: 도착공정 → A급수량 → 담당자 순으로 이동
+  if (현재작업공정 === '공정검사' && 현재id === '도착공정') {
+    document.getElementById('A급수량').focus();
+    return;
+  }
+  if (현재작업공정 === '공정검사' && 현재id === 'A급수량') {
+    document.getElementById('담당자입력').focus();
+    return;
+  }
+
   // 출하검사·공정검사: 출고수량 → 담당자 바로 이동 (불량수량 스킵)
   if (검사공정 && 현재id === '출고수량') {
     var 담당자el = document.getElementById('담당자입력');
