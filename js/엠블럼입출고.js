@@ -594,6 +594,7 @@ async function 저장하기() {
     담당자코드: 선택된담당자 ? 선택된담당자.코드 : '',
     단가:       단가값,
     불량내역:   현재작업공정 === '공정검사' ? 현재불량내역 : [],
+    A급수량:    현재작업공정 === '공정검사' ? (Number(document.getElementById('A급수량').value) || 0) : 0,
     완료여부:   true,
     매출확정:   false
   };
@@ -674,6 +675,7 @@ async function 수정폼채우기(id) {
   document.getElementById('불량수량').value = 공정처리모드 ? '' : (항목.불량수량 || 0);
   현재불량내역 = 공정처리모드 ? [] : (항목.불량내역 || []);
   불량내역그리기();
+  document.getElementById('A급수량').value = 공정처리모드 ? '' : (항목.A급수량 || '');
   document.getElementById('출고일자').value = 항목.출고일자 || '';
   var _lotEl2 = document.getElementById('lot번호'); if (_lotEl2) _lotEl2.value = 항목.lot번호 || '';
   document.getElementById('단가').value     = 항목.단가     || '';
@@ -722,6 +724,7 @@ function 폼초기화(일자유지) {
   document.getElementById('품명품번표시').textContent  = '';
   현재불량내역 = [];
   불량내역그리기();
+  document.getElementById('A급수량').value             = '';
   document.getElementById('입고수량').value            = '';
   document.getElementById('출고수량').value            = '';
   document.getElementById('불량수량').value            = '';
