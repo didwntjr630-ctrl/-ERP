@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 품목 등록</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .필터행 {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .필터행 label { font-size: 12px; color: #2a6496; font-weight: bold; }
+    .필터행 input {
+      border: 1px solid #c0cfe0;
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-size: 13px;
+      font-family: inherit;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="활성">품목 등록</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+    <div id="알림박스" class="알림" style="position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:9999; min-width:260px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:14px; font-weight:600;"></div>
+    <div id="확인모달_오버레이" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; min-width:280px; max-width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div id="확인모달_메시지" style="margin-bottom:20px; font-size:14px; line-height:1.6; white-space:pre-line;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="버튼 회색" onclick="확인모달닫기()">취소</button>
+          <button class="버튼 파랑" id="확인모달_확인버튼">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 조회 필터 카드 -->
+    <div class="카드 검색카드">
+      <div class="검색카드제목">품목 조회</div>
+      <div class="필터행">
+        <div>
+          <label>품명 / 품번 검색</label><br>
+          <input type="text" id="검색어" placeholder="품명 또는 품번 입력" style="margin-top:4px; width:220px;" oninput="필터적용()">
+        </div>
+      </div>
+      <div id="검색결과안내" class="검색결과안내"></div>
+    </div>
+
+    <!-- 품목 목록 카드 -->
+    <div class="카드">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <div class="페이지제목" style="font-size:15px; margin-bottom:0;">
+          등록 품목
+          <span style="font-size:12px; color:#888; font-weight:normal;">(모든 시스템 공용 — 입출고·엠블럼 자동 반영)</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="버튼 파랑" style="height:30px; padding:0 14px; font-size:13px;" onclick="항목추가()">+ 품목 추가</button>
+          <button id="저장버튼" class="버튼 초록" style="height:30px; padding:0 18px; font-size:13px;" onclick="저장하기()">저장</button>
+        </div>
+      </div>
+      <div class="테이블감싸기">
+        <table id="품목테이블">
+          <thead>
+            <tr>
+              <th style="width:220px;">품명</th>
+              <th style="width:100px;">품번</th>
+              <th>규격</th>
+              <th style="width:140px;">단가 (원)</th>
+              <th style="width:50px;">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="품목테이블바디">
+            <tr><td colspan="5" class="빈목록안내">품목 추가 버튼으로 등록하세요.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /내용영역 -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+
+    var 전체목록 = [];
+    var 변경셋 = new Set();
+
+    /* 데이터 로드 */
+    async function 데이터로드() {
+      var { data, error } = await 수파베이스
+        .from('품목마스터').select('*').order('id', { ascending: true });
+      전체목록 = error ? [] : (data || []);
+      필터적용();
+    }
+
+    /* 필터 적용 */
+    function 필터적용() {
+      var 검색어 = (document.getElementById('검색어').value || '').trim().toLowerCase();
+
+      var 결과 = 전체목록.filter(function(h) {
+        if (!검색어) return true;
+        return (h.품명 || '').toLowerCase().includes(검색어) ||
+               (h.품번 || '').toLowerCase().includes(검색어);
+      });
+
+      테이블그리기(결과);
+      document.getElementById('검색결과안내').innerHTML =
+        '검색 결과: <span class="결과강조">' + 결과.length + '건</span>';
+    }
+
+    /* 테이블 렌더링 */
+    function 테이블그리기(목록) {
+      var 바디 = document.getElementById('품목테이블바디');
+      if (!목록.length) {
+        바디.innerHTML = '<tr><td colspan="5" class="빈목록안내">해당 조건의 품목이 없습니다.</td></tr>';
+        return;
+      }
+
+      바디.innerHTML = '';
+      목록.forEach(function(항목) {
+        var 행 = document.createElement('tr');
+        var 단가표시 = _금액포맷(항목.단가);
+
+        행.innerHTML =
+          '<td><input type="text" value="' + (항목.품명 || '').replace(/"/g, '&quot;') + '" placeholder="품명 입력" ' +
+            'style="width:100%;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'oninput="항목변경(' + 항목.id + ',\'품명\',this.value)"></td>' +
+          '<td><input type="text" value="' + (항목.품번 || '').replace(/"/g, '&quot;') + '" placeholder="품번" ' +
+            'style="width:90px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'oninput="항목변경(' + 항목.id + ',\'품번\',this.value)"></td>' +
+          '<td><input type="text" value="' + (항목.규격 || '').replace(/"/g, '&quot;') + '" placeholder="규격 (선택)" ' +
+            'style="width:100%;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;" ' +
+            'oninput="항목변경(' + 항목.id + ',\'규격\',this.value)"></td>' +
+          '<td><input type="text" inputmode="numeric" value="' + 단가표시 + '" placeholder="0" ' +
+            'style="width:120px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;" ' +
+            'oninput="_금액입력(this,' + 항목.id + ')" onblur="_금액블러(this)"></td>' +
+          '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="항목삭제(' + 항목.id + ')">삭제</button></td>';
+        바디.appendChild(행);
+      });
+    }
+
+    /* 저장 버튼 상태 */
+    function _저장버튼갱신() {
+      var btn = document.getElementById('저장버튼');
+      if (!btn) return;
+      if (변경셋.size > 0) {
+        btn.textContent = '저장 (' + 변경셋.size + '건)';
+        btn.style.background = '#e67e22';
+        btn.style.borderColor = '#e67e22';
+      } else {
+        btn.textContent = '저장';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }
+    }
+
+    /* CRUD */
+    async function 항목추가() {
+      var { data, error } = await 수파베이스.from('품목마스터')
+        .insert({ 품명: '', 품번: '', 규격: '', 단가: 0 })
+        .select().single();
+      if (error) { 알림표시('추가 실패: ' + error.message, '오류'); return; }
+      전체목록.push(data);
+      document.getElementById('검색어').value = '';
+      필터적용();
+      setTimeout(function() {
+        var 마지막입력 = document.querySelector('#품목테이블바디 tr:last-child input');
+        if (마지막입력) 마지막입력.focus();
+      }, 50);
+    }
+
+    async function 항목삭제(id) {
+      확인모달표시('이 품목을 삭제하시겠습니까?\n삭제해도 기존 입출고 기록은 유지됩니다.', async function() {
+        var { error } = await 수파베이스.from('품목마스터').delete().eq('id', id);
+        if (error) { 알림표시('삭제 실패: ' + error.message, '오류'); return; }
+        전체목록 = 전체목록.filter(function(h) { return h.id !== id; });
+        변경셋.delete(id);
+        _저장버튼갱신();
+        필터적용();
+        알림표시('삭제되었습니다.', '성공');
+      });
+    }
+
+    function 항목변경(id, field, value) {
+      var 항목 = 전체목록.find(function(h) { return h.id === id; });
+      if (!항목) return;
+      항목[field] = field === '단가' ? (Number(String(value).replace(/,/g, '')) || 0) : value;
+      변경셋.add(id);
+      _저장버튼갱신();
+    }
+
+    async function 저장하기() {
+      if (변경셋.size === 0) { 알림표시('변경사항이 없습니다.', '안내'); return; }
+      var ids = Array.from(변경셋);
+      var 성공 = 0, 실패 = 0, 실패메시지 = '';
+      for (var i = 0; i < ids.length; i++) {
+        var 항목 = 전체목록.find(function(h) { return h.id === ids[i]; });
+        if (!항목) continue;
+        if (!(항목.품명 || '').trim()) { 실패++; 실패메시지 = '품명은 필수입니다.'; continue; }
+        var { error } = await 수파베이스.from('품목마스터').update({
+          품명: (항목.품명 || '').trim(),
+          품번: 항목.품번 || '',
+          규격: 항목.규격 || '',
+          단가: Number(항목.단가) || 0
+        }).eq('id', 항목.id);
+        if (error) { 실패++; 실패메시지 = error.message; } else { 성공++; 변경셋.delete(항목.id); }
+      }
+      _저장버튼갱신();
+      if (실패 > 0) 알림표시(성공 + '건 저장, ' + 실패 + '건 실패 (' + 실패메시지 + ')', '오류');
+      else 알림표시(성공 + '건 저장 완료', '성공');
+    }
+
+    /* 금액 포맷 유틸 */
+    function _금액포맷(v) {
+      var n = Number(String(v).replace(/,/g, ''));
+      return (!v && v !== 0) || isNaN(n) || n === 0 ? '' : n.toLocaleString('ko-KR');
+    }
+    function _금액입력(el, id) {
+      var raw = el.value.replace(/,/g, '');
+      항목변경(id, '단가', raw);
+    }
+    function _금액블러(el) {
+      var n = Number(el.value.replace(/,/g, ''));
+      el.value = (isNaN(n) || n === 0) ? '' : n.toLocaleString('ko-KR');
+    }
+
+    /* 알림 / 확인모달 */
+    function 알림표시(메시지, 종류) {
+      var el = document.getElementById('알림박스');
+      el.textContent = 메시지;
+      el.className = '알림 ' + 종류;
+      el.style.display = 'block';
+      setTimeout(function() { el.style.display = 'none'; }, 3500);
+    }
+    function 확인모달표시(메시지, 콜백) {
+      document.getElementById('확인모달_메시지').textContent = 메시지;
+      var 버튼 = document.getElementById('확인모달_확인버튼');
+      버튼.onclick = function() { 확인모달닫기(); 콜백(); };
+      document.getElementById('확인모달_오버레이').style.display = 'flex';
+    }
+    function 확인모달닫기() {
+      document.getElementById('확인모달_오버레이').style.display = 'none';
+    }
+
+    /* 실시간 구독 */
+    수파베이스.channel('품목마스터_실시간_등록화면')
+      .on('postgres_changes', { event: '*', schema: 'public', table: '품목마스터' }, function() {
+        데이터로드();
+      })
+      .subscribe();
+
+    /* 시작 */
+    데이터로드();
+  </script>
+</body>
+</html>
