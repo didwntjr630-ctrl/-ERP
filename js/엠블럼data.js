@@ -25,6 +25,26 @@ async function 엠블럼_품목목록로드() {
   })
   .subscribe();
 
+/* ─────────── 불량코드 목록 — 공정검사 불량 등록용 ─────────── */
+var 엠블럼_불량코드목록 = [];
+
+async function 엠블럼_불량코드목록로드() {
+  var { data, error } = await 수파베이스
+    .from('불량코드마스터')
+    .select('*')
+    .order('id', { ascending: true });
+  if (error) { console.error('엠블럼_불량코드목록로드 오류:', error); return; }
+  엠블럼_불량코드목록.length = 0;
+  (data || []).forEach(function(p) { 엠블럼_불량코드목록.push(p); });
+}
+엠블럼_불량코드목록로드();
+
+수파베이스.channel('불량코드마스터_실시간_엠블럼')
+  .on('postgres_changes', { event: '*', schema: 'public', table: '불량코드마스터' }, function() {
+    엠블럼_불량코드목록로드();
+  })
+  .subscribe();
+
 /* ─────────── 담당자 목록 ─────────── */
 var 엠블럼_담당자목록 = [
   { 코드: '001', 직급: '이사', 이름: '박영민' },
