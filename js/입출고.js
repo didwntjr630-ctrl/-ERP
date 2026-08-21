@@ -10,6 +10,9 @@
      완료여부  - false = 자동생성 미처리, true = 등록 완료
    =================================================== */
 
+/* '태산 입고'는 공정검사와 완전히 동일하게 동작 (일단은) */
+function 공정검사류(공정) { return 공정 === '공정검사' || 공정 === '태산 입고'; }
+
 var 수정중인id            = null;
 var 수정중인항목이확정됨  = false;
 var 선택된품목   = null;
@@ -174,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // 폴링: 5초마다 확정 상태 체크 (Realtime 보완용)
   setInterval(async function() {
-    if (현재작업공정 !== '출하검사' && 현재작업공정 !== '공정검사') return;
+    if (현재작업공정 !== '출하검사' && !공정검사류(현재작업공정)) return;
     var 이전크기 = 확정된id목록.size;
     var 이전목록 = new Set(확정된id목록);
     await 확정id목록갱신();
@@ -212,7 +215,7 @@ function 오늘날짜세팅() {
 
 /* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
 function 입고수량변경() {
-  if (현재작업공정 === '공정검사') {
+  if (공정검사류(현재작업공정)) {
     불량합계갱신();
   } else if (현재작업공정 === '출하검사') {
     var v = document.getElementById('입고수량').value;
@@ -295,7 +298,7 @@ function 불량합계갱신() {
     el.style.color = 총불량 > 0 ? '#e67e22' : '#888';
     el.style.fontWeight = 총불량 > 0 ? 'bold' : 'normal';
   }
-  if (현재작업공정 === '공정검사') {
+  if (공정검사류(현재작업공정)) {
     document.getElementById('불량수량').value = 총불량;
     var 입고 = Number(document.getElementById('입고수량').value) || 0;
     document.getElementById('출고수량').value = Math.max(0, 입고 - 총불량);
@@ -346,9 +349,9 @@ async function 공정뷰선택(공정) {
   if (공정) {
     if (폼제목)  폼제목.textContent  = 공정 + ' 입출고 등록';
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
-    if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정 === '공정검사') ? 'none' : 'block';
-    if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정 === '공정검사') ? 'flex' : 'none';
-    if (품질현황영역) 품질현황영역.style.display = (공정 === '공정검사') ? 'flex' : 'none';
+    if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'none' : 'block';
+    if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'flex' : 'none';
+    if (품질현황영역) 품질현황영역.style.display = (공정검사류(공정)) ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
     document.getElementById('검색_공정').value = 공정;
   } else {
@@ -366,7 +369,7 @@ async function 공정뷰선택(공정) {
   // 제목 직접 탐색 (고정 텍스트 기준)
   document.querySelectorAll('.카드 .페이지제목').forEach(function(el) {
     if (el.textContent.trim() === '출하 현황' || el.textContent.trim() === '코팅 출하 현황') {
-      el.textContent = (공정 === '공정검사') ? '코팅 출하 현황' : '출하 현황';
+      el.textContent = (공정검사류(공정)) ? '코팅 출하 현황' : '출하 현황';
     }
   });
 
@@ -375,7 +378,7 @@ async function 공정뷰선택(공정) {
   var 업체sel = document.getElementById('엑셀업체');
   if (업체sel) {
     업체sel.innerHTML = '';
-    var 옵션소스 = (공정 === '공정검사') ? APP_CONFIG.공정검사옵션 : APP_CONFIG.출하검사옵션;
+    var 옵션소스 = (공정검사류(공정)) ? APP_CONFIG.공정검사옵션 : APP_CONFIG.출하검사옵션;
     var 출력업체목록 = 옵션소스.엑셀출력업체 || 옵션소스.도착공정 || [];
     출력업체목록.forEach(function(업체명) {
       var opt = document.createElement('option');
@@ -390,24 +393,24 @@ async function 공정뷰선택(공정) {
 }
 
 function 출하검사폼전환(공정) {
-  var 검사공정 = 공정 === '출하검사' || 공정 === '공정검사';
+  var 검사공정 = 공정 === '출하검사' || 공정검사류(공정);
   document.getElementById('불량수량그룹').style.display = 검사공정 ? 'none' : '';
   document.getElementById('잔량그룹').style.display     = 검사공정 ? 'none' : '';
 
   var 공정검사불량행 = document.getElementById('공정검사불량행');
   var 공정검사불량내역행 = document.getElementById('공정검사불량내역행');
   var 출고el = document.getElementById('출고수량');
-  if (공정검사불량행) 공정검사불량행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
-  if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
+  if (공정검사불량행) 공정검사불량행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
+  if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
   if (출고el) {
-    출고el.readOnly = (공정 === '공정검사');
-    출고el.style.background = (공정 === '공정검사') ? '#f3f4f6' : '';
+    출고el.readOnly = (공정검사류(공정));
+    출고el.style.background = (공정검사류(공정)) ? '#f3f4f6' : '';
   }
 
   var 담당자그룹 = document.getElementById('담당자그룹');
   var 담당자저장행 = document.getElementById('담당자저장행');
   if (담당자그룹) {
-    if (공정 === '공정검사' && 공정검사불량행) {
+    if (공정검사류(공정) && 공정검사불량행) {
       공정검사불량행.appendChild(담당자그룹);
       담당자그룹.style.marginLeft = '-90px';
     } else if (담당자저장행) {
@@ -421,8 +424,8 @@ function 출하검사폼전환(공정) {
     출발el.value    = APP_CONFIG.출하검사옵션.출발공정[0];
     출발el.readOnly = false;
     document.getElementById('도착공정').value = APP_CONFIG.출하검사옵션.도착공정[0];
-  } else if (공정 === '공정검사') {
-    출발el.value    = APP_CONFIG.공정검사옵션.출발공정[0];
+  } else if (공정검사류(공정)) {
+    출발el.value    = 공정;
     출발el.readOnly = true;
     document.getElementById('도착공정').value = APP_CONFIG.공정검사옵션.도착공정[0];
   } else {
@@ -434,7 +437,7 @@ function 공정별출발도착옵션갱신(공정) {
   if (공정 === '출하검사') {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.출하검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.출하검사옵션.도착공정.slice();
-  } else if (공정 === '공정검사') {
+  } else if (공정검사류(공정)) {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.공정검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.공정검사옵션.도착공정.slice();
   } else {
@@ -490,7 +493,7 @@ function 공정팝업열기(구분) {
 }
 
 async function 확정id목록갱신() {
-  if (현재작업공정 !== '출하검사' && 현재작업공정 !== '공정검사') { 확정된id목록 = new Set(); return; }
+  if (현재작업공정 !== '출하검사' && !공정검사류(현재작업공정)) { 확정된id목록 = new Set(); return; }
   var { data } = await 수파베이스.from('매출기록').select('입출고id');
   확정된id목록 = new Set((data || []).map(function(r) { return Number(r['입출고id']); }));
 }
@@ -502,14 +505,14 @@ async function 공정필터목록갱신() {
 
   if (!현재작업공정) {
     결과 = 전체;
-  } else if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
+  } else if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 공정검사류(현재작업공정)) {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정; });
   } else {
     결과 = 전체.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
   }
 
   // 출하검사·공정검사: 조회 기간 날짜 필터 적용 (기본값 = 이번 달)
-  if (현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
+  if (현재작업공정 === '출하검사' || 공정검사류(현재작업공정)) {
     var _시작 = document.getElementById('검색_시작일').value;
     var _종료 = document.getElementById('검색_종료일').value;
     if (_시작) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') >= _시작; });
@@ -634,7 +637,7 @@ async function 저장하기() {
   if (!입고값)        미입력.push('입고수량');
   if (!도착값)        미입력.push('도착 공정');
   if (!출고값)        미입력.push('출고수량');
-  var 검사공정 = 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사';
+  var 검사공정 = 현재작업공정 === '출하검사' || 공정검사류(현재작업공정);
   if (!선택된담당자 && !검사공정) 미입력.push('담당자');
 
   if (미입력.length > 0) {
@@ -661,8 +664,8 @@ async function 저장하기() {
     'lot번호':  lot값,
     담당자:     선택된담당자 ? (선택된담당자.직급 + ' ' + 선택된담당자.이름) : '',
     담당자코드: 선택된담당자 ? 선택된담당자.코드 : '',
-    불량내역:   현재작업공정 === '공정검사' ? 현재불량내역 : [],
-    A급수량:    현재작업공정 === '공정검사' ? (Number(document.getElementById('A급수량').value) || 0) : 0,
+    불량내역:   공정검사류(현재작업공정) ? 현재불량내역 : [],
+    A급수량:    공정검사류(현재작업공정) ? (Number(document.getElementById('A급수량').value) || 0) : 0,
     완료여부:   true
   };
 
@@ -840,10 +843,10 @@ function 폼초기화(일자유지) {
   document.getElementById('불량수량').value            = '';
   document.getElementById('lot번호').value             = '';
   _lot수동모드 = false;
-  document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : 현재작업공정 === '공정검사' ? APP_CONFIG.공정검사옵션.출발공정[0] : (현재작업공정 || '');
-  document.getElementById('출발공정').readOnly         = 현재작업공정 === '공정검사';
+  document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : (현재작업공정 || '');
+  document.getElementById('출발공정').readOnly         = 공정검사류(현재작업공정);
   document.getElementById('출발공정').disabled          = false;
-  document.getElementById('도착공정').value            = 현재작업공정 === '공정검사' ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
+  document.getElementById('도착공정').value            = 공정검사류(현재작업공정) ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
   document.getElementById('담당자입력').value          = '';
   document.getElementById('담당자코드표시').textContent = '';
   document.getElementById('잔량표시').textContent      = '-';
@@ -952,7 +955,7 @@ function 목록테이블그리기(목록) {
    공정별 재고 현황
 ══════════════════════════════════════════ */
 async function 출하현황요약() {
-  var 기준공정 = 현재작업공정 === '공정검사' ? '공정검사' : '출하검사';
+  var 기준공정 = 공정검사류(현재작업공정) ? 현재작업공정 : '출하검사';
   var 전체 = await 데이터불러오기();
   var 품명필터   = document.getElementById('출하현황_품명필터').value;
   var 납품처필터 = document.getElementById('출하현황_납품처필터').value;
@@ -1088,7 +1091,7 @@ async function 검색조회() {
   });
   if (담당) 결과 = 결과.filter(function(h) { return (h.담당자||'') === 담당; });
 
-  if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사') {
+  if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 공정검사류(현재작업공정)) {
     결과 = 결과.filter(function(h) { return h.공정 === 현재작업공정; });
   } else if (현재작업공정) {
     결과 = 결과.filter(function(h) { return h.공정 === 현재작업공정 && h.완료여부 === false; });
@@ -1490,7 +1493,7 @@ var 폼입력순서 = ['품명','출고일자','lot번호','출발공정','입�
 function 폼엔터핸들러(event, 현재id) {
   if (event.key !== 'Enter') return;
   event.preventDefault();
-  var 검사공정 = 현재작업공정 === '출하검사' || 현재작업공정 === '공정검사';
+  var 검사공정 = 현재작업공정 === '출하검사' || 공정검사류(현재작업공정);
 
   // 출고일자: 빈 칸이면 오늘 날짜 기입 후 lot번호로 이동
   if (현재id === '출고일자') {
@@ -1506,16 +1509,16 @@ function 폼엔터핸들러(event, 현재id) {
   }
 
   // 공정검사: 도착공정 → A급수량 → 담당자 순으로 이동
-  if (현재작업공정 === '공정검사' && 현재id === '도착공정') {
+  if (공정검사류(현재작업공정) && 현재id === '도착공정') {
     document.getElementById('A급수량').focus();
     return;
   }
-  if (현재작업공정 === '공정검사' && 현재id === 'A급수량') {
+  if (공정검사류(현재작업공정) && 현재id === 'A급수량') {
     document.getElementById('담당자입력').focus();
     return;
   }
   // 공정검사: 담당자에서 Enter → 불량코드 팝업 자동 오픈
-  if (현재작업공정 === '공정검사' && 현재id === '담당자입력') {
+  if (공정검사류(현재작업공정) && 현재id === '담당자입력') {
     불량코드팝업열기();
     return;
   }
@@ -1624,7 +1627,7 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
-  var 공정검사여부 = 현재작업공정 === '공정검사';
+  var 공정검사여부 = 공정검사류(현재작업공정);
 
   var _오늘 = new Date();
   var _년 = _오늘.getFullYear(), _월 = String(_오늘.getMonth()+1).padStart(2,'0');
