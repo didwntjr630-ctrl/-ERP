@@ -39,6 +39,16 @@ function _품질현황_셀쓰기(xml, ref, value, isText) {
   });
 }
 
+/* ─────────── 셀 값 지우기 (서식은 유지한 채 빈 셀로) ─────────── */
+function _품질현황_셀지우기(xml, ref) {
+  var re = new RegExp('<c r="' + ref + '"([^>/]*)(/>|>[\\s\\S]*?</c>)');
+  return xml.replace(re, function(match, attrs) {
+    var sMatch = attrs.match(/\ss="(\d+)"/);
+    var sAttr = sMatch ? ' s="' + sMatch[1] + '"' : '';
+    return '<c r="' + ref + '"' + sAttr + '/>';
+  });
+}
+
 /* ─────────── 시트명 → 내부 파일 경로 매핑 (workbook.xml + rels 파싱) ─────────── */
 async function _품질현황_시트맵구하기(zip) {
   var wbXml   = await zip.file('xl/workbook.xml').async('string');
@@ -91,6 +101,23 @@ function _품질현황_행병합(목록) {
   return 유지;
 }
 
+/* 불량내역 코드 컬럼 전체 (셀 초기화용) */
+var 품질현황_전체불량열 = Object.keys(품질현황_불량코드열맵).map(function(k) { return 품질현황_불량코드열맵[k]; });
+
+/* ─────────── 삼양 구역(5~44행) 전체를 빈 칸으로 초기화 — 다른 달 생성 시 남아있던 값이 섞이지 않도록 ─────────── */
+function _품질현황_삼양구역초기화(xml) {
+  [5, 10, 15, 20, 25, 30, 35, 40].forEach(function(시작행) {
+    for (var i = 0; i < 5; i++) {
+      var 행 = 시작행 + i;
+      xml = _품질현황_셀지우기(xml, 'E' + 행);
+      xml = _품질현황_셀지우기(xml, 'F' + 행);
+      xml = _품질현황_셀지우기(xml, 'Y' + 행);
+      품질현황_전체불량열.forEach(function(열) { xml = _품질현황_셀지우기(xml, 열 + 행); });
+    }
+  });
+  return xml;
+}
+
 /* ─────────── 하루치 데이터를 해당 날짜 시트 XML에 기입 ─────────── */
 function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록) {
   xml = _품질현황_셀쓰기(xml, 'N2', 월, false);
@@ -99,6 +126,9 @@ function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록) {
   /* GN7 F/L용으로 재활용하는 A 슬롯 라벨 (삼양 구역만 사용) */
   xml = _품질현황_셀쓰기(xml, 'C30', 'GN7 F/L', true);
   xml = _품질현황_셀쓰기(xml, 'D30', 'GN7 FL', true);
+
+  /* 이 날짜에 해당하는 값만 다시 채울 것이므로, 먼저 전체를 비워서 다른 달 생성 시 남은 값이 섞이지 않게 함 */
+  xml = _품질현황_삼양구역초기화(xml);
 
   if (!하루기록 || !하루기록.length) return xml;
 
