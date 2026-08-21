@@ -260,6 +260,10 @@
         <div id="공정뷰안내" style="display:none; font-size:12px; color:#666; background:#f0f6fb; border:1px solid #c5d8ed; border-radius:4px; padding:4px 10px;">
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
+        <div id="품질현황출력영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
+          <input type="month" id="품질현황_연월" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;">
+          <button id="품질현황출력버튼" class="버튼 초록" onclick="엠블럼품질현황_출력()">품질현황 출력</button>
+        </div>
         <div id="확정버튼영역" style="display:none; margin-left:auto;">
           <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold; white-space:nowrap;">확 정</button>
         </div>
@@ -407,6 +411,8 @@
   <script src="js/presence.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/엠블럼입출고.js"></script>
+  <script src="js/품질현황템플릿.js"></script>
+  <script src="js/엠블럼품질현황.js"></script>
   <script>
     세션체크();
     접속자패널초기화();
