@@ -58,6 +58,20 @@ async function _품질현황_시트맵구하기(zip) {
   return sheetMap;
 }
 
+/* ─────────── 열었을 때 수식(양품·불량·불량율 등)이 자동 재계산되도록 설정 ─────────── */
+async function _품질현황_재계산강제(zip) {
+  var wbXml = await zip.file('xl/workbook.xml').async('string');
+  if (/<calcPr\b[^>]*\/>/.test(wbXml)) {
+    wbXml = wbXml.replace(/<calcPr\b([^>]*)\/>/, function(m, attrs) {
+      attrs = attrs.replace(/\s*fullCalcOnLoad="[^"]*"/, '');
+      return '<calcPr' + attrs + ' fullCalcOnLoad="1"/>';
+    });
+  } else {
+    wbXml = wbXml.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+  }
+  zip.file('xl/workbook.xml', wbXml);
+}
+
 /* ─────────── 5행 초과 시 초과분을 5번째 행에 합산 ─────────── */
 function _품질현황_행병합(목록) {
   if (목록.length <= 5) return 목록;
@@ -127,6 +141,7 @@ async function 품질현황_생성(연, 월) {
   for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
   var zip = await JSZip.loadAsync(buf.buffer);
   var 시트맵 = await _품질현황_시트맵구하기(zip);
+  await _품질현황_재계산강제(zip);
 
   var 전체 = await 데이터불러오기();
   var 월문자 = String(월).padStart(2, '0');
