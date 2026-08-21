@@ -395,8 +395,10 @@ function 출하검사폼전환(공정) {
   document.getElementById('잔량그룹').style.display     = 검사공정 ? 'none' : '';
 
   var 공정검사불량행 = document.getElementById('공정검사불량행');
+  var 공정검사불량내역행 = document.getElementById('공정검사불량내역행');
   var 출고el = document.getElementById('출고수량');
   if (공정검사불량행) 공정검사불량행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
+  if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
   if (출고el) {
     출고el.readOnly = (공정 === '공정검사');
     출고el.style.background = (공정 === '공정검사') ? '#f3f4f6' : '';
@@ -405,8 +407,13 @@ function 출하검사폼전환(공정) {
   var 담당자그룹 = document.getElementById('담당자그룹');
   var 담당자저장행 = document.getElementById('담당자저장행');
   if (담당자그룹) {
-    if (공정 === '공정검사' && 공정검사불량행) 공정검사불량행.appendChild(담당자그룹);
-    else if (담당자저장행) 담당자저장행.insertBefore(담당자그룹, 담당자저장행.firstChild);
+    if (공정 === '공정검사' && 공정검사불량행) {
+      공정검사불량행.appendChild(담당자그룹);
+      담당자그룹.style.marginLeft = '-90px';
+    } else if (담당자저장행) {
+      담당자그룹.style.marginLeft = '';
+      담당자저장행.insertBefore(담당자그룹, 담당자저장행.firstChild);
+    }
   }
 
   var 출발el = document.getElementById('출발공정');
@@ -1505,6 +1512,11 @@ function 폼엔터핸들러(event, 현재id) {
   }
   if (현재작업공정 === '공정검사' && 현재id === 'A급수량') {
     document.getElementById('담당자입력').focus();
+    return;
+  }
+  // 공정검사: 담당자에서 Enter → 불량코드 팝업 자동 오픈
+  if (현재작업공정 === '공정검사' && 현재id === '담당자입력') {
+    불량코드팝업열기();
     return;
   }
 
