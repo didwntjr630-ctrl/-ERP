@@ -1396,6 +1396,7 @@ function 폼엔터핸들러(event, 현재id) {
   }
   if (현재작업공정 === '공정검사' && 현재id === '도착공정') { document.getElementById('A급수량').focus(); return; }
   if (현재작업공정 === '공정검사' && 현재id === 'A급수량') { document.getElementById('담당자입력').focus(); return; }
+  if (현재작업공정 === '공정검사' && 현재id === '담당자입력') { 불량코드팝업열기(); return; }
   if (검사공정 && 현재id === '출고수량') { document.getElementById('담당자입력').focus(); return; }
   if (검사공정 && 현재id === '담당자입력') { 저장하기(); return; }
 
