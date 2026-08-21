@@ -375,8 +375,13 @@ function 출하검사폼전환(공정) {
   var 담당자그룹 = document.getElementById('담당자그룹');
   var 담당자저장행 = document.getElementById('담당자저장행');
   if (담당자그룹) {
-    if (공정 === '공정검사' && 공정검사불량행) 공정검사불량행.appendChild(담당자그룹);
-    else if (담당자저장행) 담당자저장행.insertBefore(담당자그룹, 담당자저장행.firstChild);
+    if (공정 === '공정검사' && 공정검사불량행) {
+      공정검사불량행.appendChild(담당자그룹);
+      담당자그룹.style.marginLeft = '-14px';
+    } else if (담당자저장행) {
+      담당자그룹.style.marginLeft = '';
+      담당자저장행.insertBefore(담당자그룹, 담당자저장행.firstChild);
+    }
   }
 
   var 출발el = document.getElementById('출발공정');
