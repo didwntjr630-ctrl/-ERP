@@ -58,6 +58,20 @@ async function _품질현황_시트맵구하기(zip) {
   return sheetMap;
 }
 
+/* ─────────── 열었을 때 수식(양품·불량·불량율 등)이 자동 재계산되도록 설정 ─────────── */
+async function _품질현황_재계산강제(zip) {
+  var wbXml = await zip.file('xl/workbook.xml').async('string');
+  if (/<calcPr\b[^>]*\/>/.test(wbXml)) {
+    wbXml = wbXml.replace(/<calcPr\b([^>]*)\/>/, function(m, attrs) {
+      attrs = attrs.replace(/\s*fullCalcOnLoad="[^"]*"/, '');
+      return '<calcPr' + attrs + ' fullCalcOnLoad="1"/>';
+    });
+  } else {
+    wbXml = wbXml.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+  }
+  zip.file('xl/workbook.xml', wbXml);
+}
+
 /* ─────────── 5행 초과 시 초과분을 5번째 행에 합산 ─────────── */
 function _품질현황_행병합(목록) {
   if (목록.length <= 5) return 목록;
@@ -80,7 +94,8 @@ function _품질현황_행병합(목록) {
 /* ─────────── 하루치 데이터를 해당 날짜 시트 XML에 기입 ─────────── */
 function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록) {
   xml = _품질현황_셀쓰기(xml, 'N2', 월, false);
-  xml = _품질현황_셀쓰기(xml, 'P2', 일, false);
+  xml = _품질현황_셀쓰기(xml, 'P2', '', true);
+  xml = _품질현황_셀쓰기(xml, 'Q2', '', true);
   /* GN7 F/L용으로 재활용하는 A 슬롯 라벨 (삼양 구역만 사용) */
   xml = _품질현황_셀쓰기(xml, 'C30', 'GN7 F/L', true);
   xml = _품질현황_셀쓰기(xml, 'D30', 'GN7 FL', true);
@@ -98,12 +113,16 @@ function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록) {
 
   Object.keys(모델별).forEach(function(시작행문자) {
     var 시작행 = Number(시작행문자);
-    var 목록 = _품질현황_행병합(모델별[시작행문자]);
+    /* 목록 화면은 최신순(내림차순)으로 보이므로, 엑셀은 등록 순서대로(오름차순) 위에서 아래로 나오게 정렬 */
+    var 정렬된 = 모델별[시작행문자].slice().sort(function(a, b) { return (a.id || 0) - (b.id || 0); });
+    var 목록 = _품질현황_행병합(정렬된);
     목록.forEach(function(항목, idx) {
       var 행 = 시작행 + idx;
       xml = _품질현황_셀쓰기(xml, 'E' + 행, 항목.lot번호 || 항목.출고번호 || '', true);
       xml = _품질현황_셀쓰기(xml, 'F' + 행, Number(항목.입고수량) || 0, false);
-      xml = _품질현황_셀쓰기(xml, 'Y' + 행, Number(항목.A급수량) || 0, false);
+      if (Number(항목.A급수량) > 0) {
+        xml = _품질현황_셀쓰기(xml, 'Y' + 행, Number(항목.A급수량), false);
+      }
       (항목.불량내역 || []).forEach(function(b) {
         var 열 = 품질현황_불량코드열맵[b.명];
         if (!열) return;
@@ -122,6 +141,7 @@ async function 품질현황_생성(연, 월) {
   for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
   var zip = await JSZip.loadAsync(buf.buffer);
   var 시트맵 = await _품질현황_시트맵구하기(zip);
+  await _품질현황_재계산강제(zip);
 
   var 전체 = await 데이터불러오기();
   var 월문자 = String(월).padStart(2, '0');
