@@ -157,13 +157,12 @@ async function 품질현황_생성(연, 월) {
   return zip.generateAsync({ type: 'blob' });
 }
 
-/* ─────────── 버튼 핸들러 ─────────── */
+/* ─────────── 버튼 핸들러 (상단 조회 기간 필터의 시작일 기준 월 사용) ─────────── */
 async function 품질현황_출력() {
-  var 연월el = document.getElementById('품질현황_연월');
-  var 버튼   = document.getElementById('품질현황출력버튼');
-  var 연월값 = (연월el && 연월el.value) || '';
-  if (!/^\d{4}-\d{2}$/.test(연월값)) { 알림표시('출력할 연/월을 선택하세요.', '오류'); return; }
-  var 연 = Number(연월값.slice(0, 4)), 월 = Number(연월값.slice(5, 7));
+  var 버튼  = document.getElementById('품질현황출력버튼');
+  var 시작일 = (document.getElementById('검색_시작일') || {}).value || '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(시작일)) { 알림표시('상단 조회 기간의 시작일을 먼저 선택하세요.', '오류'); return; }
+  var 연 = Number(시작일.slice(0, 4)), 월 = Number(시작일.slice(5, 7));
 
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '생성 중...'; }
   try {

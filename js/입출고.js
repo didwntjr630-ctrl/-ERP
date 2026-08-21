@@ -360,13 +360,6 @@ async function 공정뷰선택(공정) {
     document.getElementById('검색_공정').value = '';
   }
 
-  if (품질현황영역 && 공정 === '공정검사') {
-    var 연월el = document.getElementById('품질현황_연월');
-    if (연월el && !연월el.value) {
-      var 오늘 = new Date();
-      연월el.value = 오늘.getFullYear() + '-' + String(오늘.getMonth() + 1).padStart(2, '0');
-    }
-  }
 
   // 출하현황 제목 변경
   var 현황제목 = document.querySelector('#출하현황카드제목, .카드 .페이지제목[data-현황]');
@@ -1624,8 +1617,8 @@ async function 출하검사_엑셀다운로드() {
   var _오늘 = new Date();
   var _년 = _오늘.getFullYear(), _월 = String(_오늘.getMonth()+1).padStart(2,'0');
   var _말일 = String(new Date(_년, _오늘.getMonth()+1, 0).getDate()).padStart(2,'0');
-  var 시작일 = (document.getElementById('엑셀시작일') || {}).value || (_년 + '-' + _월 + '-01');
-  var 종료일 = (document.getElementById('엑셀종료일') || {}).value || (_년 + '-' + _월 + '-' + _말일);
+  var 시작일 = (document.getElementById('검색_시작일') || {}).value || (_년 + '-' + _월 + '-01');
+  var 종료일 = (document.getElementById('검색_종료일') || {}).value || (_년 + '-' + _월 + '-' + _말일);
   var 선택업체 = (document.getElementById('엑셀업체') || {}).value || (APP_CONFIG.출하검사옵션.도착공정 || [])[0] || '';
   var 업체단축명 = 선택업체.replace(/\(주\)/g, '').trim();
   var 업체타이틀 = 업체단축명.split('').join(' ');
