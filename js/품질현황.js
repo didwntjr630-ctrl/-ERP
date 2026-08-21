@@ -4,8 +4,6 @@
    (JSZip으로 셀 값만 직접 수정 — 차트·이미지·서식 등 나머지는 원본 그대로 보존)
    =================================================== */
 
-var 품질현황_템플릿파일 = '삼양이엔지 엠블럼 통합품질 현황.xlsx';
-
 /* 품명 → 템플릿 모델 슬롯(시작행) 매핑. 슬롯당 5행(LOT 5건)까지 */
 var 품질현황_모델슬롯맵 = {
   '기아 61mm':               { 시작행: 5  },
@@ -119,10 +117,10 @@ function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록) {
 
 /* ─────────── 메인: 연/월 지정해서 워크북 생성 ─────────── */
 async function 품질현황_생성(연, 월) {
-  var res = await fetch(encodeURI(품질현황_템플릿파일));
-  if (!res.ok) throw new Error('템플릿 파일을 불러올 수 없습니다: ' + 품질현황_템플릿파일);
-  var buf = await res.arrayBuffer();
-  var zip = await JSZip.loadAsync(buf);
+  if (typeof 품질현황템플릿_BASE64 === 'undefined') throw new Error('품질현황템플릿.js 가 로드되지 않았습니다.');
+  var bin = atob(품질현황템플릿_BASE64), buf = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  var zip = await JSZip.loadAsync(buf.buffer);
   var 시트맵 = await _품질현황_시트맵구하기(zip);
 
   var 전체 = await 데이터불러오기();
