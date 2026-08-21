@@ -257,16 +257,9 @@
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
         <div id="품질현황출력영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
-          <input type="month" id="품질현황_연월" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;">
           <button id="품질현황출력버튼" class="버튼 초록" onclick="품질현황_출력()">품질현황 출력</button>
         </div>
         <div id="확정버튼영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
-          <div style="display:flex; align-items:center; gap:4px;">
-            <input type="date" id="엑셀시작일" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;">
-            <span style="color:#666; font-size:13px; padding:0 2px;">~</span>
-            <input type="date" id="엑셀종료일" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;">
-            <button onclick="엑셀날짜이번달()" style="height:32px; padding:0 10px; font-size:12px; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; cursor:pointer; white-space:nowrap; color:#333;">이번 달</button>
-          </div>
           <select id="엑셀업체" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;"></select>
           <button id="엑셀다운로드버튼" class="버튼 초록" onclick="출하검사_엑셀다운로드()">검사대장 출력</button>
           <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold;">확 정</button>

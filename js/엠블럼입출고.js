@@ -330,14 +330,6 @@ function 공정뷰선택(공정) {
     document.getElementById('검색_공정').value = '';
   }
 
-  if (품질현황영역 && 공정 === '공정검사') {
-    var 연월el = document.getElementById('품질현황_연월');
-    if (연월el && !연월el.value) {
-      var 오늘 = new Date();
-      연월el.value = 오늘.getFullYear() + '-' + String(오늘.getMonth() + 1).padStart(2, '0');
-    }
-  }
-
   document.querySelectorAll('.카드 .페이지제목').forEach(function(el) {
     if (el.textContent.trim() === '출하 현황' || el.textContent.trim() === '코팅 출하 현황') {
       el.textContent = (공정 === '공정검사') ? '코팅 출하 현황' : '출하 현황';
