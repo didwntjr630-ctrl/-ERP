@@ -395,8 +395,10 @@ function 출하검사폼전환(공정) {
   document.getElementById('잔량그룹').style.display     = 검사공정 ? 'none' : '';
 
   var 공정검사불량행 = document.getElementById('공정검사불량행');
+  var 공정검사불량내역행 = document.getElementById('공정검사불량내역행');
   var 출고el = document.getElementById('출고수량');
   if (공정검사불량행) 공정검사불량행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
+  if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
   if (출고el) {
     출고el.readOnly = (공정 === '공정검사');
     출고el.style.background = (공정 === '공정검사') ? '#f3f4f6' : '';

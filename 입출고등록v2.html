@@ -204,8 +204,8 @@
         </div>
       </div>
 
-      <!-- 공정검사 전용: 불량 입력 -->
-      <div class="폼행" id="공정검사불량행" style="display:none;">
+      <!-- 공정검사 전용: A급수량 / 총불량수량 / 담당자(JS로 이동) -->
+      <div class="폼행" id="공정검사불량행" style="display:none; gap:24px;">
         <div class="입력그룹" style="flex:0 0 120px;">
           <label for="A급수량">A급 수량</label>
           <div class="수량행">
@@ -214,7 +214,18 @@
             <span class="단위">EA</span>
           </div>
         </div>
-        <div class="입력그룹" style="flex:0 0 340px;">
+        <div class="입력그룹" style="flex:0 0 130px;">
+          <label style="color:#888;">총 불량수량</label>
+          <div class="수량행">
+            <div id="총불량표시" class="순이동량">-</div>
+            <span class="단위">EA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 공정검사 전용: 불량 내역 표 -->
+      <div class="폼행" id="공정검사불량내역행" style="display:none;">
+        <div class="입력그룹" style="flex:1 1 100%;">
           <label>불량 내역 <span style="color:#888; font-weight:normal;">(코드 셀 더블클릭)</span></label>
           <div class="테이블감싸기" style="max-height:180px; overflow-y:auto;">
             <table>
@@ -223,13 +234,6 @@
               </thead>
               <tbody id="불량내역바디"></tbody>
             </table>
-          </div>
-        </div>
-        <div class="입력그룹" style="flex:0 0 130px;">
-          <label style="color:#888;">총 불량수량</label>
-          <div class="수량행">
-            <div id="총불량표시" class="순이동량">-</div>
-            <span class="단위">EA</span>
           </div>
         </div>
       </div>
