@@ -342,11 +342,13 @@ async function 공정뷰선택(공정) {
   var 안내박스 = document.getElementById('공정뷰안내');
 
   var 확정버튼영역 = document.getElementById('확정버튼영역');
+  var 품질현황영역 = document.getElementById('품질현황출력영역');
   if (공정) {
     if (폼제목)  폼제목.textContent  = 공정 + ' 입출고 등록';
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
     if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정 === '공정검사') ? 'none' : 'block';
     if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정 === '공정검사') ? 'flex' : 'none';
+    if (품질현황영역) 품질현황영역.style.display = (공정 === '공정검사') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
     document.getElementById('검색_공정').value = 공정;
   } else {
@@ -354,7 +356,16 @@ async function 공정뷰선택(공정) {
     if (목록제목) 목록제목.textContent = '입출고 목록';
     if (안내박스) 안내박스.style.display = 'none';
     if (확정버튼영역) 확정버튼영역.style.display = 'none';
+    if (품질현황영역) 품질현황영역.style.display = 'none';
     document.getElementById('검색_공정').value = '';
+  }
+
+  if (품질현황영역 && 공정 === '공정검사') {
+    var 연월el = document.getElementById('품질현황_연월');
+    if (연월el && !연월el.value) {
+      var 오늘 = new Date();
+      연월el.value = 오늘.getFullYear() + '-' + String(오늘.getMonth() + 1).padStart(2, '0');
+    }
   }
 
   // 출하현황 제목 변경
