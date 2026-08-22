@@ -161,6 +161,23 @@ function 불량내역삭제(idx) {
   불량내역그리기();
 }
 
+/* 불량내역 수량 칸: Enter=다음 불량코드 팝업, ↓/↑=아래·위 줄 수량칸으로 이동 */
+function 불량내역방향키(e, idx) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    e.target.blur();
+    불량코드팝업열기();
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    var 다음 = document.getElementById('불량수량입력_' + (idx + 1));
+    if (다음) 다음.focus();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    var 이전 = document.getElementById('불량수량입력_' + (idx - 1));
+    if (이전) 이전.focus();
+  }
+}
+
 function 불량내역그리기() {
   var 바디 = document.getElementById('불량내역바디');
   if (!바디) return;
@@ -173,7 +190,7 @@ function 불량내역그리기() {
       '<td><input type="number" min="0" value="' + (r.수량 || 0) + '" id="불량수량입력_' + idx + '" ' +
         'style="width:90px;border:1px solid #c0cfe0;border-radius:3px;padding:3px 6px;font-size:13px;font-family:inherit;text-align:right;" ' +
         'oninput="불량내역수량변경(' + idx + ',this.value)" ' +
-        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();불량코드팝업열기();}"></td>' +
+        'onkeydown="불량내역방향키(event,' + idx + ')"></td>' +
       '<td style="text-align:center;"><button class="버튼 빨강 소형" onclick="불량내역삭제(' + idx + ')">삭제</button></td>';
     바디.appendChild(행);
   });

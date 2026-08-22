@@ -163,3 +163,12 @@ function 관리자체크() {
   if (!세션 || !세션.관리자) { location.href = 'main.html'; return false; }
   return true;
 }
+
+/* 전산 전체: 수량/금액 입력 칸(클릭·포커스) 시 값 전체 선택 → 바로 덮어쓰기 가능 */
+document.addEventListener('focus', function(e) {
+  var el = e.target;
+  if (!el || el.tagName !== 'INPUT') return;
+  if (el.type === 'number' || el.getAttribute('inputmode') === 'numeric') {
+    el.select();
+  }
+}, true);
