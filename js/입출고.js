@@ -685,6 +685,20 @@ async function 저장하기() {
     return;
   }
 
+  // 검사 공정(출하검사·공정검사·태산입고): 같은 공정에 동일 LOT 번호 중복 등록 방지
+  if (검사공정 && 수정중인id === null) {
+    var { data: _중복lot } = await 수파베이스
+      .from(테이블명)
+      .select('id')
+      .eq('공정', 현재작업공정)
+      .eq('lot번호', lot값)
+      .limit(1);
+    if (_중복lot && _중복lot.length > 0) {
+      알림표시('이미 ' + 현재작업공정 + '에 등록된 LOT 번호입니다 (' + lot값 + ').', '오류');
+      return;
+    }
+  }
+
   var 입고 = Number(입고값) || 0;
   var 출고 = Number(출고값) || 0;
   var 불량 = Number(불량값) || 0;
