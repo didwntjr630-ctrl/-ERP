@@ -420,16 +420,25 @@ function 출하검사폼전환(공정) {
   }
 
   var 출발el = document.getElementById('출발공정');
+  var 도착el = document.getElementById('도착공정');
   if (공정 === '출하검사') {
     출발el.value    = APP_CONFIG.출하검사옵션.출발공정[0];
     출발el.readOnly = false;
-    document.getElementById('도착공정').value = APP_CONFIG.출하검사옵션.도착공정[0];
+    도착el.value    = APP_CONFIG.출하검사옵션.도착공정[0];
+    도착el.readOnly = false;
+  } else if (공정 === '태산 입고') {
+    출발el.value    = 공정;
+    출발el.readOnly = true;
+    도착el.value    = APP_CONFIG.태산입고옵션.도착공정[0];
+    도착el.readOnly = true;
   } else if (공정검사류(공정)) {
     출발el.value    = 공정;
     출발el.readOnly = true;
-    document.getElementById('도착공정').value = APP_CONFIG.공정검사옵션.도착공정[0];
+    도착el.value    = APP_CONFIG.공정검사옵션.도착공정[0];
+    도착el.readOnly = false;
   } else {
     출발el.readOnly = false;
+    도착el.readOnly = false;
   }
 }
 
@@ -437,6 +446,9 @@ function 공정별출발도착옵션갱신(공정) {
   if (공정 === '출하검사') {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.출하검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.출하검사옵션.도착공정.slice();
+  } else if (공정 === '태산 입고') {
+    출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.태산입고옵션.출발공정);
+    도착공정목록 = APP_CONFIG.태산입고옵션.도착공정.slice();
   } else if (공정검사류(공정)) {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.공정검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.공정검사옵션.도착공정.slice();
@@ -862,7 +874,8 @@ function 폼초기화(일자유지) {
   document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : (현재작업공정 || '');
   document.getElementById('출발공정').readOnly         = 공정검사류(현재작업공정);
   document.getElementById('출발공정').disabled          = false;
-  document.getElementById('도착공정').value            = 공정검사류(현재작업공정) ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
+  document.getElementById('도착공정').value            = 현재작업공정 === '태산 입고' ? APP_CONFIG.태산입고옵션.도착공정[0] : 공정검사류(현재작업공정) ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
+  document.getElementById('도착공정').readOnly         = (현재작업공정 === '태산 입고');
   document.getElementById('담당자입력').value          = '';
   document.getElementById('담당자코드표시').textContent = '';
   document.getElementById('잔량표시').textContent      = '-';
