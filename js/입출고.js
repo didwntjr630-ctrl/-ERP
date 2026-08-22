@@ -1426,6 +1426,9 @@ function 전체선택토글() {
   });
 }
 
+/* 공정검사 → 태산 입고, 태산 입고 → 출하검사: '확정'은 매출이 아니라 다음 공정 전달 */
+var 확정전달맵 = { '공정검사': '태산 입고', '태산 입고': '출하검사' };
+
 function 확정처리() {
   var 선택ids = Array.from(document.querySelectorAll('.행선택체크:checked'))
                      .map(function(c) { return Number(c.value); });
@@ -1433,6 +1436,23 @@ function 확정처리() {
     알림표시('확정할 항목을 선택해주세요.', '오류');
     return;
   }
+
+  var 전달공정 = 확정전달맵[현재작업공정];
+  if (전달공정) {
+    확인모달표시(선택ids.length + '건을 ' + 전달공정 + '(으)로 전달하시겠습니까?', async function() {
+      var 전체 = await 데이터불러오기();
+      var 선택항목 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
+      for (var i = 0; i < 선택항목.length; i++) {
+        var h = 선택항목[i];
+        await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자);
+      }
+      document.getElementById('전체선택체크').checked = false;
+      알림표시(선택ids.length + '건이 ' + 전달공정 + '(으)로 전달되었습니다.', '성공');
+      await 공정필터목록갱신();
+    });
+    return;
+  }
+
   확인모달표시(선택ids.length + '건을 매출확정 하시겠습니까?', async function() {
     // 확정 직전 최신 상태 재조회 — 동시 작업 중복 방지
     await 확정id목록갱신();
@@ -1474,6 +1494,27 @@ function 확정처리() {
     document.getElementById('전체선택체크').checked = false;
     알림표시(선택ids.length + '건이 매출확정 되었습니다. 매출관리 메뉴에서 확인하세요.', '성공');
     await 공정필터목록갱신();
+  });
+}
+
+/* 체크된 항목 일괄 삭제 */
+function 선택삭제() {
+  var 선택ids = Array.from(document.querySelectorAll('.행선택체크:checked'))
+                     .map(function(c) { return Number(c.value); });
+  if (선택ids.length === 0) {
+    알림표시('삭제할 항목을 선택해주세요.', '오류');
+    return;
+  }
+  확인모달표시(선택ids.length + '건을 삭제하시겠습니까?\n되돌릴 수 없습니다.', async function() {
+    var 성공 = 0, 실패 = 0;
+    for (var i = 0; i < 선택ids.length; i++) {
+      var 삭제됨 = await 데이터삭제(선택ids[i]);
+      if (삭제됨) 성공++; else 실패++;
+    }
+    document.getElementById('전체선택체크').checked = false;
+    알림표시(실패 > 0 ? (성공 + '건 삭제, ' + 실패 + '건 실패') : (성공 + '건이 삭제되었습니다.'), 실패 > 0 ? '오류' : '성공');
+    await 공정필터목록갱신();
+    await 공정별재고요약();
   });
 }
 
