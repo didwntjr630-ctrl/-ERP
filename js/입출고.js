@@ -1235,7 +1235,13 @@ async function lot팝업열기() {
     }
   });
 
-  var lot목록 = Object.values(lot맵).map(function(d) {
+  /* 이미 다음 공정으로 넘어간(현재 위치가 지금 보는 공정보다 뒤인) LOT는 목록에서 제외 */
+  var 현재공정순번 = 공정순서.indexOf(현재작업공정);
+  var lot목록 = Object.values(lot맵).filter(function(d) {
+    if (!현재작업공정 || 현재공정순번 === -1) return true;
+    var 위치순번 = 공정순서.indexOf(d.현재위치);
+    return 위치순번 === -1 || 위치순번 <= 현재공정순번;
+  }).map(function(d) {
     return {
       'lot번호':  d['lot번호'],
       품명:     d.품명,
