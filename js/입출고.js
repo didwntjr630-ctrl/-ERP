@@ -24,6 +24,7 @@ var 확정된id목록 = new Set();
 var 확정된lot목록 = new Set(); /* 공정검사·태산입고: 다음 공정으로 이미 전달된 LOT (매출기록 대신 LOT 기준으로 추적) */
 var _앱브로드캐스트채널 = null;
 var 현재표시목록 = [];
+var _태산입고입고일자값 = null; /* 태산입고: 공정검사 확정일 — 화면에는 노출하지 않고 내부적으로만 저장 */
 /* ── LOT 수동 띄어쓰기 모드 ── */
 var _lot수동모드  = false;
 var _품명히스토리 = [];
@@ -418,11 +419,9 @@ function 출하검사폼전환(공정) {
 
   var 공정검사불량행 = document.getElementById('공정검사불량행');
   var 공정검사불량내역행 = document.getElementById('공정검사불량내역행');
-  var 입고일자그룹 = document.getElementById('입고일자그룹');
   var 출고el = document.getElementById('출고수량');
   if (공정검사불량행) 공정검사불량행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
   if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
-  if (입고일자그룹) 입고일자그룹.style.display = (공정 === '태산 입고') ? '' : 'none';
   if (출고el) {
     출고el.readOnly = false;
     출고el.style.background = '';
@@ -732,7 +731,7 @@ async function 저장하기() {
     담당자코드: 선택된담당자 ? 선택된담당자.코드 : '',
     불량내역:   공정검사류(현재작업공정) ? 현재불량내역 : [],
     A급수량:    공정검사류(현재작업공정) ? (Number(document.getElementById('A급수량').value) || 0) : 0,
-    입고일자:   현재작업공정 === '태산 입고' ? (document.getElementById('입고일자').value || null) : null,
+    입고일자:   현재작업공정 === '태산 입고' ? (_태산입고입고일자값 || null) : null,
     완료여부:   true
   };
 
@@ -852,7 +851,7 @@ async function 수정폼채우기(id, 확정됨) {
   현재불량내역 = 공정처리모드 ? [] : (항목.불량내역 || []);
   불량내역그리기();
   document.getElementById('A급수량').value = 공정처리모드 ? '' : (항목.A급수량 || '');
-  document.getElementById('입고일자').value = 항목.입고일자 || '';
+  _태산입고입고일자값 = 항목.입고일자 || null;
   document.getElementById('출고일자').value = 항목.출고일자 || '';
   document.getElementById('lot번호').value  = 항목['lot번호']  || '';
   document.getElementById('출발공정').value = 공정처리모드 ? 현재작업공정 : (항목.출발공정 || '');
@@ -906,7 +905,7 @@ function 폼초기화(일자유지) {
   현재불량내역 = [];
   불량내역그리기();
   document.getElementById('A급수량').value             = '';
-  document.getElementById('입고일자').value            = '';
+  _태산입고입고일자값 = null;
   document.getElementById('입고수량').value            = '';
   document.getElementById('출고수량').value            = '';
   document.getElementById('불량수량').value            = '';
@@ -963,7 +962,7 @@ function 목록테이블그리기(목록) {
   if (전체체크) 전체체크.checked = false;
 
   if (목록.length === 0) {
-    바디.innerHTML = '<tr><td colspan="15" class="빈목록안내">' +
+    바디.innerHTML = '<tr><td colspan="14" class="빈목록안내">' +
       (현재작업공정 ? 현재작업공정 + ' 관련 데이터가 없습니다.' : '데이터가 없습니다.') +
       '</td></tr>';
     return;
@@ -1016,7 +1015,6 @@ function 목록테이블그리기(목록) {
       '<td style="color:#27ae60; font-weight:bold;">' + 도착셀 + '</td>' +
       '<td>' + (항목.담당자   || '') + '</td>' +
       '<td>' + (항목.출고일자 || '') + '</td>' +
-      '<td>' + (항목.입고일자 || '') + '</td>' +
       '<td>' + (항목['lot번호']  || '') + '</td>' +
       '<td>' + 조치버튼 + '</td>';
     Array.from(행.children).forEach(function(td) { td.tabIndex = -1; });
@@ -1386,13 +1384,13 @@ async function lot선택시(lot데이터) {
     ' &nbsp;<button class="버튼 회색" style="font-size:11px; height:22px; padding:0 8px;" onclick="목록새로고침()">전체 목록</button>';
 }
 
-/* 태산 입고: 공정검사 확정 LOT 선택 시 — 입고일자는 공정검사 확정일로 자동 세팅 */
+/* 태산 입고: 공정검사 확정 LOT 선택 시 — 입고일자(내부값)는 공정검사 확정일로 자동 세팅, 화면에는 표시하지 않음 */
 function 태산입고lot선택시(항목) {
   document.getElementById('lot번호').value = 항목['lot번호'];
   var 품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; });
   if (품목) 품목선택(품목);
   document.getElementById('입고수량').value = 항목.입고수량 || 0;
-  document.getElementById('입고일자').value = 항목.확정일자 || '';
+  _태산입고입고일자값 = 항목.확정일자 || null;
   잔량미리보기();
   폼임시저장();
   작업시작알림();
