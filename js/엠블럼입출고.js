@@ -385,8 +385,8 @@ function 출하검사폼전환(공정) {
   if (공정검사불량행) 공정검사불량행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
   if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정 === '공정검사') ? 'flex' : 'none';
   if (출고el) {
-    출고el.readOnly = (공정 === '공정검사');
-    출고el.style.background = (공정 === '공정검사') ? '#f3f4f6' : '';
+    출고el.readOnly = false;
+    출고el.style.background = '';
   }
 
   var 담당자그룹 = document.getElementById('담당자그룹');
