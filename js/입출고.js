@@ -1497,6 +1497,27 @@ function 확정처리() {
   });
 }
 
+/* 체크된 항목 일괄 삭제 */
+function 선택삭제() {
+  var 선택ids = Array.from(document.querySelectorAll('.행선택체크:checked'))
+                     .map(function(c) { return Number(c.value); });
+  if (선택ids.length === 0) {
+    알림표시('삭제할 항목을 선택해주세요.', '오류');
+    return;
+  }
+  확인모달표시(선택ids.length + '건을 삭제하시겠습니까?\n되돌릴 수 없습니다.', async function() {
+    var 성공 = 0, 실패 = 0;
+    for (var i = 0; i < 선택ids.length; i++) {
+      var 삭제됨 = await 데이터삭제(선택ids[i]);
+      if (삭제됨) 성공++; else 실패++;
+    }
+    document.getElementById('전체선택체크').checked = false;
+    알림표시(실패 > 0 ? (성공 + '건 삭제, ' + 실패 + '건 실패') : (성공 + '건이 삭제되었습니다.'), 실패 > 0 ? '오류' : '성공');
+    await 공정필터목록갱신();
+    await 공정별재고요약();
+  });
+}
+
 /* ══════════════════════════════════════════
    출하성적서 자동 생성
 ══════════════════════════════════════════ */
