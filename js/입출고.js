@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (document.getElementById('확인모달_오버레이').style.display !== 'none') { 확인모달닫기(); return; }
     if (document.getElementById('알림모달_오버레이').style.display !== 'none') { 알림모달닫기(); return; }
     if (document.getElementById('조회팝업_오버레이').style.display !== 'none') { 조회팝업닫기(); return; }
+    if (수정중인id !== null) { 폼임시저장초기화(); 폼초기화(); return; }
   });
 
   // 목록 테이블 셀 클릭 포커스 + 좌우 방향키 이동
@@ -368,7 +369,7 @@ async function 공정뷰선택(공정) {
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
     if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'none' : 'block';
     if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'flex' : 'none';
-    if (품질현황영역) 품질현황영역.style.display = (공정검사류(공정)) ? 'flex' : 'none';
+    if (품질현황영역) 품질현황영역.style.display = (공정 === '태산 입고') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
     document.getElementById('검색_공정').value = 공정;
   } else {
@@ -547,6 +548,16 @@ async function 공정필터목록갱신() {
     if (_시작) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') >= _시작; });
     if (_종료) 결과 = 결과.filter(function(h) { return (h.출고일자||h.일자||'') <= _종료; });
   }
+
+  // 상단 조회 필터(품명/담당자)가 이미 적용돼 있으면 저장/삭제 후에도 그대로 유지
+  var _품명필터el = document.getElementById('검색_품명');
+  var _품명필터 = _품명필터el ? _품명필터el.value.trim().toLowerCase() : '';
+  if (_품명필터) 결과 = 결과.filter(function(h) {
+    return (h.품명||'').toLowerCase().includes(_품명필터) || (h.품번||'').toLowerCase().includes(_품명필터);
+  });
+  var _담당필터el = document.getElementById('검색_담당자');
+  var _담당필터 = _담당필터el ? _담당필터el.value : '';
+  if (_담당필터) 결과 = 결과.filter(function(h) { return (h.담당자||'') === _담당필터; });
 
   목록테이블그리기(결과);
 
