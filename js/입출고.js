@@ -21,6 +21,7 @@ var 현재작업공정 = null;
 var 출발공정목록 = [];
 var 도착공정목록 = [];
 var 확정된id목록 = new Set();
+var 확정된lot목록 = new Set(); /* 공정검사·태산입고: 다음 공정으로 이미 전달된 LOT (매출기록 대신 LOT 기준으로 추적) */
 var _앱브로드캐스트채널 = null;
 var 현재표시목록 = [];
 /* ── LOT 수동 띄어쓰기 모드 ── */
@@ -523,7 +524,16 @@ function 공정팝업열기(구분) {
 }
 
 async function 확정id목록갱신() {
-  if (현재작업공정 !== '출하검사' && !공정검사류(현재작업공정)) { 확정된id목록 = new Set(); return; }
+  var 전달공정 = 확정전달맵[현재작업공정];
+  if (전달공정) {
+    /* 공정검사·태산입고: 다음 공정에 이미 넘어간 LOT 을 '확정' 표시 대상으로 취급 (매출기록 대신 LOT 기준 추적) */
+    var { data: lotData } = await 수파베이스.from(테이블명).select('lot번호').eq('공정', 전달공정);
+    확정된lot목록 = new Set((lotData || []).map(function(r) { return r['lot번호']; }).filter(Boolean));
+    확정된id목록 = new Set();
+    return;
+  }
+  확정된lot목록 = new Set();
+  if (현재작업공정 !== '출하검사') { 확정된id목록 = new Set(); return; }
   var { data } = await 수파베이스.from('매출기록').select('입출고id');
   확정된id목록 = new Set((data || []).map(function(r) { return Number(r['입출고id']); }));
 }
@@ -978,7 +988,7 @@ function 목록테이블그리기(목록) {
       : '<button class="버튼 회색 소형" onclick="수정하기(' + 항목.id + ')">수정</button> ' +
         '<button class="버튼 빨강 소형" onclick="삭제하기(' + 항목.id + ')">삭제</button>';
 
-    var 이미확정 = 확정된id목록.has(항목.id);
+    var 이미확정 = 확정전달맵[현재작업공정] ? 확정된lot목록.has(항목['lot번호']) : 확정된id목록.has(항목.id);
     if (이미확정) 행.style.cssText = 'background:#f0f0f0; color:#aaa;';
     else if (미완료) 행.style.cssText = 'background:#fff8e1;';
 
@@ -1466,14 +1476,22 @@ function 확정처리() {
   var 전달공정 = 확정전달맵[현재작업공정];
   if (전달공정) {
     확인모달표시(선택ids.length + '건을 ' + 전달공정 + '(으)로 전달하시겠습니까?', async function() {
+      // 전달 직전 최신 상태 재조회 — 이미 넘어간 LOT 중복 전달 방지
+      await 확정id목록갱신();
       var 전체 = await 데이터불러오기();
-      var 선택항목 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
+      var 선택항목전체 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
+      var 선택항목 = 선택항목전체.filter(function(h) { return !확정된lot목록.has(h['lot번호']); });
+      if (선택항목.length === 0) {
+        알림표시('선택한 항목이 이미 모두 ' + 전달공정 + '(으)로 전달되었습니다.', '오류');
+        await 공정필터목록갱신();
+        return;
+      }
       for (var i = 0; i < 선택항목.length; i++) {
         var h = 선택항목[i];
         await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자);
       }
       document.getElementById('전체선택체크').checked = false;
-      알림표시(선택ids.length + '건이 ' + 전달공정 + '(으)로 전달되었습니다.', '성공');
+      알림표시(선택항목.length + '건이 ' + 전달공정 + '(으)로 전달되었습니다.', '성공');
       await 공정필터목록갱신();
     });
     return;
