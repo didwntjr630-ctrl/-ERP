@@ -143,6 +143,10 @@
           <input type="text" id="lot번호" placeholder="더블클릭 또는 직접 입력" ondblclick="lot팝업열기()"
                  oninput="lot번호포맷(this)" onkeydown="lot키다운(event)">
         </div>
+        <div class="입력그룹" id="입고일자그룹" style="display:none; flex:0 0 155px;">
+          <label for="입고일자">입고일자</label>
+          <input type="date" id="입고일자" onchange="폼임시저장()">
+        </div>
       </div>
 
       <!-- 2행: 출발공정 + 입고수량 → 도착공정 + 출고수량 + 불량수량 -->
@@ -287,6 +291,7 @@
               <th>도착 공정</th>
               <th>담당자</th>
               <th>일자</th>
+              <th>입고일자</th>
               <th>LOT No.</th>
               <th>조치</th>
             </tr>
