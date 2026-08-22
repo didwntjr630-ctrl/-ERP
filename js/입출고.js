@@ -218,11 +218,11 @@ function 오늘날짜세팅() {
 
 /* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
 function 입고수량변경() {
-  if (공정검사류(현재작업공정)) {
-    불량합계갱신();
-  } else if (현재작업공정 === '출하검사') {
+  if (현재작업공정 === '태산 입고' || 현재작업공정 === '출하검사') {
     var v = document.getElementById('입고수량').value;
     document.getElementById('출고수량').value = v;
+  } else if (공정검사류(현재작업공정)) {
+    불량합계갱신();
   }
   잔량미리보기();
 }
@@ -423,8 +423,9 @@ function 출하검사폼전환(공정) {
   if (공정검사불량행) 공정검사불량행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
   if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
   if (출고el) {
-    출고el.readOnly = false;
-    출고el.style.background = '';
+    var 출고잠금 = (공정 === '태산 입고');
+    출고el.readOnly = 출고잠금;
+    출고el.style.background = 출고잠금 ? '#eee' : '';
   }
 
   var 담당자그룹 = document.getElementById('담당자그룹');
@@ -992,9 +993,9 @@ function 목록테이블그리기(목록) {
       : '<button class="버튼 회색 소형" onclick="수정하기(' + 항목.id + ')">수정</button> ' +
         '<button class="버튼 빨강 소형" onclick="삭제하기(' + 항목.id + ')">삭제</button>';
 
-    var 이미확정 = (현재작업공정 === '공정검사')
+    var 이미확정 = 공정검사류(현재작업공정)
       ? !!항목.확정됨
-      : (확정전달맵[현재작업공정] ? 확정된lot목록.has(항목['lot번호']) : 확정된id목록.has(항목.id));
+      : 확정된id목록.has(항목.id);
     if (이미확정) 행.style.cssText = 'background:#f0f0f0; color:#aaa;';
     else if (미완료) 행.style.cssText = 'background:#fff8e1;';
 
@@ -1390,6 +1391,7 @@ function 태산입고lot선택시(항목) {
   var 품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; });
   if (품목) 품목선택(품목);
   document.getElementById('입고수량').value = 항목.입고수량 || 0;
+  document.getElementById('출고수량').value = 항목.입고수량 || 0;
   _태산입고입고일자값 = 항목.확정일자 || null;
   잔량미리보기();
   폼임시저장();
@@ -1589,6 +1591,12 @@ function 확정처리() {
         var h = 선택항목[i];
         await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자);
       }
+      // 실제로 전달된 행 자체에도 확정 표시를 남겨(확정됨=true), LOT 우연 일치로 인한 오탐 없이
+      // 이 행이 진짜 확정·전달되었는지를 정확히 추적한다
+      await 수파베이스
+        .from(테이블명)
+        .update({ 확정됨: true, 확정일시: new Date().toISOString() })
+        .in('id', 선택항목.map(function(h) { return h.id; }));
       document.getElementById('전체선택체크').checked = false;
       알림표시(선택항목.length + '건이 ' + 전달공정 + '(으)로 전달되었습니다.', '성공');
       await 공정필터목록갱신();
