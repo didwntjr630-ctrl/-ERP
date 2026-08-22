@@ -177,7 +177,7 @@ async function 품질현황_생성(연, 월) {
   var 월문자 = String(월).padStart(2, '0');
   var 말일 = new Date(연, 월, 0).getDate();
   var 대상 = 전체.filter(function(h) {
-    return h.공정 === '공정검사' && h.완료여부 !== false &&
+    return 공정검사류(h.공정) && h.완료여부 !== false &&
       (h.출고일자 || '').slice(0, 7) === (연 + '-' + 월문자);
   });
 

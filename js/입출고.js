@@ -420,16 +420,25 @@ function 출하검사폼전환(공정) {
   }
 
   var 출발el = document.getElementById('출발공정');
+  var 도착el = document.getElementById('도착공정');
   if (공정 === '출하검사') {
     출발el.value    = APP_CONFIG.출하검사옵션.출발공정[0];
     출발el.readOnly = false;
-    document.getElementById('도착공정').value = APP_CONFIG.출하검사옵션.도착공정[0];
+    도착el.value    = APP_CONFIG.출하검사옵션.도착공정[0];
+    도착el.readOnly = false;
+  } else if (공정 === '태산 입고') {
+    출발el.value    = 공정;
+    출발el.readOnly = true;
+    도착el.value    = APP_CONFIG.태산입고옵션.도착공정[0];
+    도착el.readOnly = false;
   } else if (공정검사류(공정)) {
     출발el.value    = 공정;
     출발el.readOnly = true;
-    document.getElementById('도착공정').value = APP_CONFIG.공정검사옵션.도착공정[0];
+    도착el.value    = APP_CONFIG.공정검사옵션.도착공정[0];
+    도착el.readOnly = false;
   } else {
     출발el.readOnly = false;
+    도착el.readOnly = false;
   }
 }
 
@@ -437,6 +446,9 @@ function 공정별출발도착옵션갱신(공정) {
   if (공정 === '출하검사') {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.출하검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.출하검사옵션.도착공정.slice();
+  } else if (공정 === '태산 입고') {
+    출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.태산입고옵션.출발공정);
+    도착공정목록 = APP_CONFIG.태산입고옵션.도착공정.slice();
   } else if (공정검사류(공정)) {
     출발공정목록 = APP_CONFIG.공정목록.concat(APP_CONFIG.공정검사옵션.출발공정);
     도착공정목록 = APP_CONFIG.공정검사옵션.도착공정.slice();
@@ -669,6 +681,9 @@ async function 저장하기() {
     완료여부:   true
   };
 
+  /* 공정검사 완료 → 태산 입고, 태산 입고 완료 → 출하검사 로 자동 대기 생성 (도착공정 선택과 무관하게 항상 실행) */
+  var 강제전달공정 = ({ '공정검사': '태산 입고', '태산 입고': '출하검사' })[기록공정];
+
   if (수정중인id !== null) {
     var 확정취소대상 = 수정중인항목이확정됨;
     var 이전기록 = await 데이터하나가져오기(수정중인id);
@@ -686,9 +701,17 @@ async function 저장하기() {
       await 매출기록확정취소(수정중인id);
     }
 
+    var 전달안내 = '';
+    if (이전미완료 && 강제전달공정) {
+      await 다음공정자동생성(강제전달공정, 기록공정, 출고, 선택된품목, lot값, 일자값);
+      전달안내 = '등록 완료! ' + 강제전달공정 + '에 자동으로 전달되었습니다.';
+    }
     if (이전미완료 && 도착값 && 공정순서.includes(도착값)) {
       await 다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
-      알림표시('등록 완료! ' + 도착값 + '에 자동으로 전달되었습니다.' + (확정취소대상 ? ' (매출확정 취소됨. 재확정 필요)' : ''), '성공');
+      전달안내 = '등록 완료! ' + 도착값 + '에 자동으로 전달되었습니다.';
+    }
+    if (전달안내) {
+      알림표시(전달안내 + (확정취소대상 ? ' (매출확정 취소됨. 재확정 필요)' : ''), '성공');
     } else {
       알림표시(확정취소대상 ? '수정 완료. 매출확정이 취소되었습니다. 재확정이 필요합니다.' : '수정되었습니다.', '성공');
     }
@@ -701,12 +724,17 @@ async function 저장하기() {
   } else {
     var 저장결과 = await 데이터저장(새항목);
     if (!저장결과) return;
+
+    var 전달메시지 = '';
+    if (강제전달공정) {
+      await 다음공정자동생성(강제전달공정, 기록공정, 출고, 선택된품목, lot값, 일자값);
+      전달메시지 = 기록공정 + ' 저장 완료 → ' + 강제전달공정 + '에 자동 전달';
+    }
     if (도착값 && 공정순서.includes(도착값)) {
       await 다음공정자동생성(도착값, 기록공정, 출고, 선택된품목, lot값, 일자값);
-      알림표시(기록공정 + ' 저장 완료 → ' + 도착값 + '에 자동 전달', '성공');
-    } else {
-      알림표시(기록공정 + ' 기록이 저장되었습니다.', '성공');
+      전달메시지 = 기록공정 + ' 저장 완료 → ' + 도착값 + '에 자동 전달';
     }
+    알림표시(전달메시지 || (기록공정 + ' 기록이 저장되었습니다.'), '성공');
   }
 
   폼임시저장초기화();
@@ -846,7 +874,8 @@ function 폼초기화(일자유지) {
   document.getElementById('출발공정').value            = 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.출발공정[0] : (현재작업공정 || '');
   document.getElementById('출발공정').readOnly         = 공정검사류(현재작업공정);
   document.getElementById('출발공정').disabled          = false;
-  document.getElementById('도착공정').value            = 공정검사류(현재작업공정) ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
+  document.getElementById('도착공정').value            = 현재작업공정 === '태산 입고' ? APP_CONFIG.태산입고옵션.도착공정[0] : 공정검사류(현재작업공정) ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
+  document.getElementById('도착공정').readOnly         = false;
   document.getElementById('담당자입력').value          = '';
   document.getElementById('담당자코드표시').textContent = '';
   document.getElementById('잔량표시').textContent      = '-';
@@ -1206,7 +1235,13 @@ async function lot팝업열기() {
     }
   });
 
-  var lot목록 = Object.values(lot맵).map(function(d) {
+  /* 이미 다음 공정으로 넘어간(현재 위치가 지금 보는 공정보다 뒤인) LOT는 목록에서 제외 */
+  var 현재공정순번 = 공정순서.indexOf(현재작업공정);
+  var lot목록 = Object.values(lot맵).filter(function(d) {
+    if (!현재작업공정 || 현재공정순번 === -1) return true;
+    var 위치순번 = 공정순서.indexOf(d.현재위치);
+    return 위치순번 === -1 || 위치순번 <= 현재공정순번;
+  }).map(function(d) {
     return {
       'lot번호':  d['lot번호'],
       품명:     d.품명,
@@ -1627,7 +1662,11 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
-  var 공정검사여부 = 공정검사류(현재작업공정);
+  if (현재작업공정 === '태산 입고') {
+    알림표시('태산 입고 검사대장 양식은 아직 준비 중입니다.', '오류');
+    return;
+  }
+  var 공정검사여부 = 현재작업공정 === '공정검사';
 
   var _오늘 = new Date();
   var _년 = _오늘.getFullYear(), _월 = String(_오늘.getMonth()+1).padStart(2,'0');
