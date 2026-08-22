@@ -1226,6 +1226,11 @@ function lot번호포맷(input) {
 async function lot팝업열기() {
   var 전체 = await 데이터불러오기();
 
+  /* 이미 품목이 선택되어 있으면 해당 품목의 LOT만 조회 (다른 품목 LOT과 섞이지 않도록) */
+  if (선택된품목) {
+    전체 = 전체.filter(function(h) { return h.품명 === 선택된품목.품명; });
+  }
+
   /* 태산 입고: 공정검사에서 확정된 LOT 중, 아직 태산입고에 등록되지 않은 것만 조회해서 수동으로 불러온다 */
   if (현재작업공정 === '태산 입고') {
     var 태산lot목록 = new Set(
@@ -1315,9 +1320,11 @@ async function lot팝업열기() {
     }
   });
 
-  /* 이미 다음 공정으로 넘어간(현재 위치가 지금 보는 공정보다 뒤인) LOT는 목록에서 제외 */
+  /* 이미 다음 공정으로 넘어간(현재 위치가 지금 보는 공정보다 뒤인) LOT는 목록에서 제외,
+     재고수량이 0 이하(이미 다 소진·처리 완료된 LOT)인 것도 제외 */
   var 현재공정순번 = 공정순서.indexOf(현재작업공정);
   var lot목록 = Object.values(lot맵).filter(function(d) {
+    if (d.입고합 - d.출고합 - d.불량합 <= 0) return false;
     if (!현재작업공정 || 현재공정순번 === -1) return true;
     var 위치순번 = 공정순서.indexOf(d.현재위치);
     return 위치순번 === -1 || 위치순번 <= 현재공정순번;
