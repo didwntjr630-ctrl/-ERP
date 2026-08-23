@@ -113,7 +113,10 @@ document.addEventListener('DOMContentLoaded', async function() {
       업체sel.appendChild(opt);
     });
   })();
-  await 공정뷰선택('출하검사');  // 출하검사 기본 선택
+  // 메인화면 바로가기 메뉴 등에서 ?공정=XXX 로 넘어오면 해당 탭을 바로 선택, 없으면 출하검사 기본 선택
+  var URL공정 = new URLSearchParams(location.search).get('공정');
+  var 시작공정 = (URL공정 && APP_CONFIG.공정목록.includes(URL공정)) ? URL공정 : '출하검사';
+  await 공정뷰선택(시작공정);
   폼임시저장복원();               // 이탈 전 작성 내용 복원
 
   /* 이전 입력 품명 히스토리 (Supabase 백그라운드 로드) */
