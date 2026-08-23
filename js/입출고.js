@@ -371,7 +371,7 @@ async function 공정뷰선택(공정) {
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
     if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'none' : 'block';
     if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'flex' : 'none';
-    if (품질현황영역) 품질현황영역.style.display = (공정 === '태산 입고') ? 'flex' : 'none';
+    if (품질현황영역) 품질현황영역.style.display = (공정 === '출하검사') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
     document.getElementById('검색_공정').value = 공정;
   } else {

@@ -261,12 +261,12 @@
         <div id="공정뷰안내" style="display:none; font-size:12px; color:#666; background:#f0f6fb; border:1px solid #c5d8ed; border-radius:4px; padding:4px 10px;">
           🔵 파란 행 = <b>내가 받은 것 (입고)</b> &nbsp;|&nbsp; ⚪ 흰 행 = <b>내가 보낸 것 (출고)</b>
         </div>
-        <div id="품질현황출력영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
-          <button id="품질현황출력버튼" class="버튼 초록" onclick="품질현황_출력()">품질현황 출력</button>
-        </div>
         <div id="확정버튼영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
           <select id="엑셀업체" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;"></select>
           <button id="엑셀다운로드버튼" class="버튼 초록" onclick="출하검사_엑셀다운로드()">검사대장 출력</button>
+          <div id="품질현황출력영역" style="display:none; gap:6px; align-items:center;">
+            <button id="품질현황출력버튼" class="버튼 초록" onclick="품질현황_출력()">품질현황 출력</button>
+          </div>
           <button class="버튼 파랑" onclick="확정처리()" style="padding:6px 20px; font-size:13px; font-weight:bold;">확 정</button>
           <button class="버튼 빨강" onclick="선택삭제()" style="padding:6px 20px; font-size:13px; font-weight:bold;">삭 제</button>
         </div>
