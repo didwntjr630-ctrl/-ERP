@@ -398,7 +398,7 @@ async function 공정뷰선택(공정) {
   var 업체sel = document.getElementById('엑셀업체');
   if (업체sel) {
     업체sel.innerHTML = '';
-    var 옵션소스 = (공정검사류(공정)) ? APP_CONFIG.공정검사옵션 : APP_CONFIG.출하검사옵션;
+    var 옵션소스 = (공정 === '태산 입고') ? APP_CONFIG.태산입고옵션 : (공정검사류(공정)) ? APP_CONFIG.공정검사옵션 : APP_CONFIG.출하검사옵션;
     var 출력업체목록 = 옵션소스.엑셀출력업체 || 옵션소스.도착공정 || [];
     출력업체목록.forEach(function(업체명) {
       var opt = document.createElement('option');
@@ -1858,11 +1858,8 @@ function 색상판별(품명) {
 }
 
 async function 출하검사_엑셀다운로드() {
-  if (현재작업공정 === '태산 입고') {
-    알림표시('태산 입고 검사대장 양식은 아직 준비 중입니다.', '오류');
-    return;
-  }
   var 공정검사여부 = 현재작업공정 === '공정검사';
+  var 태산입고여부 = 현재작업공정 === '태산 입고';
 
   var _오늘 = new Date();
   var _년 = _오늘.getFullYear(), _월 = String(_오늘.getMonth()+1).padStart(2,'0');
@@ -1877,9 +1874,9 @@ async function 출하검사_엑셀다운로드() {
   if (버튼) { 버튼.disabled = true; 버튼.textContent = '조회 중...'; }
   if (!선택업체) { 알림표시('업체를 선택하세요.', '오류'); if (버튼) { 버튼.disabled = false; 버튼.textContent = '검사대장 출력'; } return; }
 
-  // 공정검사: MX5 누적을 위해 날짜 필터 없이 전체 조회 / 출하검사: 선택 월만 조회
+  // 공정검사·태산입고: MX5 누적을 위해 날짜 필터 없이 전체 조회 / 출하검사: 선택 월만 조회
   var 쿼리 = 수파베이스.from('입출고기록').select('*').eq('공정', 현재작업공정 || '출하검사');
-  if (!공정검사여부) {
+  if (!공정검사여부 && !태산입고여부) {
     쿼리 = 쿼리.gte('출고일자', 시작일).lte('출고일자', 종료일);
   }
   var { data: 조회결과, error: 조회오류 } = await 쿼리;
@@ -1892,9 +1889,12 @@ async function 출하검사_엑셀다운로드() {
     return;
   }
 
+  // 태산입고: Excel의 "입고일자"는 공정검사 확정일이 자동 기록된 별도 필드를 사용, 그 외는 출고일자 사용
+  function 대장일자(항목) { return 태산입고여부 ? (항목.입고일자 || '') : (항목.출고일자 || ''); }
+
   function 날짜정렬(arr) {
     return arr.sort(function(a, b) {
-      var da = a.출고일자 || '', db = b.출고일자 || '';
+      var da = 대장일자(a), db = 대장일자(b);
       if (da !== db) return da > db ? 1 : -1;
       return a.id - b.id;
     });
@@ -1907,11 +1907,11 @@ async function 출하검사_엑셀다운로드() {
   var 전체 = (조회결과 || []).filter(function(h) { return (h.도착공정 || '') === 선택업체; });
 
   var MX5데이터, 비MX5데이터, 데이터;
-  if (공정검사여부) {
+  if (공정검사여부 || 태산입고여부) {
     // MX5: 전체 기간 누적, 비MX5: 선택 월만
     MX5데이터 = 날짜정렬(전체.filter(function(h) { return 차종추출(h.품명) === 'MX5'; }));
     비MX5데이터 = 날짜정렬(전체.filter(function(h) {
-      return 차종추출(h.품명) !== 'MX5' && (h.출고일자 || '') >= 시작일 && (h.출고일자 || '') <= 종료일;
+      return 차종추출(h.품명) !== 'MX5' && 대장일자(h) >= 시작일 && 대장일자(h) <= 종료일;
     }));
     if (MX5데이터.length === 0 && 비MX5데이터.length === 0) {
       알림표시(시작일 + ' ~ ' + 종료일 + ' ' + 업체단축명 + ' 데이터가 없습니다.', '오류');
@@ -1928,9 +1928,9 @@ async function 출하검사_엑셀다운로드() {
   }
 
   try {
-    var BASE64 = 공정검사여부 ? 아노다이징출하대장_BASE64 : 보은금속출하대장_BASE64;
+    var BASE64 = 태산입고여부 ? 태산테크수입검사대장_BASE64 : (공정검사여부 ? 아노다이징출하대장_BASE64 : 보은금속출하대장_BASE64);
     if (typeof BASE64 === 'undefined') {
-      throw new Error((공정검사여부 ? '아노다이징' : '보은금속') + '템플릿.js 가 로드되지 않았습니다.');
+      throw new Error((태산입고여부 ? '태산테크수입검사대장' : 공정검사여부 ? '아노다이징' : '보은금속') + '템플릿.js 가 로드되지 않았습니다.');
     }
 
     var bin = atob(BASE64);
@@ -1949,7 +1949,13 @@ async function 출하검사_엑셀다운로드() {
         var rc = targetWs.getRow(REF_ROW).getCell(c);
         targetRefStyles[c] = JSON.parse(JSON.stringify(rc.style || {}));
       }
-      var targetTmplLast = targetWs.lastRow ? targetWs.lastRow.number : REF_ROW;
+      // targetWs.lastRow.number 는 병합·서식 잔재로 실제보다 훨씬 크게 나올 수 있어(예: 100만 행),
+      // A열에 실제 값이 있는 마지막 행을 직접 스캔해 안전하게 구한다
+      var targetTmplLast = REF_ROW - 1;
+      for (var scanR = REF_ROW; scanR <= REF_ROW + 500; scanR++) {
+        var scanCell = targetWs.getRow(scanR).getCell(1);
+        if (scanCell.value !== null && scanCell.value !== undefined && scanCell.value !== '') targetTmplLast = scanR;
+      }
 
       데이터목록.forEach(function(항목, idx) {
         var rowNum = REF_ROW + idx;
@@ -1961,7 +1967,7 @@ async function 출하검사_엑셀다운로드() {
         var 색상 = 색상판별(항목.품명);
         var 판정 = 불량 === 0 ? 'OK' : 'NG';
         var 불량율 = 검사수량 > 0 ? 불량 / 검사수량 : 0;
-        var 날짜표시 = idx === 0 || 항목.출고일자 !== 데이터목록[idx - 1].출고일자;
+        var 날짜표시 = idx === 0 || 대장일자(항목) !== 대장일자(데이터목록[idx - 1]);
 
         if (rowNum > targetTmplLast) {
           for (var c = 1; c <= colMax; c++) {
@@ -1970,9 +1976,10 @@ async function 출하검사_엑셀다운로드() {
         }
 
         row.getCell(1).value = idx + 1;
+        var 일자값 = 대장일자(항목);
         var dateCell = row.getCell(2);
-        dateCell.value = (날짜표시 && 항목.출고일자) ? new Date(항목.출고일자 + 'T00:00:00Z') : null;
-        if (날짜표시 && 항목.출고일자) dateCell.numFmt = 'yyyy-mm-dd';
+        dateCell.value = (날짜표시 && 일자값) ? new Date(일자값 + 'T00:00:00Z') : null;
+        if (날짜표시 && 일자값) dateCell.numFmt = 'yyyy-mm-dd';
         row.getCell(3).value = 항목['lot번호'] || '';
         row.getCell(4).value = 수량;
         row.getCell(5).value = 차종;
@@ -1980,7 +1987,10 @@ async function 출하검사_엑셀다운로드() {
         row.getCell(7).value = 검사수량;
         row.getCell(8).value = 불량;
 
-        if (공정검사여부) {
+        if (태산입고여부) {
+          // 불량 코드별 내역·태산테크 그룹·합계·비고는 원본 서식만 유지, 값은 비워둠
+          for (var j = 9; j <= 24; j++) row.getCell(j).value = null;
+        } else if (공정검사여부) {
           for (var j = 9; j <= 18; j++) row.getCell(j).value = null;
           row.getCell(19).value = 판정;
           row.getCell(20).value = null;
@@ -2007,7 +2017,7 @@ async function 출하검사_엑셀다운로드() {
       var 마지막행 = 데이터목록.length > 0 ? REF_ROW + 데이터목록.length - 1 : targetTmplLast;
       targetWs.pageSetup.orientation = 'landscape';
       targetWs.pageSetup.horizontalCentered = true;
-      if (공정검사여부) {
+      if (공정검사여부 || 태산입고여부) {
         targetWs.pageSetup.paperSize = 9;
         targetWs.pageSetup.scale = 75;
         targetWs.pageSetup.fitToPage = false;
@@ -2031,7 +2041,30 @@ async function 출하검사_엑셀다운로드() {
 
     var 파일명, ptXml;
 
-    if (공정검사여부) {
+    if (태산입고여부) {
+      // 시트1(MX5_태산수입검사대장2025~): MX5 전체 누적
+      // 시트2(태산수입검사대장2026년_월_MM): 선택 월 시트를 동적으로 찾아 사용
+      var 월문자 = 종료일.slice(5, 7);
+      var ws1 = workbook.worksheets[0];
+      var ws2 = workbook.getWorksheet('태산수입검사대장2026년_월_' + 월문자);
+      if (!ws1) throw new Error('태산테크수입검사대장 템플릿 시트를 찾을 수 없습니다.');
+      if (!ws2) throw new Error(월문자 + '월 시트가 템플릿에 없습니다. 관리자에게 해당 월 시트 추가를 요청하세요.');
+      ws2.getCell('A1').value = '코팅 완료품 수 입 검 사 대 장 ( ' + 시작일 + ' ~ ' + 종료일 + ' )';
+
+      시트채우기(ws1, MX5데이터, 24);
+      시트채우기(ws2, 비MX5데이터, 24);
+
+      // 이 템플릿에는 월별 시트가 여러 개 들어있는데, 다운로드 결과물에는 선택한 월만 남기고 나머지는 제거
+      workbook.worksheets.slice().forEach(function(sheet) {
+        if (sheet !== ws1 && sheet !== ws2) workbook.removeWorksheet(sheet.id);
+      });
+
+      var ws1Index = workbook.worksheets.indexOf(ws1);
+      var ws2Index = workbook.worksheets.indexOf(ws2);
+      파일명 = '태산테크수입검사대장_' + 시작일.replace(/-/g,'') + '~' + 종료일.replace(/-/g,'') + '.xlsx';
+      ptXml = '<definedName name="_xlnm.Print_Titles" localSheetId="' + ws1Index + '">\'' + ws1.name.replace(/'/g, "''") + '\'!$1:$5</definedName>' +
+              '<definedName name="_xlnm.Print_Titles" localSheetId="' + ws2Index + '">\'' + ws2.name.replace(/'/g, "''") + '\'!$1:$5</definedName>';
+    } else if (공정검사여부) {
       // 시트1(MX5_태산출하검사대장_25~): MX5 전체 누적
       // 시트2(코팅수입검사대장): 비MX5 선택 월 데이터
       var ws1 = workbook.worksheets[0];
