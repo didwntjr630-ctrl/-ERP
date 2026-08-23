@@ -134,6 +134,7 @@ img, video, canvas, svg {
   margin-right: 12px;
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 #접속자수뱃지 {
@@ -177,6 +178,24 @@ img, video, canvas, svg {
   color: white;
   text-decoration: none;
   line-height: 1.2;
+  flex: 0 0 auto;
+}
+
+/* nav 항목이 늘어나 폭이 좁아지면 줄바꿈 대신 가로 스크롤되도록 (헤더 높이 깨짐 방지) */
+.메뉴바 nav {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  scrollbar-width: none;
+}
+
+.메뉴바 nav::-webkit-scrollbar {
+  display: none;
 }
 
 .메뉴바 .회사명 .회사명_메인 {
@@ -205,6 +224,7 @@ img, video, canvas, svg {
   transition: color 0.15s, background 0.15s;
   border-bottom: 3px solid transparent;
   margin-top: 3px;
+  flex: 0 0 auto;
 }
 
 .메뉴바 nav a:hover {
@@ -231,6 +251,7 @@ img, video, canvas, svg {
   gap: 12px;
   font-size: 13px;
   color: #D1D5DB;
+  flex: 0 0 auto;
 }
 
 .메뉴바 .우측정보 .사용자명 {

@@ -363,6 +363,11 @@ async function 공정뷰선택(공정) {
     document.querySelectorAll('.공정선택버튼.전체버튼').forEach(function(b) { b.classList.add('활성'); });
   }
 
+  // 상단 메뉴바 nav: 현재 선택된 공정과 일치하는 바로가기 항목만 활성 표시
+  document.querySelectorAll('.메뉴바 nav a').forEach(function(a) { a.classList.remove('활성'); });
+  var 현재nav항목 = document.querySelector('.메뉴바 nav a[data-공정="' + 공정 + '"]');
+  if (현재nav항목) 현재nav항목.classList.add('활성');
+
   var 폼제목 = document.querySelector('#폼카드 .페이지제목');
   var 목록제목 = document.getElementById('목록제목');
   var 안내박스 = document.getElementById('공정뷰안내');
