@@ -216,12 +216,12 @@ function 오늘날짜세팅() {
   if (월el) 월el.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
 
-/* ── 입고수량 변경 시 출하검사는 출고수량 자동 동기화 ── */
+/* ── 입고수량 변경 시 태산입고는 출고수량 자동 동기화, 검사 공정(공정검사·출하검사)은 불량내역 기준 재계산 ── */
 function 입고수량변경() {
-  if (현재작업공정 === '태산 입고' || 현재작업공정 === '출하검사') {
+  if (현재작업공정 === '태산 입고') {
     var v = document.getElementById('입고수량').value;
     document.getElementById('출고수량').value = v;
-  } else if (공정검사류(현재작업공정)) {
+  } else if (공정검사류(현재작업공정) || 현재작업공정 === '출하검사') {
     불량합계갱신();
   }
   잔량미리보기();
@@ -318,7 +318,7 @@ function 불량합계갱신() {
     el.style.color = 총불량 > 0 ? '#e67e22' : '#888';
     el.style.fontWeight = 총불량 > 0 ? 'bold' : 'normal';
   }
-  if (공정검사류(현재작업공정)) {
+  if (공정검사류(현재작업공정) || 현재작업공정 === '출하검사') {
     document.getElementById('불량수량').value = 총불량;
     var 입고 = Number(document.getElementById('입고수량').value) || 0;
     document.getElementById('출고수량').value = Math.max(0, 입고 - 총불량);
@@ -420,8 +420,8 @@ function 출하검사폼전환(공정) {
   var 공정검사불량행 = document.getElementById('공정검사불량행');
   var 공정검사불량내역행 = document.getElementById('공정검사불량내역행');
   var 출고el = document.getElementById('출고수량');
-  if (공정검사불량행) 공정검사불량행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
-  if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정검사류(공정)) ? 'flex' : 'none';
+  if (공정검사불량행) 공정검사불량행.style.display = (공정검사류(공정) || 공정 === '출하검사') ? 'flex' : 'none';
+  if (공정검사불량내역행) 공정검사불량내역행.style.display = (공정검사류(공정) || 공정 === '출하검사') ? 'flex' : 'none';
   if (출고el) {
     var 출고잠금 = (공정 === '태산 입고');
     출고el.readOnly = 출고잠금;
@@ -431,7 +431,7 @@ function 출하검사폼전환(공정) {
   var 담당자그룹 = document.getElementById('담당자그룹');
   var 담당자저장행 = document.getElementById('담당자저장행');
   if (담당자그룹) {
-    if (공정검사류(공정) && 공정검사불량행) {
+    if ((공정검사류(공정) || 공정 === '출하검사') && 공정검사불량행) {
       공정검사불량행.appendChild(담당자그룹);
       담당자그룹.style.marginLeft = '-90px';
     } else if (담당자저장행) {
@@ -446,7 +446,7 @@ function 출하검사폼전환(공정) {
     출발el.value    = APP_CONFIG.출하검사옵션.출발공정[0];
     출발el.readOnly = false;
     도착el.value    = APP_CONFIG.출하검사옵션.도착공정[0];
-    도착el.readOnly = false;
+    도착el.readOnly = true;
   } else if (공정 === '태산 입고') {
     출발el.value    = 공정;
     출발el.readOnly = true;
@@ -730,8 +730,8 @@ async function 저장하기() {
     'lot번호':  lot값,
     담당자:     선택된담당자 ? (선택된담당자.직급 + ' ' + 선택된담당자.이름) : '',
     담당자코드: 선택된담당자 ? 선택된담당자.코드 : '',
-    불량내역:   공정검사류(현재작업공정) ? 현재불량내역 : [],
-    A급수량:    공정검사류(현재작업공정) ? (Number(document.getElementById('A급수량').value) || 0) : 0,
+    불량내역:   (공정검사류(현재작업공정) || 현재작업공정 === '출하검사') ? 현재불량내역 : [],
+    A급수량:    (공정검사류(현재작업공정) || 현재작업공정 === '출하검사') ? (Number(document.getElementById('A급수량').value) || 0) : 0,
     입고일자:   현재작업공정 === '태산 입고' ? (_태산입고입고일자값 || null) : null,
     완료여부:   true
   };
@@ -784,7 +784,7 @@ async function 저장하기() {
 }
 
 /* 다음 공정에 미처리(완료여부=false) 기록 자동 생성 */
-async function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자) {
+async function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자, A급수량) {
   // 같은 lot + 공정의 미처리 레코드가 이미 있으면 중복 생성 방지
   var { data: 기존 } = await 수파베이스
     .from('입출고기록')
@@ -809,6 +809,7 @@ async function 다음공정자동생성(도착공정, 원출발공정, 출고수
     'lot번호':  lot,
     담당자:     '',
     담당자코드: '',
+    A급수량:    A급수량 || 0,
     완료여부:   false
   };
   await 데이터저장(자동);
@@ -851,7 +852,7 @@ async function 수정폼채우기(id, 확정됨) {
   document.getElementById('불량수량').value = 공정처리모드 ? '' : (항목.불량수량 || 0);
   현재불량내역 = 공정처리모드 ? [] : (항목.불량내역 || []);
   불량내역그리기();
-  document.getElementById('A급수량').value = 공정처리모드 ? '' : (항목.A급수량 || '');
+  document.getElementById('A급수량').value = (공정처리모드 && 현재작업공정 !== '출하검사') ? '' : (항목.A급수량 || '');
   _태산입고입고일자값 = 항목.입고일자 || null;
   document.getElementById('출고일자').value = 항목.출고일자 || '';
   document.getElementById('lot번호').value  = 항목['lot번호']  || '';
@@ -916,7 +917,7 @@ function 폼초기화(일자유지) {
   document.getElementById('출발공정').readOnly         = 공정검사류(현재작업공정);
   document.getElementById('출발공정').disabled          = false;
   document.getElementById('도착공정').value            = 현재작업공정 === '태산 입고' ? APP_CONFIG.태산입고옵션.도착공정[0] : 공정검사류(현재작업공정) ? APP_CONFIG.공정검사옵션.도착공정[0] : 현재작업공정 === '출하검사' ? APP_CONFIG.출하검사옵션.도착공정[0] : '';
-  document.getElementById('도착공정').readOnly         = false;
+  document.getElementById('도착공정').readOnly         = (현재작업공정 === '출하검사');
   document.getElementById('담당자입력').value          = '';
   document.getElementById('담당자코드표시').textContent = '';
   document.getElementById('잔량표시').textContent      = '-';
@@ -1254,6 +1255,7 @@ async function lot팝업열기() {
           품명:     h.품명,
           품번:     h.품번,
           입고수량: h.출고수량,
+          A급수량:  h.A급수량 || 0,
           확정일자: h.확정일시 ? h.확정일시.slice(0, 10) : (h.출고일자 || ''),
           기록id:   h.id
         };
@@ -1269,6 +1271,7 @@ async function lot팝업열기() {
         { 제목: 'LOT 번호',  필드: 'lot번호'  },
         { 제목: '품명',      필드: '품명'     },
         { 제목: '수량',      필드: '입고수량' },
+        { 제목: 'A급수량',   필드: 'A급수량'  },
         { 제목: '확정일자',  필드: '확정일자' }
       ],
       선택시: function(항목) { 태산입고lot선택시(항목); }
@@ -1392,6 +1395,7 @@ function 태산입고lot선택시(항목) {
   if (품목) 품목선택(품목);
   document.getElementById('입고수량').value = 항목.입고수량 || 0;
   document.getElementById('출고수량').value = 항목.입고수량 || 0;
+  document.getElementById('A급수량').value  = 항목.A급수량 || '';
   _태산입고입고일자값 = 항목.확정일자 || null;
   잔량미리보기();
   폼임시저장();
@@ -1589,7 +1593,7 @@ function 확정처리() {
       }
       for (var i = 0; i < 선택항목.length; i++) {
         var h = 선택항목[i];
-        await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자);
+        await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자, h.A급수량);
       }
       // 실제로 전달된 행 자체에도 확정 표시를 남겨(확정됨=true), LOT 우연 일치로 인한 오탐 없이
       // 이 행이 진짜 확정·전달되었는지를 정확히 추적한다
@@ -1735,17 +1739,17 @@ function 폼엔터핸들러(event, 현재id) {
     return;
   }
 
-  // 공정검사: 도착공정 → A급수량 → 담당자 순으로 이동
-  if (공정검사류(현재작업공정) && 현재id === '도착공정') {
+  // 공정검사·출하검사: 도착공정 → A급수량 → 담당자 순으로 이동
+  if ((공정검사류(현재작업공정) || 현재작업공정 === '출하검사') && 현재id === '도착공정') {
     document.getElementById('A급수량').focus();
     return;
   }
-  if (공정검사류(현재작업공정) && 현재id === 'A급수량') {
+  if ((공정검사류(현재작업공정) || 현재작업공정 === '출하검사') && 현재id === 'A급수량') {
     document.getElementById('담당자입력').focus();
     return;
   }
-  // 공정검사: 담당자에서 Enter → 불량코드 팝업 자동 오픈
-  if (공정검사류(현재작업공정) && 현재id === '담당자입력') {
+  // 공정검사·출하검사: 담당자에서 Enter → 불량코드 팝업 자동 오픈
+  if ((공정검사류(현재작업공정) || 현재작업공정 === '출하검사') && 현재id === '담당자입력') {
     불량코드팝업열기();
     return;
   }
