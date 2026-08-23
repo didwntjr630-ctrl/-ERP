@@ -784,7 +784,7 @@ async function 저장하기() {
 }
 
 /* 다음 공정에 미처리(완료여부=false) 기록 자동 생성 */
-async function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자) {
+async function 다음공정자동생성(도착공정, 원출발공정, 출고수량, 품목, lot, 일자, A급수량) {
   // 같은 lot + 공정의 미처리 레코드가 이미 있으면 중복 생성 방지
   var { data: 기존 } = await 수파베이스
     .from('입출고기록')
@@ -809,6 +809,7 @@ async function 다음공정자동생성(도착공정, 원출발공정, 출고수
     'lot번호':  lot,
     담당자:     '',
     담당자코드: '',
+    A급수량:    A급수량 || 0,
     완료여부:   false
   };
   await 데이터저장(자동);
@@ -851,7 +852,7 @@ async function 수정폼채우기(id, 확정됨) {
   document.getElementById('불량수량').value = 공정처리모드 ? '' : (항목.불량수량 || 0);
   현재불량내역 = 공정처리모드 ? [] : (항목.불량내역 || []);
   불량내역그리기();
-  document.getElementById('A급수량').value = 공정처리모드 ? '' : (항목.A급수량 || '');
+  document.getElementById('A급수량').value = (공정처리모드 && 현재작업공정 !== '출하검사') ? '' : (항목.A급수량 || '');
   _태산입고입고일자값 = 항목.입고일자 || null;
   document.getElementById('출고일자').value = 항목.출고일자 || '';
   document.getElementById('lot번호').value  = 항목['lot번호']  || '';
@@ -1592,7 +1593,7 @@ function 확정처리() {
       }
       for (var i = 0; i < 선택항목.length; i++) {
         var h = 선택항목[i];
-        await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자);
+        await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자, h.A급수량);
       }
       // 실제로 전달된 행 자체에도 확정 표시를 남겨(확정됨=true), LOT 우연 일치로 인한 오탐 없이
       // 이 행이 진짜 확정·전달되었는지를 정확히 추적한다
