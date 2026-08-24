@@ -21,7 +21,6 @@ var 현재작업공정 = null;
 var 출발공정목록 = [];
 var 도착공정목록 = [];
 var 확정된id목록 = new Set();
-var 확정된lot목록 = new Set(); /* 공정검사·태산입고: 다음 공정으로 이미 전달된 LOT (매출기록 대신 LOT 기준으로 추적) */
 var _앱브로드캐스트채널 = null;
 var 현재표시목록 = [];
 var _태산입고입고일자값 = null; /* 태산입고: 공정검사 확정일 — 화면에는 노출하지 않고 내부적으로만 저장 */
@@ -534,15 +533,8 @@ function 공정팝업열기(구분) {
 }
 
 async function 확정id목록갱신() {
-  var 전달공정 = 확정전달맵[현재작업공정];
-  if (전달공정) {
-    /* 태산입고: 다음 공정(출하검사)에 이미 넘어간 LOT 을 '확정' 표시 대상으로 취급 (매출기록 대신 LOT 기준 추적) */
-    var { data: lotData } = await 수파베이스.from(테이블명).select('lot번호').eq('공정', 전달공정);
-    확정된lot목록 = new Set((lotData || []).map(function(r) { return r['lot번호']; }).filter(Boolean));
-    확정된id목록 = new Set();
-    return;
-  }
-  확정된lot목록 = new Set();
+  /* 공정검사·태산입고는 항목.확정됨 컬럼을 직접 보므로 이 함수에서 별도 조회가 필요 없음 */
+  if (공정검사류(현재작업공정)) { 확정된id목록 = new Set(); return; }
   if (현재작업공정 !== '출하검사') { 확정된id목록 = new Set(); return; }
   var { data } = await 수파베이스.from('매출기록').select('입출고id');
   확정된id목록 = new Set((data || []).map(function(r) { return Number(r['입출고id']); }));
@@ -1287,6 +1279,48 @@ async function lot팝업열기() {
     return;
   }
 
+  /* 출하검사: 태산입고에서 확정된 LOT 중, 아직 출하검사에 등록되지 않은 것만 조회해서 수동으로 불러온다 */
+  if (현재작업공정 === '출하검사') {
+    var 출하lot목록 = new Set(
+      전체.filter(function(h) { return h.공정 === '출하검사'; })
+          .map(function(h) { return (h['lot번호']||'').trim(); })
+    );
+    var 확정목록_태산 = 전체
+      .filter(function(h) {
+        return h.공정 === '태산 입고' && h.확정됨 === true
+          && (Number(h.출고수량) || 0) > 0
+          && !출하lot목록.has((h['lot번호']||'').trim());
+      })
+      .map(function(h) {
+        return {
+          'lot번호':  h['lot번호'] || '-',
+          품명:     h.품명,
+          품번:     h.품번,
+          입고수량: h.출고수량,
+          A급수량:  h.A급수량 || 0,
+          확정일자: h.확정일시 ? h.확정일시.slice(0, 10) : (h.출고일자 || ''),
+          기록id:   h.id
+        };
+      });
+
+    if (확정목록_태산.length === 0) { 알림표시('태산입고에서 확정된 LOT이 없습니다.', '오류'); return; }
+
+    조회팝업열기({
+      제목: '태산입고 확정 LOT 조회 (출하검사로 가져오기)',
+      검색힌트: 'LOT 또는 품명 검색...',
+      데이터: 확정목록_태산,
+      열목록: [
+        { 제목: 'LOT 번호',  필드: 'lot번호'  },
+        { 제목: '품명',      필드: '품명'     },
+        { 제목: '수량',      필드: '입고수량' },
+        { 제목: 'A급수량',   필드: 'A급수량'  },
+        { 제목: '확정일자',  필드: '확정일자' }
+      ],
+      선택시: function(항목) { 출하검사lot선택시(항목); }
+    });
+    return;
+  }
+
   if (현재작업공정) {
     var 미처리 = 전체.filter(function(h) {
       return h.공정 === 현재작업공정 && h.완료여부 === false && (Number(h.입고수량) || 0) > 0;
@@ -1406,6 +1440,18 @@ function 태산입고lot선택시(항목) {
   document.getElementById('A급수량').value  = 항목.A급수량 || '';
   _태산입고입고일자값 = 항목.확정일자 || null;
   잔량미리보기();
+  폼임시저장();
+  작업시작알림();
+}
+
+/* 출하검사: 태산입고 확정 LOT 선택 시 — 입고수량·A급수량 자동 반영, 출고수량은 불량내역 입력에 따라 계산 */
+function 출하검사lot선택시(항목) {
+  document.getElementById('lot번호').value = 항목['lot번호'];
+  var 품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; });
+  if (품목) 품목선택(품목);
+  document.getElementById('입고수량').value = 항목.입고수량 || 0;
+  document.getElementById('A급수량').value  = 항목.A급수량 || '';
+  불량합계갱신();
   폼임시저장();
   작업시작알림();
 }
@@ -1547,9 +1593,6 @@ function 전체선택토글() {
   });
 }
 
-/* 태산 입고 → 출하검사: '확정'은 매출이 아니라 다음 공정 전달 */
-var 확정전달맵 = { '태산 입고': '출하검사' };
-
 function 확정처리() {
   var 선택ids = Array.from(document.querySelectorAll('.행선택체크:checked'))
                      .map(function(c) { return Number(c.value); });
@@ -1558,9 +1601,10 @@ function 확정처리() {
     return;
   }
 
-  /* 공정검사: 다음 공정으로 자동 전달하지 않고, 확정 표시만 해둔다.
-     태산 입고에서 LOT 조회로 확정된 기록을 수동으로 불러온다. */
-  if (현재작업공정 === '공정검사') {
+  /* 공정검사·태산입고: 다음 공정으로 자동 전달하지 않고, 확정 표시만 해둔다.
+     다음 공정(태산입고/출하검사)에서 LOT 조회로 확정된 기록을 수동으로 불러온다. */
+  if (공정검사류(현재작업공정)) {
+    var 전달공정안내 = 현재작업공정 === '공정검사' ? '태산 입고' : '출하검사';
     확인모달표시(선택ids.length + '건을 확정 처리하시겠습니까?', async function() {
       var 전체 = await 데이터불러오기();
       var 선택항목전체 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
@@ -1580,37 +1624,7 @@ function 확정처리() {
         return;
       }
       document.getElementById('전체선택체크').checked = false;
-      알림표시(선택항목.length + '건이 확정 처리되었습니다. 태산 입고에서 LOT 조회로 불러올 수 있습니다.', '성공');
-      await 공정필터목록갱신();
-    });
-    return;
-  }
-
-  var 전달공정 = 확정전달맵[현재작업공정];
-  if (전달공정) {
-    확인모달표시(선택ids.length + '건을 ' + 전달공정 + '(으)로 전달하시겠습니까?', async function() {
-      // 전달 직전 최신 상태 재조회 — 이미 넘어간 LOT 중복 전달 방지
-      await 확정id목록갱신();
-      var 전체 = await 데이터불러오기();
-      var 선택항목전체 = 전체.filter(function(h) { return 선택ids.includes(h.id); });
-      var 선택항목 = 선택항목전체.filter(function(h) { return !확정된lot목록.has(h['lot번호']); });
-      if (선택항목.length === 0) {
-        알림표시('선택한 항목이 이미 모두 ' + 전달공정 + '(으)로 전달되었습니다.', '오류');
-        await 공정필터목록갱신();
-        return;
-      }
-      for (var i = 0; i < 선택항목.length; i++) {
-        var h = 선택항목[i];
-        await 다음공정자동생성(전달공정, h.공정, h.출고수량, { 품명: h.품명, 품번: h.품번 }, h['lot번호'], h.출고일자, h.A급수량);
-      }
-      // 실제로 전달된 행 자체에도 확정 표시를 남겨(확정됨=true), LOT 우연 일치로 인한 오탐 없이
-      // 이 행이 진짜 확정·전달되었는지를 정확히 추적한다
-      await 수파베이스
-        .from(테이블명)
-        .update({ 확정됨: true, 확정일시: new Date().toISOString() })
-        .in('id', 선택항목.map(function(h) { return h.id; }));
-      document.getElementById('전체선택체크').checked = false;
-      알림표시(선택항목.length + '건이 ' + 전달공정 + '(으)로 전달되었습니다.', '성공');
+      알림표시(선택항목.length + '건이 확정 처리되었습니다. ' + 전달공정안내 + '에서 LOT 조회로 불러올 수 있습니다.', '성공');
       await 공정필터목록갱신();
     });
     return;
