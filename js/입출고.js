@@ -1734,13 +1734,8 @@ function 폼엔터핸들러(event, 현재id) {
   event.preventDefault();
   var 검사공정 = 현재작업공정 === '출하검사' || 공정검사류(현재작업공정);
 
-  // 검사 공정(공정검사·태산입고·출하검사): 품명에서 엔터 → LOT칸으로 바로 이동,
-  // LOT칸에서 엔터 한 번 더 → 불량내역 팝업 바로 오픈
-  if (검사공정 && 현재id === '품명') {
-    var lot바로el = document.getElementById('lot번호');
-    if (lot바로el) lot바로el.focus();
-    return;
-  }
+  // 검사 공정(공정검사·태산입고·출하검사): LOT칸에서 엔터 → 불량내역 팝업 바로 오픈
+  // (품명→일자→LOT 순서는 그대로 유지, LOT 다음 단계만 단축)
   if (검사공정 && 현재id === 'lot번호') {
     불량코드팝업열기();
     return;
