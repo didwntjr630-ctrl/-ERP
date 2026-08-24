@@ -1734,6 +1734,18 @@ function 폼엔터핸들러(event, 현재id) {
   event.preventDefault();
   var 검사공정 = 현재작업공정 === '출하검사' || 공정검사류(현재작업공정);
 
+  // 검사 공정(공정검사·태산입고·출하검사): 품명에서 엔터 → LOT칸으로 바로 이동,
+  // LOT칸에서 엔터 한 번 더 → 불량내역 팝업 바로 오픈
+  if (검사공정 && 현재id === '품명') {
+    var lot바로el = document.getElementById('lot번호');
+    if (lot바로el) lot바로el.focus();
+    return;
+  }
+  if (검사공정 && 현재id === 'lot번호') {
+    불량코드팝업열기();
+    return;
+  }
+
   // 출고일자: 빈 칸이면 오늘 날짜 기입 후 lot번호로 이동
   if (현재id === '출고일자') {
     var 일자el = document.getElementById('출고일자');
@@ -1971,7 +1983,7 @@ async function 출하검사_엑셀다운로드() {
         var rowNum = REF_ROW + idx;
         var row = targetWs.getRow(rowNum);
         var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
-        var 불량 = Number(항목.불량수량) || 0;
+        var 불량 = 0; /* 검사대장은 실측 후 수기 기입용 — 전산 불량수량 값을 그대로 넣지 않음 */
         var 검사수량 = AQL검사수량계산(수량);
         var 차종 = 차종추출(항목.품명);
         var 색상 = 색상판별(항목.품명);
