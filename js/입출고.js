@@ -1769,12 +1769,17 @@ function 폼엔터핸들러(event, 현재id) {
   }
 
   // 출고일자: 빈 칸이면 오늘 날짜 기입 후 lot번호로 이동
+  // (출하검사는 LOT을 직접 입력하지 않고 태산입고 확정 데이터를 검색해서 불러오므로, LOT 조회 팝업을 바로 오픈)
   if (현재id === '출고일자') {
     var 일자el = document.getElementById('출고일자');
     if (!일자el.value || !/^\d{4}-\d{2}-\d{2}$/.test(일자el.value)) {
       var t = new Date();
       일자el.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
       폼임시저장();
+    }
+    if (현재작업공정 === '출하검사') {
+      lot팝업열기();
+      return;
     }
     var lotEl = document.getElementById('lot번호');
     if (lotEl) lotEl.focus();
