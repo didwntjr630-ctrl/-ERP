@@ -1446,7 +1446,7 @@ function 태산입고lot선택시(항목) {
   if (입고수량el) 입고수량el.focus();
 }
 
-/* 출하검사: 태산입고 확정 LOT 선택 시 — 입고수량·A급수량 자동 반영, 출고수량은 불량내역 입력에 따라 계산 */
+/* 출하검사: 태산입고 확정 LOT 선택 시 — 입고수량·A급수량 자동 반영 후 바로 저장까지 완료 */
 function 출하검사lot선택시(항목) {
   document.getElementById('lot번호').value = 항목['lot번호'];
   var 품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; });
@@ -1454,8 +1454,7 @@ function 출하검사lot선택시(항목) {
   document.getElementById('입고수량').value = 항목.입고수량 || 0;
   document.getElementById('A급수량').value  = 항목.A급수량 || '';
   불량합계갱신();
-  폼임시저장();
-  작업시작알림();
+  저장하기();
 }
 
 /* ══════════════════════════════════════════
