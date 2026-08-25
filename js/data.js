@@ -103,9 +103,12 @@ async function 데이터불러오기() {
   return data || [];
 }
 
-/* 새 항목 저장 (출고번호 중복 시 최대 3회 재시도) */
+/* 새 항목 저장 (출고번호 중복 시 최대 8회 재시도)
+   LOT 선택 즉시 자동저장처럼 짧은 시간에 여러 건이 연달아 저장될 때
+   출고번호 계산이 겹칠 수 있어, 재시도 횟수를 늘리고 매 재시도마다 짧게 무작위 대기해 충돌을 줄인다 */
 async function 데이터저장(새항목) {
-  for (var 시도 = 0; 시도 < 3; 시도++) {
+  for (var 시도 = 0; 시도 < 8; 시도++) {
+    if (시도 > 0) await new Promise(function(r) { setTimeout(r, 80 + Math.random() * 150); });
     새항목.출고번호 = await 출고번호생성();
     var { data, error } = await 수파베이스
       .from(테이블명)

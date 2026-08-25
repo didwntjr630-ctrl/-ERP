@@ -1446,7 +1446,7 @@ function 태산입고lot선택시(항목) {
   if (입고수량el) 입고수량el.focus();
 }
 
-/* 출하검사: 태산입고 확정 LOT 선택 시 — 입고수량·A급수량 자동 반영, 출고수량은 불량내역 입력에 따라 계산 */
+/* 출하검사: 태산입고 확정 LOT 선택 시 — 입고수량·A급수량 자동 반영 후 바로 저장까지 완료 */
 function 출하검사lot선택시(항목) {
   document.getElementById('lot번호').value = 항목['lot번호'];
   var 품목 = 품목목록.find(function(p) { return p.품명 === 항목.품명; });
@@ -1454,8 +1454,7 @@ function 출하검사lot선택시(항목) {
   document.getElementById('입고수량').value = 항목.입고수량 || 0;
   document.getElementById('A급수량').value  = 항목.A급수량 || '';
   불량합계갱신();
-  폼임시저장();
-  작업시작알림();
+  저장하기();
 }
 
 /* ══════════════════════════════════════════
@@ -1769,12 +1768,17 @@ function 폼엔터핸들러(event, 현재id) {
   }
 
   // 출고일자: 빈 칸이면 오늘 날짜 기입 후 lot번호로 이동
+  // (출하검사는 LOT을 직접 입력하지 않고 태산입고 확정 데이터를 검색해서 불러오므로, LOT 조회 팝업을 바로 오픈)
   if (현재id === '출고일자') {
     var 일자el = document.getElementById('출고일자');
     if (!일자el.value || !/^\d{4}-\d{2}-\d{2}$/.test(일자el.value)) {
       var t = new Date();
       일자el.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
       폼임시저장();
+    }
+    if (현재작업공정 === '출하검사') {
+      lot팝업열기();
+      return;
     }
     var lotEl = document.getElementById('lot번호');
     if (lotEl) lotEl.focus();
