@@ -206,13 +206,14 @@ function _품질현황_상세표초기화(xml) {
 }
 
 /* ─────────── 거래처(모델)별 상세표 채우기 ───────────
-   그룹별 5슬롯에 그날의 공정검사 기록을 위 줄에, 같은 LOT의 태산입고 기록(날짜 무관, 전체에서 매칭)을 아래 줄에 채운다.
+   기준은 출하일자(그날 실제 출하검사 데이터)로 잡아 아래 줄(2번째)에 채우고,
+   위 줄(1번째)에는 같은 LOT의 공정검사 기록(날짜 무관, 전체에서 매칭)을 가져와 채운다.
    합산(3번째) 줄은 템플릿 수식이 자동 계산하므로 LOT 표시(앞 4자리를 뺀 표기)만 직접 기입한다 */
-function _품질현황_상세표채우기(xml, 하루기록_공정검사, 태산입고_lot맵) {
-  if (!하루기록_공정검사 || !하루기록_공정검사.length) return xml;
+function _품질현황_상세표채우기(xml, 하루기록_출하검사, 공정검사_lot맵) {
+  if (!하루기록_출하검사 || !하루기록_출하검사.length) return xml;
 
   var 그룹별 = {};
-  하루기록_공정검사.forEach(function(항목) {
+  하루기록_출하검사.forEach(function(항목) {
     var 헤더행 = 품질현황_상세표_그룹행[항목.품명];
     if (!헤더행) return; // MX5 등 매핑 없는 모델은 이 표에서 제외
     if (!그룹별[헤더행]) 그룹별[헤더행] = [];
@@ -223,38 +224,38 @@ function _품질현황_상세표채우기(xml, 하루기록_공정검사, 태산
     var 헤더행 = Number(헤더행문자);
     var 첫데이터행 = 헤더행 + 3;
     var 정렬된 = 그룹별[헤더행문자].slice().sort(function(a, b) { return (a.id || 0) - (b.id || 0); });
-    var 목록 = 정렬된.slice(0, 5); // 하루·모델당 5건 초과분은 표시하지 않음 (슬롯 5개 한도)
+    var 목록 = 정렬된.slice(0, 5); // 하루·모델당 5건 초과분은 표시하지 않음 (슬롯 5개 한도, 1번 슬롯부터 순서대로 채움)
 
-    목록.forEach(function(공정검사기록, idx) {
+    목록.forEach(function(출하검사기록, idx) {
       var r1 = 첫데이터행 + idx * 3, r2 = r1 + 1, r3 = r1 + 2;
-      var lot = 공정검사기록['lot번호'] || '';
+      var lot = 출하검사기록['lot번호'] || '';
 
-      var 열합계1 = {};
-      (공정검사기록.불량내역 || []).forEach(function(b) {
-        var 열 = 품질현황_불량코드열맵[b.명];
-        if (!열) return;
-        열합계1[열] = (열합계1[열] || 0) + (Number(b.수량) || 0);
-      });
-      xml = _품질현황_셀쓰기(xml, 'E' + r1, lot, true);
-      xml = _품질현황_셀쓰기(xml, 'F' + r1, Number(공정검사기록.입고수량) || 0, false);
-      xml = _품질현황_셀쓰기(xml, 'G' + r1, Number(공정검사기록.출고수량) || 0, false);
-      xml = _품질현황_셀쓰기(xml, 'H' + r1, Number(공정검사기록.불량수량) || 0, false);
-      Object.keys(열합계1).forEach(function(열) { xml = _품질현황_셀쓰기(xml, 열 + r1, 열합계1[열], false); });
-
-      var 태산기록 = lot ? 태산입고_lot맵[lot] : null;
-      if (태산기록) {
-        var 열합계2 = {};
-        (태산기록.불량내역 || []).forEach(function(b) {
+      var 공정검사기록 = lot ? 공정검사_lot맵[lot] : null;
+      if (공정검사기록) {
+        var 열합계1 = {};
+        (공정검사기록.불량내역 || []).forEach(function(b) {
           var 열 = 품질현황_불량코드열맵[b.명];
           if (!열) return;
-          열합계2[열] = (열합계2[열] || 0) + (Number(b.수량) || 0);
+          열합계1[열] = (열합계1[열] || 0) + (Number(b.수량) || 0);
         });
-        xml = _품질현황_셀쓰기(xml, 'E' + r2, lot, true);
-        xml = _품질현황_셀쓰기(xml, 'F' + r2, Number(태산기록.입고수량) || 0, false);
-        xml = _품질현황_셀쓰기(xml, 'G' + r2, Number(태산기록.출고수량) || 0, false);
-        xml = _품질현황_셀쓰기(xml, 'H' + r2, Number(태산기록.불량수량) || 0, false);
-        Object.keys(열합계2).forEach(function(열) { xml = _품질현황_셀쓰기(xml, 열 + r2, 열합계2[열], false); });
+        xml = _품질현황_셀쓰기(xml, 'E' + r1, lot, true);
+        xml = _품질현황_셀쓰기(xml, 'F' + r1, Number(공정검사기록.입고수량) || 0, false);
+        xml = _품질현황_셀쓰기(xml, 'G' + r1, Number(공정검사기록.출고수량) || 0, false);
+        xml = _품질현황_셀쓰기(xml, 'H' + r1, Number(공정검사기록.불량수량) || 0, false);
+        Object.keys(열합계1).forEach(function(열) { xml = _품질현황_셀쓰기(xml, 열 + r1, 열합계1[열], false); });
       }
+
+      var 열합계2 = {};
+      (출하검사기록.불량내역 || []).forEach(function(b) {
+        var 열 = 품질현황_불량코드열맵[b.명];
+        if (!열) return;
+        열합계2[열] = (열합계2[열] || 0) + (Number(b.수량) || 0);
+      });
+      xml = _품질현황_셀쓰기(xml, 'E' + r2, lot, true);
+      xml = _품질현황_셀쓰기(xml, 'F' + r2, Number(출하검사기록.입고수량) || 0, false);
+      xml = _품질현황_셀쓰기(xml, 'G' + r2, Number(출하검사기록.출고수량) || 0, false);
+      xml = _품질현황_셀쓰기(xml, 'H' + r2, Number(출하검사기록.불량수량) || 0, false);
+      Object.keys(열합계2).forEach(function(열) { xml = _품질현황_셀쓰기(xml, 열 + r2, 열합계2[열], false); });
 
       // 합산 줄의 LOT 표시는 앞 4자리(날짜 부분)를 비우고 나머지만 표기
       var 표시lot = lot.length > 4 ? lot.slice(4).trim() : lot;
@@ -265,9 +266,26 @@ function _품질현황_상세표채우기(xml, 하루기록_공정검사, 태산
   return xml;
 }
 
+/* ─────────── 시트 탭 색상 지정 (sheetPr/tabColor 없으면 새로 삽입) ─────────── */
+function _품질현황_시트탭색상(xml, argb) {
+  if (/<sheetPr\b[^>]*\/>/.test(xml)) {
+    xml = xml.replace(/<sheetPr\b([^>]*)\/>/, '<sheetPr$1><tabColor rgb="' + argb + '"/></sheetPr>');
+  } else if (/<sheetPr\b[^>]*>/.test(xml)) {
+    if (/<tabColor\b[^>]*\/>/.test(xml)) {
+      xml = xml.replace(/<tabColor\b[^>]*\/>/, '<tabColor rgb="' + argb + '"/>');
+    } else {
+      xml = xml.replace(/(<sheetPr\b[^>]*>)/, '$1<tabColor rgb="' + argb + '"/>');
+    }
+  } else {
+    xml = xml.replace(/(<worksheet\b[^>]*>)/, '$1<sheetPr><tabColor rgb="' + argb + '"/></sheetPr>');
+  }
+  return xml;
+}
+
 /* ─────────── 하루치 데이터를 해당 날짜 시트 XML에 기입 ───────────
-   삼양 구역(5~44행) = 공정검사·태산입고 데이터, 태산 구역(45~84행) = 출하검사 데이터 */
-function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록_삼양, 하루기록_태산, 태산입고_lot맵) {
+   삼양 구역(5~44행) = 공정검사·태산입고 데이터, 태산 구역(45~84행) = 출하검사 데이터
+   거래처별 상세표(99행 이하)는 출하일자 기준 — 아래줄=그날 출하검사, 위줄=같은 LOT 공정검사(날짜 무관 매칭) */
+function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록_삼양, 하루기록_태산, 하루기록_출하검사, 공정검사_lot맵) {
   xml = _품질현황_셀쓰기(xml, 'N2', 월, false);
   xml = _품질현황_셀쓰기(xml, 'P2', '', true);
   xml = _품질현황_셀쓰기(xml, 'Q2', '', true);
@@ -284,9 +302,12 @@ function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록_삼�
 
   xml = _품질현황_구역채우기(xml, 하루기록_삼양, 품질현황_모델슬롯맵);
   xml = _품질현황_구역채우기(xml, 하루기록_태산, 품질현황_모델슬롯맵_태산);
+  xml = _품질현황_상세표채우기(xml, 하루기록_출하검사, 공정검사_lot맵 || {});
 
-  var 하루기록_공정검사만 = (하루기록_삼양 || []).filter(function(h) { return h.공정 === '공정검사'; });
-  xml = _품질현황_상세표채우기(xml, 하루기록_공정검사만, 태산입고_lot맵 || {});
+  /* 실제 출하가 있었던 날짜 시트는 탭 색상을 노랑으로 표시 */
+  if (하루기록_출하검사 && 하루기록_출하검사.length) {
+    xml = _품질현황_시트탭색상(xml, 'FFFFFF00');
+  }
 
   return xml;
 }
@@ -311,9 +332,12 @@ async function 품질현황_생성(연, 월) {
   // - 출하검사는 LOT 조회로 태산입고에서 넘어와 바로 등록되어 자체 불량내역이 없으므로, 같은 LOT의 태산입고 불량내역을 가져와 채움
   // - 거래처별 상세표(99행 이하)의 아래 줄(태산입고) 데이터도 이 맵으로 채움
   var 태산입고_lot맵 = {};
+  var 공정검사_lot맵 = {};
   전체.forEach(function(h) {
     if (h.공정 === '태산 입고' && h['lot번호']) {
       태산입고_lot맵[h['lot번호']] = h;
+    } else if (h.공정 === '공정검사' && h['lot번호']) {
+      공정검사_lot맵[h['lot번호']] = h;
     }
   });
   var 대상_출하검사 = 전체.filter(function(h) {
@@ -344,7 +368,7 @@ async function 품질현황_생성(연, 월) {
     var 시트파일 = 시트맵[String(일)];
     if (!시트파일 || !zip.file(시트파일)) continue;
     var xml = await zip.file(시트파일).async('string');
-    xml = _품질현황_일자시트작성(xml, 연, 월, 일, 일자별[일], 일자별_출하검사[일], 태산입고_lot맵);
+    xml = _품질현황_일자시트작성(xml, 연, 월, 일, 일자별[일], 일자별_출하검사[일], 일자별_출하검사[일], 공정검사_lot맵);
     zip.file(시트파일, xml);
   }
 
