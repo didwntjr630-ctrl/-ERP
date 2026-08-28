@@ -48,12 +48,17 @@ var 품질현황_불량코드열맵 = {
   '테스트시료': 'X' /* 템플릿에 전용 칸이 없어 시료 칸에 합산 */
 };
 
-/* ─────────── 셀 값 쓰기 (기존 서식 s= 속성은 그대로 유지) ─────────── */
-function _품질현황_셀쓰기(xml, ref, value, isText) {
+/* ─────────── 셀 값 쓰기 (기존 서식 s= 속성은 그대로 유지, 강제스타일 지정 시 그 값으로 덮어씀) ─────────── */
+function _품질현황_셀쓰기(xml, ref, value, isText, 강제스타일) {
   var re = new RegExp('<c r="' + ref + '"([^>/]*)(/>|>[\\s\\S]*?</c>)');
   return xml.replace(re, function(match, attrs) {
-    var sMatch = attrs.match(/\ss="(\d+)"/);
-    var sAttr = sMatch ? ' s="' + sMatch[1] + '"' : '';
+    var sAttr;
+    if (강제스타일 !== undefined && 강제스타일 !== null) {
+      sAttr = ' s="' + 강제스타일 + '"';
+    } else {
+      var sMatch = attrs.match(/\ss="(\d+)"/);
+      sAttr = sMatch ? ' s="' + sMatch[1] + '"' : '';
+    }
     if (isText) {
       var esc = String(value == null ? '' : value)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -61,6 +66,15 @@ function _품질현황_셀쓰기(xml, ref, value, isText) {
     }
     return '<c r="' + ref + '"' + sAttr + '><v>' + Number(value || 0) + '</v></c>';
   });
+}
+
+/* ─────────── 특정 셀의 현재 스타일(s= 값) 읽기 ─────────── */
+function _품질현황_셀스타일읽기(xml, ref) {
+  var re = new RegExp('<c r="' + ref + '"([^>/]*)(?:/>|>[\\s\\S]*?</c>)');
+  var m = xml.match(re);
+  if (!m) return null;
+  var sMatch = m[1].match(/\ss="(\d+)"/);
+  return sMatch ? sMatch[1] : null;
 }
 
 /* ─────────── 셀 값 지우기 (서식은 유지한 채 빈 셀로) ─────────── */
@@ -268,9 +282,10 @@ function _품질현황_상세표채우기(xml, 하루기록_출하검사, 공정
       xml = _품질현황_셀쓰기(xml, 'H' + r2, Number(출하검사기록.불량수량) || 0, false);
       Object.keys(열합계2).forEach(function(열) { xml = _품질현황_셀쓰기(xml, 열 + r2, 열합계2[열], false); });
 
-      // 합산 줄의 LOT 표시는 앞 4자리(날짜 부분)를 비우고 나머지만 표기
+      // 합산 줄의 LOT 표시는 앞 4자리(날짜 부분)를 비우고 나머지만 표기 — 위/아래 줄과 같은 서식(굵게·가운데정렬)으로 맞춤
       var 표시lot = lot.length > 4 ? lot.slice(4).trim() : lot;
-      xml = _품질현황_셀쓰기(xml, 'E' + r3, 표시lot, true);
+      var 원본줄스타일 = _품질현황_셀스타일읽기(xml, 'E' + r1);
+      xml = _품질현황_셀쓰기(xml, 'E' + r3, 표시lot, true, 원본줄스타일);
     });
   });
 
