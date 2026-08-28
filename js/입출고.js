@@ -380,14 +380,12 @@ async function 공정뷰선택(공정) {
     if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'flex' : 'none';
     if (품질현황영역) 품질현황영역.style.display = (공정 === '출하검사') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
-    document.getElementById('검색_공정').value = 공정;
   } else {
     if (폼제목)  폼제목.textContent  = '입출고 등록';
     if (목록제목) 목록제목.textContent = '입출고 목록';
     if (안내박스) 안내박스.style.display = 'none';
     if (확정버튼영역) 확정버튼영역.style.display = 'none';
     if (품질현황영역) 품질현황영역.style.display = 'none';
-    document.getElementById('검색_공정').value = '';
   }
 
 
@@ -1151,7 +1149,8 @@ async function 검색조회() {
   var 시작 = document.getElementById('검색_시작일').value;
   var 종료 = document.getElementById('검색_종료일').value;
   var 품명 = document.getElementById('검색_품명').value.trim().toLowerCase();
-  var 공정 = document.getElementById('검색_공정').value;
+  var lotEl = document.getElementById('검색_lot');
+  var lot값 = lotEl ? lotEl.value.trim().toLowerCase() : '';
   var 담당 = document.getElementById('검색_담당자').value;
 
   if (시작) 결과 = 결과.filter(function(h) { return (h.출고일자||'') >= 시작; });
@@ -1159,9 +1158,7 @@ async function 검색조회() {
   if (품명) 결과 = 결과.filter(function(h) {
     return (h.품명||'').toLowerCase().includes(품명) || (h.품번||'').toLowerCase().includes(품명);
   });
-  if (공정) 결과 = 결과.filter(function(h) {
-    return h.공정 === 공정 || h.출발공정 === 공정 || h.도착공정 === 공정;
-  });
+  if (lot값) 결과 = 결과.filter(function(h) { return (h['lot번호']||'').toLowerCase().includes(lot값); });
   if (담당) 결과 = 결과.filter(function(h) { return (h.담당자||'') === 담당; });
 
   if (현재작업공정 === '수입검사' || 현재작업공정 === '출하검사' || 공정검사류(현재작업공정)) {
@@ -1180,7 +1177,8 @@ async function 전체보기() {
   검색기간기본값세팅();
   document.getElementById('검색_품명').value   = '';
   document.getElementById('검색_담당자').value = '';
-  if (!현재작업공정) document.getElementById('검색_공정').value = '';
+  var lotEl = document.getElementById('검색_lot');
+  if (lotEl) lotEl.value = '';
   await 공정필터목록갱신();
 }
 
