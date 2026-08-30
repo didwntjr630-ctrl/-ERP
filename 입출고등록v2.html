@@ -78,7 +78,7 @@
         <div class="검색항목">
           <label>품명 / 품번</label>
           <div class="검색입력행">
-            <input type="text" id="검색_품명" placeholder="품명 또는 품번" onkeydown="엔터검색(event)">
+            <input type="text" id="검색_품명" placeholder="품명 또는 품번" onkeydown="엔터검색(event)" autocomplete="off">
             <button class="돋보기버튼 검색용" onclick="검색_품목팝업열기()" title="품목 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           </div>
         </div>
@@ -129,7 +129,7 @@
         <div class="입력그룹" style="flex:0 0 155px;">
           <label for="출고일자">일자</label>
           <div style="display:flex; gap:4px; align-items:center;">
-            <input type="text" id="출고일자" placeholder="YYYYMMDD" maxlength="10" style="flex:1; min-width:0;"
+            <input type="text" id="출고일자" placeholder="YYYYMMDD" maxlength="10" style="flex:1; min-width:0;" autocomplete="off"
                    oninput="날짜입력포맷(this)" onkeydown="폼엔터핸들러(event,'출고일자')">
             <button type="button" title="달력으로 선택"
                     onclick="var c=document.getElementById('출고일자_캘린더');try{c.showPicker();}catch(e){c.click();}"
@@ -155,7 +155,7 @@
       <div class="폼행 공정흐름행">
         <div class="입력그룹">
           <label for="출발공정">출발 공정 <span style="color:#888; font-weight:normal;">(코드/이름 또는 더블클릭)</span></label>
-          <input type="text" id="출발공정" placeholder="코드 입력 또는 더블클릭 선택"
+          <input type="text" id="출발공정" placeholder="코드 입력 또는 더블클릭 선택" autocomplete="off"
                  ondblclick="공정팝업열기('출발')"
                  onblur="공정코드변환('출발')"
                  onkeydown="폼엔터핸들러(event,'출발공정')">
@@ -174,7 +174,7 @@
 
         <div class="입력그룹">
           <label for="도착공정">도착 공정 <span style="color:#888; font-weight:normal;">(코드/이름 또는 더블클릭)</span></label>
-          <input type="text" id="도착공정" placeholder="더블클릭하여 선택"
+          <input type="text" id="도착공정" placeholder="더블클릭하여 선택" autocomplete="off"
                  ondblclick="도착공정팝업열기()"
                  onblur="공정코드변환('도착')"
                  onkeydown="폼엔터핸들러(event,'도착공정')">
@@ -246,7 +246,7 @@
         <div class="입력그룹" id="담당자그룹" style="flex:0 0 180px;">
           <label>담당자</label>
           <div class="품명입력행">
-            <input type="text" id="담당자입력" placeholder="클릭하여 선택" readonly onclick="담당자조회팝업열기()" style="cursor:pointer;"
+            <input type="text" id="담당자입력" placeholder="클릭하여 선택" readonly onclick="담당자조회팝업열기()" style="cursor:pointer;" autocomplete="off"
                    onkeydown="폼엔터핸들러(event,'담당자입력')">
             <button class="돋보기버튼" onclick="담당자조회팝업열기()" title="담당자 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           </div>
@@ -308,9 +308,9 @@
         <div class="페이지제목" style="font-size:15px; margin-bottom:0;">출하 현황</div>
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <input type="month" id="출하현황_월필터" style="font-size:13px; padding:4px 8px; border:1px solid #c0cfe0; border-radius:3px; height:30px; background:#fff;">
-          <input type="text" id="출하현황_품명필터" readonly placeholder="전체 품목" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:150px; background:#fff; cursor:pointer;" onclick="출하현황품목조회팝업열기()">
+          <input type="text" id="출하현황_품명필터" readonly placeholder="전체 품목" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:150px; background:#fff; cursor:pointer;" onclick="출하현황품목조회팝업열기()" autocomplete="off">
           <button class="돋보기버튼" onclick="출하현황품목조회팝업열기()" title="품목 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-          <input type="text" id="출하현황_납품처필터" readonly placeholder="전체 납품처" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:140px; background:#fff; cursor:pointer;" onclick="출하현황납품처조회팝업열기()">
+          <input type="text" id="출하현황_납품처필터" readonly placeholder="전체 납품처" style="font-size:13px; padding:4px 10px; border:1px solid #c0cfe0; border-radius:3px; height:30px; width:140px; background:#fff; cursor:pointer;" onclick="출하현황납품처조회팝업열기()" autocomplete="off">
           <button class="돋보기버튼" onclick="출하현황납품처조회팝업열기()" title="납품처 조회"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button class="버튼 회색" style="height:30px; padding:0 10px; font-size:13px;" onclick="출하현황필터초기화()">전체</button>
           <button class="버튼" style="height:30px; padding:0 14px; font-size:13px; background:#f97316; border-color:#f97316; color:#fff;" onclick="출하현황요약()">조회</button>
@@ -392,7 +392,7 @@
         <button class="팝업닫기버튼" onclick="조회팝업닫기()">✕</button>
       </div>
       <div class="팝업내용">
-        <input type="text" id="조회팝업_검색" class="팝업검색입력" placeholder="검색..." oninput="조회팝업검색필터()">
+        <input type="text" id="조회팝업_검색" class="팝업검색입력" placeholder="검색..." oninput="조회팝업검색필터()" autocomplete="off">
         <div class="팝업테이블감싸기">
           <table>
             <thead><tr id="조회팝업_헤더행"></tr></thead>
