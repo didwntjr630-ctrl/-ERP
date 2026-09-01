@@ -373,12 +373,14 @@ async function 공정뷰선택(공정) {
 
   var 확정버튼영역 = document.getElementById('확정버튼영역');
   var 품질현황영역 = document.getElementById('품질현황출력영역');
+  var 검사집계영역 = document.getElementById('검사집계출력영역');
   if (공정) {
     if (폼제목)  폼제목.textContent  = 공정 + ' 입출고 등록';
     if (목록제목) 목록제목.textContent = 공정 + ' 입출고 목록';
     if (안내박스) 안내박스.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'none' : 'block';
     if (확정버튼영역) 확정버튼영역.style.display = (공정 === '출하검사' || 공정검사류(공정)) ? 'flex' : 'none';
     if (품질현황영역) 품질현황영역.style.display = (공정 === '출하검사') ? 'flex' : 'none';
+    if (검사집계영역) 검사집계영역.style.display = (공정 === '출하검사') ? 'flex' : 'none';
     document.getElementById('출발공정').value = 공정;
   } else {
     if (폼제목)  폼제목.textContent  = '입출고 등록';
@@ -386,6 +388,7 @@ async function 공정뷰선택(공정) {
     if (안내박스) 안내박스.style.display = 'none';
     if (확정버튼영역) 확정버튼영역.style.display = 'none';
     if (품질현황영역) 품질현황영역.style.display = 'none';
+    if (검사집계영역) 검사집계영역.style.display = 'none';
   }
 
 
