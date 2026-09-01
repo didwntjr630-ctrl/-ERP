@@ -248,6 +248,9 @@
         <div id="확정버튼영역" style="display:none; margin-left:auto; gap:6px; align-items:center;">
           <select id="엑셀업체" style="height:32px; font-size:13px; border:1px solid #ccc; border-radius:6px; padding:0 8px; cursor:pointer;"></select>
           <button id="엑셀다운로드버튼" class="버튼 초록" onclick="출하검사_엑셀다운로드()">검사대장 출력</button>
+          <div id="검사집계출력영역" style="display:none; gap:6px; align-items:center;">
+            <button id="검사집계출력버튼" class="버튼 초록" onclick="검사집계_출력()">검사집계 출력</button>
+          </div>
           <div id="품질현황출력영역" style="display:none; gap:6px; align-items:center;">
             <button id="품질현황출력버튼" class="버튼 초록" onclick="품질현황_출력()">품질현황 출력</button>
           </div>
@@ -404,6 +407,8 @@
   <script src="js/입출고.js"></script>
   <script src="js/품질현황템플릿.js"></script>
   <script src="js/품질현황.js"></script>
+  <script src="js/검사집계템플릿.js"></script>
+  <script src="js/검사집계.js"></script>
   <script>
     세션체크();
     접속자패널초기화();
