@@ -2023,7 +2023,10 @@ async function 출하검사_엑셀다운로드() {
       데이터목록.forEach(function(항목, idx) {
         var rowNum = REF_ROW + idx;
         var row = targetWs.getRow(rowNum);
-        var 수량 = Number(항목.입고수량) || Number(항목.출고수량) || 0;
+        // 아노다이징(공정검사)·코팅입고(태산입고) 검사대장은 출고수량 기준으로 표기, 보은금속(출하검사)은 기존대로 입고수량 우선
+        var 수량 = (태산입고여부 || 공정검사여부)
+          ? (Number(항목.출고수량) || Number(항목.입고수량) || 0)
+          : (Number(항목.입고수량) || Number(항목.출고수량) || 0);
         var 불량 = 0; /* 검사대장은 실측 후 수기 기입용 — 전산 불량수량 값을 그대로 넣지 않음 */
         var 검사수량 = AQL검사수량계산(수량);
         var 차종 = 차종추출(항목.품명);
