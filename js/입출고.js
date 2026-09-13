@@ -2137,7 +2137,7 @@ async function 출하검사_엑셀다운로드() {
       var ws2 = workbook.getWorksheet('태산출하검사대장 2026년_월_07');
       if (!ws1 || !ws2) throw new Error('아노다이징 템플릿 시트를 찾을 수 없습니다.');
       ws2.name = '코팅수입검사대장';
-      ws2.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + 시작일 + ' ~ ' + 종료일 + ' )';
+      ws2.getCell('A1').value = '아노다이징 완료품 출 하 검 사 대 장 ( ' + 종료일.slice(0, 4) + '년 ' + 종료일.slice(5, 7) + '월 )';
 
       시트채우기(ws1, MX5데이터, 24);
       시트채우기(ws2, 비MX5데이터, 24);
