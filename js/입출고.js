@@ -1918,6 +1918,108 @@ function 색상판별(품명) {
   return (APP_CONFIG.매출고정값 && APP_CONFIG.매출고정값.규격기본) || 'S/V';
 }
 
+/* 정규식 전체 매치 중 캡처그룹(숫자)의 최댓값 (없으면 0) */
+function _정규식최댓값(xml, re) {
+  var 최대 = 0, m;
+  re.lastIndex = 0;
+  while ((m = re.exec(xml))) {
+    var n = Number(m[1]);
+    if (n > 최대) 최대 = n;
+  }
+  return 최대;
+}
+
+/* ─────────── 태산테크수입검사대장 템플릿에 요청한 월 시트가 없으면 자동으로 만들어줌 ───────────
+   있는 월 시트 중 가장 최근 것을 그대로 복제해서 새 월 시트로 등록한다 (서명·도장 이미지, 인쇄설정까지 원본 그대로 유지).
+   ExcelJS로 통째로 열었다 저장하면 매크로(vbaProject.bin)가 사라지므로, 이 단계는 ExcelJS가 아니라
+   JSZip으로 필요한 워크북 파트만 직접 복제·등록한다 (읽기 전용 복제라 매크로 손실과 무관). */
+async function _태산입고_월시트_보장(buf, 월문자) {
+  var 시트이름 = '태산수입검사대장2026년_월_' + 월문자;
+  var zip = await JSZip.loadAsync(buf);
+
+  var wbXml = await zip.file('xl/workbook.xml').async('string');
+  if (wbXml.indexOf('name="' + 시트이름 + '"') !== -1) return buf; // 이미 있으면 그대로 사용
+
+  var 기존월목록 = [];
+  var sheetRe = /<sheet name="태산수입검사대장2026년_월_(\d{2})" sheetId="(\d+)" r:id="(rId\d+)"\/>/g;
+  var m;
+  while ((m = sheetRe.exec(wbXml))) 기존월목록.push({ 월: m[1], sheetId: Number(m[2]), rId: m[3] });
+  if (!기존월목록.length) throw new Error('복제할 월 시트가 템플릿에 하나도 없습니다. 관리자에게 문의하세요.');
+  기존월목록.sort(function(a, b) { return b.월.localeCompare(a.월); });
+  var 원본 = 기존월목록[0]; // 가장 최근(가장 큰 월 번호) 시트를 원본으로 사용
+
+  var wbRelsXml = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+  var relMatch = wbRelsXml.match(new RegExp('<Relationship Id="' + 원본.rId + '"[^>]*Target="([^"]+)"'));
+  var 원본시트경로 = 'xl/' + relMatch[1];
+  var 원본시트번호 = 원본시트경로.match(/sheet(\d+)\.xml$/)[1];
+
+  function 다음번호(접두, 확장자) {
+    var 최대 = 0;
+    Object.keys(zip.files).forEach(function(name) {
+      if (name.indexOf(접두) !== 0 || name.slice(-확장자.length) !== 확장자) return;
+      var n = Number(name.slice(접두.length, name.length - 확장자.length));
+      if (!isNaN(n) && n > 최대) 최대 = n;
+    });
+    return 최대 + 1;
+  }
+
+  var 새시트번호 = 다음번호('xl/worksheets/sheet', '.xml');
+  var 새시트경로 = 'xl/worksheets/sheet' + 새시트번호 + '.xml';
+  var 새시트rels경로 = 'xl/worksheets/_rels/sheet' + 새시트번호 + '.xml.rels';
+
+  zip.file(새시트경로, await zip.file(원본시트경로).async('string'));
+
+  var 원본rels파일 = zip.file('xl/worksheets/_rels/sheet' + 원본시트번호 + '.xml.rels');
+  var 새drawing경로 = null;
+
+  if (원본rels파일) {
+    var relsXml = await 원본rels파일.async('string');
+    var drawingM = relsXml.match(/drawings\/drawing(\d+)\.xml/);
+    var psM = relsXml.match(/printerSettings\/printerSettings(\d+)\.bin/);
+    var 새rels = relsXml;
+
+    if (drawingM) {
+      var 새drawing번호 = 다음번호('xl/drawings/drawing', '.xml');
+      새drawing경로 = 'xl/drawings/drawing' + 새drawing번호 + '.xml';
+      zip.file(새drawing경로, await zip.file('xl/drawings/drawing' + drawingM[1] + '.xml').async('string'));
+
+      var 원본drawingRels파일 = zip.file('xl/drawings/_rels/drawing' + drawingM[1] + '.xml.rels');
+      if (원본drawingRels파일) {
+        zip.file('xl/drawings/_rels/drawing' + 새drawing번호 + '.xml.rels', await 원본drawingRels파일.async('string'));
+      }
+      새rels = 새rels.replace('drawings/drawing' + drawingM[1] + '.xml', 'drawings/drawing' + 새drawing번호 + '.xml');
+    }
+
+    if (psM) {
+      var 새ps번호 = 다음번호('xl/printerSettings/printerSettings', '.bin');
+      zip.file('xl/printerSettings/printerSettings' + 새ps번호 + '.bin',
+        await zip.file('xl/printerSettings/printerSettings' + psM[1] + '.bin').async('uint8array'));
+      새rels = 새rels.replace('printerSettings/printerSettings' + psM[1] + '.bin', 'printerSettings/printerSettings' + 새ps번호 + '.bin');
+    }
+
+    zip.file(새시트rels경로, 새rels);
+  }
+
+  var 새sheetId = _정규식최댓값(wbXml, /sheetId="(\d+)"/g) + 1;
+  var 새rId번호 = Math.max(_정규식최댓값(wbXml, /r:id="rId(\d+)"/g), _정규식최댓값(wbRelsXml, /Id="rId(\d+)"/g)) + 1;
+  var 새rId = 'rId' + 새rId번호;
+
+  zip.file('xl/workbook.xml', wbXml.replace('</sheets>',
+    '<sheet name="' + 시트이름 + '" sheetId="' + 새sheetId + '" r:id="' + 새rId + '"/></sheets>'));
+
+  zip.file('xl/_rels/workbook.xml.rels', wbRelsXml.replace('</Relationships>',
+    '<Relationship Id="' + 새rId + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + 새시트번호 + '.xml"/></Relationships>'));
+
+  var ct = await zip.file('[Content_Types].xml').async('string');
+  var ct추가 = '<Override PartName="/xl/worksheets/sheet' + 새시트번호 + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+  if (새drawing경로) {
+    ct추가 += '<Override PartName="/' + 새drawing경로 + '" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>';
+  }
+  zip.file('[Content_Types].xml', ct.replace('</Types>', ct추가 + '</Types>'));
+
+  return zip.generateAsync({ type: 'arraybuffer' });
+}
+
 async function 출하검사_엑셀다운로드() {
   var 공정검사여부 = 현재작업공정 === '공정검사';
   var 태산입고여부 = 현재작업공정 === '태산 입고';
@@ -2000,8 +2102,14 @@ async function 출하검사_엑셀다운로드() {
     var buf = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
 
+    var 로드용버퍼 = buf.buffer;
+    if (태산입고여부) {
+      // 요청한 월 시트가 템플릿에 없으면 가장 최근 월 시트를 복제해서 자동으로 만들어줌 (매달 수동 추가 불필요)
+      로드용버퍼 = await _태산입고_월시트_보장(로드용버퍼, 종료일.slice(5, 7));
+    }
+
     var workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buf.buffer);
+    await workbook.xlsx.load(로드용버퍼);
 
     var REF_ROW = 6;
 
