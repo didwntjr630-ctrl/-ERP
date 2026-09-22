@@ -79,6 +79,9 @@
     }
 
     /* ── 인쇄 전용 ── */
+    /* 브라우저 기본 인쇄 여백을 0으로 없애야 .성적서-페이퍼 자체 padding(8mm 10mm)만 적용됨 —
+       기본 여백이 그대로 남아있으면 1페이지 맨 아래 문서번호 줄(SYE-검사성적서)이 살짝 넘쳐서 2페이지로 밀려남 */
+    @page { size: A4; margin: 0; }
     @media print {
       .no-print { display: none !important; }
       body, html { background: white !important; margin: 0 !important; padding: 0 !important; }
