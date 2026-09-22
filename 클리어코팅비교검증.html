@@ -84,9 +84,9 @@
       </div>
 
       <div class="업로드박스" id="업로드박스">
-        <input type="file" id="파일입력" accept=".xlsx,.xls">
-        <button class="버튼 파랑" onclick="document.getElementById('파일입력').click()">엑셀 파일 선택</button>
-        <div class="안내">또는 이 영역에 파일을 끌어다 놓으세요 (.xlsx)</div>
+        <input type="file" id="파일입력" accept=".xlsx,.xls" multiple>
+        <button class="버튼 파랑" onclick="document.getElementById('파일입력').click()">엑셀 파일 선택 (여러 개 가능)</button>
+        <div class="안내">또는 이 영역에 파일을 끌어다 놓으세요 (.xlsx, 여러 개 동시 선택 가능)</div>
         <div class="파일명" id="선택파일명"></div>
       </div>
 
@@ -144,18 +144,20 @@
       setTimeout(function() { el.style.display = 'none'; }, 3500);
     }
 
-    var 선택된파일 = null;
+    var 선택된파일들 = [];
 
-    function 파일선택(file) {
-      if (!file) return;
-      선택된파일 = file;
-      document.getElementById('선택파일명').textContent = file.name;
+    function 파일선택(fileList) {
+      var 파일배열 = Array.prototype.slice.call(fileList || []);
+      if (!파일배열.length) return;
+      선택된파일들 = 파일배열;
+      document.getElementById('선택파일명').textContent =
+        파일배열.length + '개 파일 선택됨: ' + 파일배열.map(function(f) { return f.name; }).join(', ');
       document.getElementById('생성버튼').disabled = false;
       document.getElementById('결과영역').style.display = 'none';
     }
 
     document.getElementById('파일입력').addEventListener('change', function(e) {
-      파일선택(e.target.files[0]);
+      파일선택(e.target.files);
     });
 
     var 업로드박스 = document.getElementById('업로드박스');
@@ -172,8 +174,7 @@
       });
     });
     업로드박스.addEventListener('drop', function(e) {
-      var file = e.dataTransfer.files && e.dataTransfer.files[0];
-      파일선택(file);
+      파일선택(e.dataTransfer.files);
     });
 
     function 기간초기화() {
@@ -182,7 +183,7 @@
     }
 
     async function 검증생성() {
-      if (!선택된파일) return;
+      if (!선택된파일들.length) return;
       var 버튼 = document.getElementById('생성버튼');
       var 시작일 = document.getElementById('검색_시작일').value || '';
       var 종료일 = document.getElementById('검색_종료일').value || '';
@@ -193,7 +194,7 @@
       버튼.disabled = true;
       버튼.textContent = '처리 중...';
       try {
-        var 결과 = await 클리어코팅_생성및다운로드(선택된파일, 시작일, 종료일);
+        var 결과 = await 클리어코팅_생성및다운로드(선택된파일들, 시작일, 종료일);
 
         document.getElementById('결과영역').style.display = 'block';
         var 요약HTML =
