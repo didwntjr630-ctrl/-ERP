@@ -34,6 +34,11 @@
     .미매칭테이블 { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
     .미매칭테이블 th, .미매칭테이블 td { border: 1px solid #e0e6ee; padding: 5px 8px; text-align: left; }
     .미매칭테이블 th { background: #f7f9fc; color: #666; }
+
+    #검색_시작일, #검색_종료일 {
+      border: 1px solid #c0cfe0; border-radius: 3px;
+      padding: 5px 8px; font-size: 13px; font-family: inherit; height: 30px;
+    }
   </style>
 </head>
 <body>
@@ -74,7 +79,7 @@
       <div class="페이지제목">클리어코팅 비교검증</div>
       <div style="font-size:12.5px; color:#777; margin-bottom:14px; line-height:1.6;">
         태산테크가 보내온 "LOT별 도막두께" 측정 결과 엑셀을 업로드하면, 그 안의 스프레이 도막두께 측정값(LOT당 5개)만 가져와서<br>
-        전산의 코팅 입고(태산 입고) 데이터와 LOT 번호로 매칭한 뒤, 일자·수량·모델·색상까지 전산 기준으로 자동 채워<br>
+        전산의 출하검사(엠블럼 출하) 데이터와 LOT 번호로 매칭한 뒤, 일자·수량·모델·색상까지 전산 기준으로 자동 채워<br>
         "클리어 코팅 도막두께 로트별 비교검증 체크시트"를 월별로 생성합니다.
       </div>
 
@@ -83,6 +88,15 @@
         <button class="버튼 파랑" onclick="document.getElementById('파일입력').click()">엑셀 파일 선택</button>
         <div class="안내">또는 이 영역에 파일을 끌어다 놓으세요 (.xlsx)</div>
         <div class="파일명" id="선택파일명"></div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;">
+        <label style="font-size:12.5px; color:#2a6496; font-weight:bold;">기간 선택</label>
+        <input type="date" id="검색_시작일">
+        <span style="color:#999;">~</span>
+        <input type="date" id="검색_종료일">
+        <span style="font-size:11.5px; color:#999;">(선택한 기간에 해당하는 LOT만 체크시트에 포함됩니다 · 비워두면 업로드 파일의 전체 기간)</span>
+        <button class="버튼 회색" style="height:30px; padding:0 12px; font-size:12.5px;" onclick="기간초기화()">기간 초기화</button>
       </div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:14px;">
@@ -163,19 +177,33 @@
       파일선택(file);
     });
 
+    function 기간초기화() {
+      document.getElementById('검색_시작일').value = '';
+      document.getElementById('검색_종료일').value = '';
+    }
+
     async function 검증생성() {
       if (!선택된파일) return;
       var 버튼 = document.getElementById('생성버튼');
+      var 시작일 = document.getElementById('검색_시작일').value || '';
+      var 종료일 = document.getElementById('검색_종료일').value || '';
+      if (시작일 && 종료일 && 시작일 > 종료일) {
+        알림표시('시작일이 종료일보다 늦습니다.', '오류');
+        return;
+      }
       버튼.disabled = true;
       버튼.textContent = '처리 중...';
       try {
-        var 결과 = await 클리어코팅_생성및다운로드(선택된파일);
+        var 결과 = await 클리어코팅_생성및다운로드(선택된파일, 시작일, 종료일);
 
         document.getElementById('결과영역').style.display = 'block';
         var 요약HTML =
-          '<div class="결과카드 강조"><div class="레이블">매칭 성공 (LOT)</div><div class="값">' + 결과.매칭건수 + '</div></div>' +
+          '<div class="결과카드 강조"><div class="레이블">체크시트에 포함 (LOT)</div><div class="값">' + 결과.매칭건수 + '</div></div>' +
           '<div class="결과카드"><div class="레이블">생성된 월</div><div class="값">' + 결과.월목록.join(', ') + '</div></div>' +
           '<div class="결과카드' + (결과.미매칭목록.length ? ' 경고' : '') + '"><div class="레이블">매칭 실패 (LOT)</div><div class="값">' + 결과.미매칭목록.length + '</div></div>';
+        if (결과.기간제외건수 > 0) {
+          요약HTML += '<div class="결과카드"><div class="레이블">기간 밖 제외 (LOT)</div><div class="값">' + 결과.기간제외건수 + '</div></div>';
+        }
         document.getElementById('결과요약').innerHTML = 요약HTML;
 
         var 미매칭영역 = document.getElementById('미매칭영역');
@@ -189,6 +217,7 @@
         }
 
         var 안내 = 결과.매칭건수 + '건 매칭 완료, 다운로드했습니다.';
+        if (결과.기간제외건수 > 0) 안내 += ' (선택한 기간 밖 ' + 결과.기간제외건수 + '건 제외)';
         if (결과.초과월목록.length) 안내 += ' (주의: ' + 결과.초과월목록.join(', ') + '는 시트 한도를 초과해 일부 LOT이 제외됐습니다)';
         알림표시(안내, 결과.미매칭목록.length ? '오류' : '성공');
       } catch (err) {
