@@ -114,18 +114,8 @@ function _클리어코팅_월시트확보(workbook, 월번호) {
   return ws;
 }
 
-/* ─────────── 한 달 분량 워크북 생성 ─────────── */
-async function _클리어코팅_월워크북생성(연월, 레코드목록) {
-  if (typeof 클리어코팅비교검증_BASE64 === 'undefined') {
-    throw new Error('클리어코팅비교검증템플릿.js 가 로드되지 않았습니다.');
-  }
-  var bin = atob(클리어코팅비교검증_BASE64);
-  var buf = new Uint8Array(bin.length);
-  for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-
-  var workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buf.buffer);
-
+/* ─────────── 이미 로드된 워크북에 한 달 분량 시트를 채움 ─────────── */
+function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) {
   var 월번호 = Number(연월.slice(5, 7));
   var ws = _클리어코팅_월시트확보(workbook, 월번호);
   ws.getCell('B2').value = '클리어 코팅 도막두께 로트별 비교검증 체크시트 (태산 코팅완료 입고품) ' + 월번호 + ' 월';
@@ -171,12 +161,7 @@ async function _클리어코팅_월워크북생성(연월, 레코드목록) {
     ws.getCell('Q' + 행).value = { formula: 'IF(P' + 행 + '="불합격", "규격 이탈 확인", "-")' };
   });
 
-  workbook.calcProperties.fullCalcOnLoad = true;
-
-  var blob = await workbook.xlsx.writeBuffer().then(function(buf) {
-    return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  });
-  return { blob: blob, 초과여부: 초과여부, 건수: 정렬.length };
+  return { 초과여부: 초과여부, 건수: 정렬.length };
 }
 
 /* ─────────── 메인: 업로드 파일 → 매칭 → (기간 필터) → 월별 워크북 생성 → 다운로드 ─────────── */
@@ -213,37 +198,39 @@ async function 클리어코팅_생성및다운로드(파일, 시작일, 종료�
     월별[연월].push(rec);
   });
 
-  var 결과목록 = [];
-  var 초과월목록 = [];
-  for (var 연월 in 월별) {
-    var 결과 = await _클리어코팅_월워크북생성(연월, 월별[연월]);
-    결과목록.push({ 연월: 연월, blob: 결과.blob, 건수: 결과.건수 });
-    if (결과.초과여부) 초과월목록.push(연월);
+  if (typeof 클리어코팅비교검증_BASE64 === 'undefined') {
+    throw new Error('클리어코팅비교검증템플릿.js 가 로드되지 않았습니다.');
   }
+  var bin = atob(클리어코팅비교검증_BASE64);
+  var buf = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
 
-  if (결과목록.length === 1) {
-    var 파일명 = '클리어코팅_비교검증_' + 결과목록[0].연월.replace('-', '') + '.xlsx';
-    var url = URL.createObjectURL(결과목록[0].blob);
-    var a = document.createElement('a'); a.href = url; a.download = 파일명; a.click();
-    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-  } else {
-    var zip = new JSZip();
-    결과목록.forEach(function(r) {
-      zip.file('클리어코팅_비교검증_' + r.연월.replace('-', '') + '.xlsx', r.blob);
-    });
-    var zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-    var zip파일명 = '클리어코팅_비교검증_' + 결과목록.length + '개월.zip';
-    var zurl = URL.createObjectURL(zipBlob);
-    var za = document.createElement('a'); za.href = zurl; za.download = zip파일명; za.click();
-    setTimeout(function() { URL.revokeObjectURL(zurl); }, 1000);
-  }
+  var workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buf.buffer);
+
+  var 월목록 = Object.keys(월별).sort();
+  var 초과월목록 = [];
+  월목록.forEach(function(연월) {
+    var 결과 = _클리어코팅_월시트채우기(workbook, 연월, 월별[연월]);
+    if (결과.초과여부) 초과월목록.push(연월);
+  });
+
+  workbook.calcProperties.fullCalcOnLoad = true;
+
+  var outBuf = await workbook.xlsx.writeBuffer();
+  var blob = new Blob([outBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  var 파일명 = '클리어코팅_비교검증_' + 월목록[0].replace('-', '') +
+    (월목록.length > 1 ? '~' + 월목록[월목록.length - 1].replace('-', '') : '') + '.xlsx';
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 파일명; a.click();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 
   return {
     매칭건수: 대상목록.length,
     전체매칭건수: 매칭결과.매칭목록.length,
     기간제외건수: 기간제외건수,
     미매칭목록: 매칭결과.미매칭목록,
-    월목록: Object.keys(월별),
+    월목록: 월목록,
     초과월목록: 초과월목록
   };
 }
