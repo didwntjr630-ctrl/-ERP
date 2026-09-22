@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 클리어코팅 비교검증</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .업로드박스 {
+      border: 2px dashed #c0cfe0;
+      border-radius: 8px;
+      padding: 28px 20px;
+      text-align: center;
+      background: #f7f9fc;
+      transition: border-color .15s, background .15s;
+    }
+    .업로드박스.드래그중 { border-color: #2a6496; background: #eef4fb; }
+    .업로드박스 input[type="file"] { display: none; }
+    .업로드박스 .파일명 { margin-top: 10px; font-size: 13px; color: #2a6496; font-weight: bold; }
+    .업로드박스 .안내 { font-size: 12px; color: #888; margin-top: 6px; }
+
+    .결과요약 { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+    .결과카드 {
+      flex: 1; min-width: 130px;
+      border: 1px solid #e0e6ee; border-radius: 6px;
+      padding: 12px 14px; background: #fff;
+    }
+    .결과카드 .레이블 { font-size: 11px; color: #888; }
+    .결과카드 .값 { font-size: 20px; font-weight: bold; margin-top: 4px; }
+    .결과카드.강조 .값 { color: #2a6496; }
+    .결과카드.경고 .값 { color: #d35400; }
+
+    .미매칭테이블 { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+    .미매칭테이블 th, .미매칭테이블 td { border: 1px solid #e0e6ee; padding: 5px 8px; text-align: left; }
+    .미매칭테이블 th { background: #f7f9fc; color: #666; }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="활성">클리어코팅 비교검증</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+    <div id="알림박스" class="알림" style="position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:9999; min-width:260px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:14px; font-weight:600;"></div>
+
+    <div class="카드">
+      <div class="페이지제목">클리어코팅 비교검증</div>
+      <div style="font-size:12.5px; color:#777; margin-bottom:14px; line-height:1.6;">
+        태산테크가 보내온 "LOT별 도막두께" 측정 결과 엑셀을 업로드하면, 그 안의 스프레이 도막두께 측정값(LOT당 5개)만 가져와서<br>
+        전산의 코팅 입고(태산 입고) 데이터와 LOT 번호로 매칭한 뒤, 일자·수량·모델·색상까지 전산 기준으로 자동 채워<br>
+        "클리어 코팅 도막두께 로트별 비교검증 체크시트"를 월별로 생성합니다.
+      </div>
+
+      <div class="업로드박스" id="업로드박스">
+        <input type="file" id="파일입력" accept=".xlsx,.xls">
+        <button class="버튼 파랑" onclick="document.getElementById('파일입력').click()">엑셀 파일 선택</button>
+        <div class="안내">또는 이 영역에 파일을 끌어다 놓으세요 (.xlsx)</div>
+        <div class="파일명" id="선택파일명"></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+        <button class="버튼 초록" id="생성버튼" onclick="검증생성()" disabled>비교검증 체크시트 생성</button>
+      </div>
+
+      <div id="결과영역" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:16px;">
+        <div class="결과요약" id="결과요약"></div>
+        <div id="미매칭영역" style="display:none;">
+          <div style="font-size:13px; font-weight:bold; color:#d35400; margin-top:8px;">매칭 실패 LOT</div>
+          <div style="max-height:260px; overflow-y:auto;">
+            <table class="미매칭테이블">
+              <thead><tr><th>LOT 번호</th><th>사유</th></tr></thead>
+              <tbody id="미매칭바디"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /내용영역 -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="js/클리어코팅비교검증템플릿.js"></script>
+  <script src="js/클리어코팅비교검증.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+
+    function 알림표시(메시지, 종류) {
+      var el = document.getElementById('알림박스');
+      el.textContent = 메시지;
+      el.className = '알림 ' + 종류;
+      el.style.display = 'block';
+      setTimeout(function() { el.style.display = 'none'; }, 3500);
+    }
+
+    var 선택된파일 = null;
+
+    function 파일선택(file) {
+      if (!file) return;
+      선택된파일 = file;
+      document.getElementById('선택파일명').textContent = file.name;
+      document.getElementById('생성버튼').disabled = false;
+      document.getElementById('결과영역').style.display = 'none';
+    }
+
+    document.getElementById('파일입력').addEventListener('change', function(e) {
+      파일선택(e.target.files[0]);
+    });
+
+    var 업로드박스 = document.getElementById('업로드박스');
+    ['dragenter', 'dragover'].forEach(function(evt) {
+      업로드박스.addEventListener(evt, function(e) {
+        e.preventDefault(); e.stopPropagation();
+        업로드박스.classList.add('드래그중');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function(evt) {
+      업로드박스.addEventListener(evt, function(e) {
+        e.preventDefault(); e.stopPropagation();
+        업로드박스.classList.remove('드래그중');
+      });
+    });
+    업로드박스.addEventListener('drop', function(e) {
+      var file = e.dataTransfer.files && e.dataTransfer.files[0];
+      파일선택(file);
+    });
+
+    async function 검증생성() {
+      if (!선택된파일) return;
+      var 버튼 = document.getElementById('생성버튼');
+      버튼.disabled = true;
+      버튼.textContent = '처리 중...';
+      try {
+        var 결과 = await 클리어코팅_생성및다운로드(선택된파일);
+
+        document.getElementById('결과영역').style.display = 'block';
+        var 요약HTML =
+          '<div class="결과카드 강조"><div class="레이블">매칭 성공 (LOT)</div><div class="값">' + 결과.매칭건수 + '</div></div>' +
+          '<div class="결과카드"><div class="레이블">생성된 월</div><div class="값">' + 결과.월목록.join(', ') + '</div></div>' +
+          '<div class="결과카드' + (결과.미매칭목록.length ? ' 경고' : '') + '"><div class="레이블">매칭 실패 (LOT)</div><div class="값">' + 결과.미매칭목록.length + '</div></div>';
+        document.getElementById('결과요약').innerHTML = 요약HTML;
+
+        var 미매칭영역 = document.getElementById('미매칭영역');
+        if (결과.미매칭목록.length) {
+          미매칭영역.style.display = 'block';
+          document.getElementById('미매칭바디').innerHTML = 결과.미매칭목록.map(function(m) {
+            return '<tr><td>' + m.lot + '</td><td>' + m.사유 + '</td></tr>';
+          }).join('');
+        } else {
+          미매칭영역.style.display = 'none';
+        }
+
+        var 안내 = 결과.매칭건수 + '건 매칭 완료, 다운로드했습니다.';
+        if (결과.초과월목록.length) 안내 += ' (주의: ' + 결과.초과월목록.join(', ') + '는 시트 한도를 초과해 일부 LOT이 제외됐습니다)';
+        알림표시(안내, 결과.미매칭목록.length ? '오류' : '성공');
+      } catch (err) {
+        알림표시('생성 실패: ' + (err.message || err), '오류');
+        console.error(err);
+      } finally {
+        버튼.disabled = false;
+        버튼.textContent = '비교검증 체크시트 생성';
+      }
+    }
+  </script>
+</body>
+</html>
