@@ -209,7 +209,10 @@
     <!-- 액션 버튼 (화면 전용) -->
     <div class="성적서액션바 no-print">
       <button class="버튼 회색" onclick="성적서닫기()">← 목록으로</button>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="file" id="클리어코팅파일입력" accept=".xlsx,.xls" style="display:none;">
+        <button class="버튼 회색" style="font-size:12px;" onclick="document.getElementById('클리어코팅파일입력').click()">클리어 코팅 도막두께 파일 첨부</button>
+        <span id="클리어코팅파일명" style="font-size:11.5px; color:#2a6496;"></span>
         <button class="버튼 초록" onclick="성적서엑셀다운로드()" id="엑셀다운로드버튼">엑셀 다운로드</button>
       </div>
     </div>
@@ -454,6 +457,45 @@
      전역 상태
   ════════════════════════════════════════ */
   var 현재성적서id = null;
+
+  /* ── 클리어 코팅 도막두께 업로드 파일 (LOT 매칭용) ──
+     클리어코팅비교검증과 같은 "LOT별 도막두께" 파일 형식: 9행부터 데이터,
+     J열=LOT NO(공백없음), Q열=측정값(μm), 같은 LOT이 연속 5행 반복 */
+  var 클리어코팅업로드맵 = null; // { 정규화LOT: [v1..v5] }
+
+  async function 클리어코팅파일파싱(file) {
+    var buf = await file.arrayBuffer();
+    var workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buf);
+    var 맵 = {};
+    workbook.eachSheet(function(sheet) {
+      var 마지막행 = sheet.actualRowCount || sheet.rowCount;
+      for (var r = 9; r <= 마지막행; r++) {
+        var lot = String(sheet.getCell('J' + r).value || '').trim();
+        if (!lot) continue;
+        var qCell = sheet.getCell('Q' + r).value;
+        var 값 = Number(qCell);
+        if (qCell === null || qCell === undefined || qCell === '' || isNaN(값)) continue;
+        var key = lot.replace(/\s+/g, '');
+        if (!맵[key]) 맵[key] = [];
+        if (맵[key].length < 5) 맵[key].push(값);
+      }
+    });
+    return 맵;
+  }
+
+  document.getElementById('클리어코팅파일입력').addEventListener('change', async function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    try {
+      클리어코팅업로드맵 = await 클리어코팅파일파싱(file);
+      document.getElementById('클리어코팅파일명').textContent = file.name + ' (' + Object.keys(클리어코팅업로드맵).length + '개 LOT)';
+    } catch (err) {
+      클리어코팅업로드맵 = null;
+      document.getElementById('클리어코팅파일명').textContent = '';
+      알림표시('클리어 코팅 파일 읽기 실패: ' + (err.message || err), '오류');
+    }
+  });
 
   /* ════════════════════════════════════════
      초기화
@@ -795,6 +837,19 @@
       }
       var 도막두께행 = 항목행['표면처리'] || null;
       var 엑셀중량행  = 항목행['중량'] || (자동기입규격 && 자동기입규격.중량행) || null;
+
+      // 4-1. 클리어 코팅 두께 실측값 기입 (표면처리 다음 줄 — 업로드한 LOT별 도막두께 파일에서 이 LOT 값을 찾아 기입)
+      if (도막두께행 && 클리어코팅업로드맵) {
+        var 클리어코팅행 = 도막두께행 + 1;
+        var _lotKey = String(데이터['lot번호'] || '').replace(/\s+/g, '');
+        var 클리어측정값 = _lotKey ? 클리어코팅업로드맵[_lotKey] : null;
+        if (클리어측정값 && 클리어측정값.length === 5) {
+          var 기입컬럼_클리어 = (자동기입규격 && 자동기입규격.기입컬럼) || ['O', 'P', 'Q', 'R', 'S'];
+          기입컬럼_클리어.forEach(function(col, i) { ws.getCell(col + 클리어코팅행).value = 클리어측정값[i]; });
+        } else {
+          알림표시('업로드한 파일에서 이 LOT(' + (데이터['lot번호'] || '') + ')의 클리어 코팅 측정값을 찾지 못했습니다. 해당 칸은 비워둡니다.', '오류');
+        }
+      }
 
       if (자동기입규격) {
         var 기입컬럼 = (자동기입규격.기입컬럼) || ['O', 'P', 'Q', 'R', 'S'];
