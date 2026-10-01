@@ -2,7 +2,8 @@
    클리어코팅비교검증.js — 스프레이 도막두께 측정 결과 엑셀(업로드)의 LOT별 측정값 5개를
    전산 "코팅 입고"(태산 입고) 데이터와 LOT 매칭해서, 클리어 코팅 도막두께 로트별 비교검증
    체크시트 양식(월별 시트)에 자동 기입 — 측정값 외 나머지 항목(일자·LOT·수량·모델·색상)은
-   전부 전산 데이터 기준으로 채운다. 기입되는 측정값은 원본에 0.3을 보정해서 넣되,
+   전부 전산 데이터 기준으로 채운다. 해당 기간(또는 매칭된 달)의 코팅입고는 측정 파일에 없어도
+   모두 출력하고 측정값만 비운 채 비고에 "측정값 없음"으로 표시한다. 기입되는 측정값은 원본에 0.3을 보정해서 넣되,
    CN7 PE(15~21 규격)를 제외한 모든 품목은 보정값을 7.0~7.9 범위로 강제 고정(clamp)해서
    개별 측정값이 절대 8.0 이상·7.0 미만으로 나오지 않게 한다.
    합격/불합격 판정은 기존 차종별 규격(CN7 PE 15~21, 그 외 4~8)을 그대로 쓰고,
@@ -70,45 +71,73 @@ async function _클리어코팅_업로드파싱(파일목록) {
   return 합친맵;
 }
 
-/* ─────────── 업로드 LOT을 전산 "코팅 입고"(태산 입고) 데이터와 매칭 ───────────
-   반환: { 매칭목록: [...], 미매칭목록: [{lot, 사유}] } */
+function _클리어코팅_LOT정규화(lot) { return String(lot || '').replace(/\s+/g, ''); }
+
+/* 두 LOT이 정확히 한 글자만 다른지 (바뀜·빠짐·더해짐 한 번) — 오타 의심 표시용 */
+function _클리어코팅_한글자차이(a, b) {
+  if (a === b || Math.abs(a.length - b.length) > 1) return false;
+  var i = 0, j = 0, 차이 = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++차이 > 1) return false;
+    if (a.length > b.length) i++;
+    else if (a.length < b.length) j++;
+    else { i++; j++; }
+  }
+  return 차이 + (a.length - i) + (b.length - j) === 1;
+}
+
+/* ─────────── 전산 "코팅 입고"(태산 입고) 전체를 기준으로 업로드 측정값을 붙임 ───────────
+   측정 파일에 없는 코팅입고 건도 목록에 넣고 측정값만 null로 둔다.
+   반환: { 코팅입고목록: [{..., 측정값: [5개] | null}], 미매칭목록: [{lot, 사유}] } */
 async function _클리어코팅_매칭(로트측정값맵) {
   var 전체 = await 데이터불러오기();
-  var 코팅입고맵 = {};
-  전체.forEach(function(h) {
-    if (h.공정 !== '태산 입고') return;
-    var key = String(h['lot번호'] || '').replace(/\s+/g, '');
-    if (key) 코팅입고맵[key] = h;
+  var 코팅입고 = 전체.filter(function(h) { return h.공정 === '태산 입고'; });
+  var 코팅입고LOT = {};
+  코팅입고.forEach(function(h) {
+    var key = _클리어코팅_LOT정규화(h['lot번호']);
+    if (key) 코팅입고LOT[key] = true;
   });
 
-  var 매칭목록 = [], 미매칭목록 = [];
+  var 미매칭목록 = [];
   Object.keys(로트측정값맵).forEach(function(key) {
     var 측정값들 = 로트측정값맵[key];
     if (측정값들.length !== 5) {
       미매칭목록.push({ lot: key, 사유: '측정값이 5개가 아님(' + 측정값들.length + '개)' });
       return;
     }
-    var 레코드 = 코팅입고맵[key];
-    if (!레코드) {
-      /* 업로드 파일에는 있지만 전산 코팅 입고 데이터에 없는 LOT은 매칭 실패 사유로 표시하지 않음(그냥 건너뜀) */
-      return;
-    }
-    var 일자 = 레코드.출고일자 || 레코드.입고일자 || '';
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(일자)) {
-      미매칭목록.push({ lot: key, 사유: '전산 데이터에 날짜가 없음' });
-      return;
-    }
-    매칭목록.push({
-      출고일자: 일자,
-      lot번호:  레코드['lot번호'],
-      입고수량: Number(레코드.입고수량) || 0,
-      차종:    _클리어코팅_차종추출(레코드.품명),
-      색상:    _클리어코팅_색상판별(레코드.품명),
-      측정값:  측정값들
+    if (코팅입고LOT[key]) return;
+    /* 전산에 없는 LOT은 원래 조용히 건너뛰지만, 전산 LOT과 한 글자만 다르면 오타일 수 있어 확인 필요로 알림 */
+    코팅입고.forEach(function(h) {
+      if (!_클리어코팅_한글자차이(key, _클리어코팅_LOT정규화(h['lot번호']))) return;
+      미매칭목록.push({
+        lot: key,
+        사유: 'LOT 번호 확인 필요 — 전산의 ' + h['lot번호'] + ' (' + (h.품명 || '') + ', ' + (h.출고일자 || '') + ')와 한 글자 다름'
+      });
     });
   });
 
-  return { 매칭목록: 매칭목록, 미매칭목록: 미매칭목록 };
+  var 코팅입고목록 = [];
+  코팅입고.forEach(function(h) {
+    var key = _클리어코팅_LOT정규화(h['lot번호']);
+    var 측정값들 = 로트측정값맵[key];
+    var 측정있음 = !!(측정값들 && 측정값들.length === 5);
+    var 일자 = h.출고일자 || h.입고일자 || '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(일자)) {
+      if (측정있음) 미매칭목록.push({ lot: key, 사유: '전산 데이터에 날짜가 없음' });
+      return;
+    }
+    코팅입고목록.push({
+      출고일자: 일자,
+      lot번호:  h['lot번호'],
+      입고수량: Number(h.입고수량) || 0,
+      차종:    _클리어코팅_차종추출(h.품명),
+      색상:    _클리어코팅_색상판별(h.품명),
+      측정값:  측정있음 ? 측정값들 : null
+    });
+  });
+
+  return { 코팅입고목록: 코팅입고목록, 미매칭목록: 미매칭목록 };
 }
 
 /* ─────────── 워크북에서 지정 월 시트를 찾고, 없으면 있는 월 중 가장 최근 것을 복제해서 만듦 ─────────── */
@@ -132,6 +161,39 @@ function _클리어코팅_월시트확보(workbook, 월번호) {
   return ws;
 }
 
+/* ─────────── 한 달이 50건을 넘으면 요약표(평균·최대·최소) 위에 줄을 끼워 넣고 요약 수식 범위를 늘림 ───────────
+   반환: 데이터 마지막 행 번호 */
+function _클리어코팅_행늘리기(ws, 필요건수) {
+  var 기본마지막행 = 클리어코팅_데이터최대행;
+  var 추가 = 필요건수 - (기본마지막행 - 클리어코팅_데이터시작행 + 1);
+  if (추가 <= 0) return 기본마지막행;
+  var 새마지막행 = 기본마지막행 + 추가;
+
+  var 빈줄 = [];
+  for (var i = 0; i < 추가; i++) 빈줄.push([]);
+  ws.spliceRows.apply(ws, [기본마지막행 + 1, 0].concat(빈줄));
+
+  var 원본행 = ws.getRow(기본마지막행);
+  for (var r = 기본마지막행 + 1; r <= 새마지막행; r++) {
+    var 행 = ws.getRow(r);
+    행.height = 원본행.height;
+    for (var c = 2; c <= 17; c++) 행.getCell(c).style = JSON.parse(JSON.stringify(원본행.getCell(c).style || {}));
+  }
+
+  var 끝행참조 = new RegExp('(\\$?[A-Z]{1,3}\\$?)' + 기본마지막행 + '(?!\\d)', 'g');
+  ws.eachRow(function(row, 행번호) {
+    if (행번호 <= 새마지막행) return;
+    row.eachCell(function(cell) {
+      var v = cell.value;
+      if (!v || typeof v !== 'object' || typeof v.formula !== 'string') return;
+      var 새값 = { formula: v.formula.replace(끝행참조, '$1' + 새마지막행) };
+      if (v.shareType === 'array') { 새값.shareType = 'array'; 새값.ref = cell.address; }
+      cell.value = 새값;
+    });
+  });
+  return 새마지막행;
+}
+
 /* ─────────── 이미 로드된 워크북에 한 달 분량 시트를 채움 ─────────── */
 function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) {
   var 월번호 = Number(연월.slice(5, 7));
@@ -143,12 +205,10 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
     return (a.lot번호 || '') < (b.lot번호 || '') ? -1 : 1;
   });
 
-  var 최대건수 = 클리어코팅_데이터최대행 - 클리어코팅_데이터시작행 + 1;
-  var 초과여부 = 정렬.length > 최대건수;
-  if (초과여부) 정렬 = 정렬.slice(0, 최대건수);
+  var 마지막행 = _클리어코팅_행늘리기(ws, 정렬.length);
 
   /* 데이터 구역 전체 초기화(값·수식 모두) — 이전에 채워졌던 잔여 이탈/불합격 표시가 남지 않도록 */
-  for (var r = 클리어코팅_데이터시작행; r <= 클리어코팅_데이터최대행; r++) {
+  for (var r = 클리어코팅_데이터시작행; r <= 마지막행; r++) {
     ['B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q'].forEach(function(col) {
       ws.getCell(col + r).value = null;
     });
@@ -169,6 +229,12 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
     ws.getCell('E' + 행).value = rec.입고수량;
     ws.getCell('F' + 행).value = rec.차종;
     ws.getCell('G' + 행).value = rec.색상;
+
+    /* 측정 파일에 없는 코팅입고 건 — 측정값·판정은 비우고 비고에만 표시 */
+    if (!rec.측정값) {
+      ws.getCell('Q' + 행).value = '측정값 없음';
+      return;
+    }
 
     var CN7PE여부 = (rec.차종 === 'CN7 PE');
     /* CN7 PE(15~21 규격)는 원측정값에 0.3만 더해서 기입.
@@ -199,7 +265,7 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
     };
   });
 
-  return { 초과여부: 초과여부, 건수: 정렬.length };
+  return { 건수: 정렬.length };
 }
 
 /* ─────────── 메인: 업로드 파일(여러 개 가능) → 매칭 → (기간 필터) → 월별 워크북 생성 → 다운로드 ─────────── */
@@ -210,24 +276,29 @@ async function 클리어코팅_생성및다운로드(파일목록, 시작일, �
   }
 
   var 매칭결과 = await _클리어코팅_매칭(로트측정값맵);
+  var 전체목록 = 매칭결과.코팅입고목록;
+  var 측정있는목록 = 전체목록.filter(function(rec) { return rec.측정값; });
+  if (!측정있는목록.length) {
+    throw new Error('전산 코팅 입고 데이터와 매칭된 LOT이 하나도 없습니다. 업로드한 파일이 맞는지 확인하세요.');
+  }
 
-  var 대상목록 = 매칭결과.매칭목록;
-  var 기간제외건수 = 0;
+  /* 기간을 정하면 그 기간의 코팅입고 전체, 안 정하면 측정값이 매칭된 달의 코팅입고 전체를 출력 */
+  var 기간안 = function(rec) {
+    if (시작일 && rec.출고일자 < 시작일) return false;
+    if (종료일 && rec.출고일자 > 종료일) return false;
+    return true;
+  };
+  var 대상목록, 기간제외건수 = 0;
   if (시작일 || 종료일) {
-    var 원본건수 = 대상목록.length;
-    대상목록 = 대상목록.filter(function(rec) {
-      if (시작일 && rec.출고일자 < 시작일) return false;
-      if (종료일 && rec.출고일자 > 종료일) return false;
-      return true;
-    });
-    기간제외건수 = 원본건수 - 대상목록.length;
+    대상목록 = 전체목록.filter(기간안);
+    기간제외건수 = 측정있는목록.filter(function(rec) { return !기간안(rec); }).length;
+  } else {
+    var 매칭월 = {};
+    측정있는목록.forEach(function(rec) { 매칭월[rec.출고일자.slice(0, 7)] = true; });
+    대상목록 = 전체목록.filter(function(rec) { return 매칭월[rec.출고일자.slice(0, 7)]; });
   }
 
-  if (!대상목록.length) {
-    throw new Error(매칭결과.매칭목록.length
-      ? '선택한 기간에 해당하는 매칭 데이터가 없습니다.'
-      : '전산 코팅 입고 데이터와 매칭된 LOT이 하나도 없습니다.');
-  }
+  if (!대상목록.length) throw new Error('선택한 기간에 코팅입고 데이터가 없습니다.');
 
   var 월별 = {};
   대상목록.forEach(function(rec) {
@@ -247,11 +318,7 @@ async function 클리어코팅_생성및다운로드(파일목록, 시작일, �
   await workbook.xlsx.load(buf.buffer);
 
   var 월목록 = Object.keys(월별).sort();
-  var 초과월목록 = [];
-  월목록.forEach(function(연월) {
-    var 결과 = _클리어코팅_월시트채우기(workbook, 연월, 월별[연월]);
-    if (결과.초과여부) 초과월목록.push(연월);
-  });
+  월목록.forEach(function(연월) { _클리어코팅_월시트채우기(workbook, 연월, 월별[연월]); });
 
   workbook.calcProperties.fullCalcOnLoad = true;
 
@@ -263,12 +330,13 @@ async function 클리어코팅_생성및다운로드(파일목록, 시작일, �
   var a = document.createElement('a'); a.href = url; a.download = 파일명; a.click();
   setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 
+  var 측정없음건수 = 대상목록.filter(function(rec) { return !rec.측정값; }).length;
   return {
-    매칭건수: 대상목록.length,
-    전체매칭건수: 매칭결과.매칭목록.length,
+    출력건수: 대상목록.length,
+    매칭건수: 대상목록.length - 측정없음건수,
+    측정없음건수: 측정없음건수,
     기간제외건수: 기간제외건수,
     미매칭목록: 매칭결과.미매칭목록,
-    월목록: 월목록,
-    초과월목록: 초과월목록
+    월목록: 월목록
   };
 }
