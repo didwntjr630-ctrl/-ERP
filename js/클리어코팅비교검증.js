@@ -130,7 +130,7 @@ async function _클리어코팅_매칭(로트측정값맵) {
     코팅입고목록.push({
       출고일자: 일자,
       lot번호:  h['lot번호'],
-      입고수량: Number(h.입고수량) || 0,
+      출고수량: Number(h.출고수량) || 0,
       차종:    _클리어코팅_차종추출(h.품명),
       색상:    _클리어코팅_색상판별(h.품명),
       측정값:  측정있음 ? 측정값들 : null
@@ -226,7 +226,7 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
       마지막일자 = rec.출고일자;
     }
     ws.getCell('D' + 행).value = rec.lot번호;
-    ws.getCell('E' + 행).value = rec.입고수량;
+    ws.getCell('E' + 행).value = rec.출고수량;
     ws.getCell('F' + 행).value = rec.차종;
     ws.getCell('G' + 행).value = rec.색상;
 
