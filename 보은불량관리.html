@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>삼양ERP - 보은 불량 관리</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .업로드박스 {
+      border: 2px dashed #c0cfe0;
+      border-radius: 8px;
+      padding: 28px 20px;
+      text-align: center;
+      background: #f7f9fc;
+      transition: border-color .15s, background .15s;
+    }
+    .업로드박스.드래그중 { border-color: #2a6496; background: #eef4fb; }
+    .업로드박스 input[type="file"] { display: none; }
+    .업로드박스 .파일명 { margin-top: 10px; font-size: 13px; color: #2a6496; font-weight: bold; }
+    .업로드박스 .안내 { font-size: 12px; color: #888; margin-top: 6px; }
+
+    .입력줄 { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .입력줄 label { font-size: 12.5px; color: #2a6496; font-weight: bold; }
+    .입력줄 input[type="month"], .입력줄 input[type="date"] {
+      border: 1px solid #c0cfe0; border-radius: 3px;
+      padding: 5px 8px; font-size: 13px; font-family: inherit; height: 30px;
+    }
+    .제목미리보기 { font-size: 12.5px; color: #555; margin-top: 8px; }
+    .제목미리보기 b { color: #1b2a41; }
+
+    .결과요약 { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+    .결과카드 {
+      flex: 1; min-width: 130px;
+      border: 1px solid #e0e6ee; border-radius: 6px;
+      padding: 12px 14px; background: #fff;
+    }
+    .결과카드 .레이블 { font-size: 11px; color: #888; }
+    .결과카드 .값 { font-size: 20px; font-weight: bold; margin-top: 4px; }
+    .결과카드.강조 .값 { color: #2a6496; }
+    .결과카드.경고 .값 { color: #d35400; }
+
+    .미리보기표 { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+    .미리보기표 th, .미리보기표 td { border: 1px solid #e0e6ee; padding: 5px 8px; }
+    .미리보기표 th { background: #1b2a41; color: #fff; font-weight: 600; }
+    .미리보기표 td.수 { text-align: right; font-variant-numeric: tabular-nums; }
+    .미리보기표 tr.소계 td { background: #fce4d3; font-weight: bold; }
+    .품목제목 { font-size: 13.5px; font-weight: bold; color: #e8742b; margin: 16px 0 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- 사이드바 -->
+  <div class="사이드바오버레이" id="사이드바오버레이" onclick="사이드바닫기()"></div>
+  <div class="사이드바" id="사이드바">
+    <div class="사이드바헤더"><span>접속 현황</span><button onclick="사이드바닫기()">✕</button></div>
+    <div class="사이드바섹션제목">현재 접속자</div>
+    <div id="접속자목록"></div>
+  </div>
+
+  <!-- 상단 메뉴바 -->
+  <div class="메뉴바">
+    <div class="햄버거뱃지래퍼">
+      <button class="햄버거버튼" onclick="사이드바열기()" title="접속자 현황">
+        <span></span><span></span><span></span>
+      </button>
+      <span id="접속자수뱃지"></span>
+    </div>
+    <a href="main.html" class="회사명">
+      <span class="회사명_메인" id="시스템명"></span>
+      <span class="회사명_부제" id="부제"></span>
+    </a>
+    <nav>
+      <a class="활성">보은 불량 관리</a>
+    </nav>
+    <div class="우측정보">
+      <span class="사용자명" id="user-info"></span>
+      <button onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="내용영역">
+    <div id="알림박스" class="알림" style="position:fixed; top:24px; left:50%; transform:translateX(-50%); z-index:9999; min-width:260px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); font-size:14px; font-weight:600;"></div>
+
+    <div class="카드">
+      <div class="페이지제목">보은 불량 관리</div>
+      <div style="font-size:12.5px; color:#777; margin-bottom:14px; line-height:1.6;">
+        ERP에서 받은 "보은 소재 불량 납품 마감 내역" 엑셀을 올리면, Sheet1_1에서 <b style="background:#ffff00; color:#333; padding:0 3px;">노란색</b>으로 표시한 LOT만 모아<br>
+        품목별 요약과 품목별 LOT 표(A/D·H/L·코팅 부적합, 합계)로 정리한 "불량 반납" 엑셀을 만들어 줍니다.
+      </div>
+
+      <div class="업로드박스" id="업로드박스">
+        <input type="file" id="파일입력" accept=".xls,.xlsx">
+        <button class="버튼 파랑" onclick="document.getElementById('파일입력').click()">엑셀 파일 선택</button>
+        <div class="안내">또는 이 영역에 파일을 끌어다 놓으세요 (.xls, .xlsx)</div>
+        <div class="파일명" id="선택파일명"></div>
+      </div>
+
+      <div class="입력줄">
+        <label for="반납월">반납 월</label>
+        <input type="month" id="반납월">
+        <label for="기간시작" style="margin-left:10px;">기간</label>
+        <input type="date" id="기간시작">
+        <span style="color:#999;">~</span>
+        <input type="date" id="기간끝">
+        <span style="font-size:11.5px; color:#999;">(비워두면 제목에 기간 없이 월만 표시)</span>
+      </div>
+      <div class="제목미리보기">엑셀 제목: <b id="제목미리보기"></b></div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+        <button class="버튼 초록" id="출력버튼" onclick="엑셀출력()" disabled>불량 반납 엑셀 출력</button>
+      </div>
+
+      <div id="결과영역" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:16px;">
+        <div class="결과요약" id="결과요약"></div>
+        <div id="미리보기"></div>
+      </div>
+    </div>
+
+  </div><!-- /내용영역 -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/presence.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="js/보은불량관리.js"></script>
+  <script>
+    세션체크();
+    접속자패널초기화();
+    채팅초기화();
+    document.getElementById('시스템명').textContent = APP_CONFIG.시스템명;
+    document.getElementById('부제').textContent = APP_CONFIG.부제;
+
+    function 알림표시(메시지, 종류) {
+      var el = document.getElementById('알림박스');
+      el.textContent = 메시지;
+      el.className = '알림 ' + 종류;
+      el.style.display = 'block';
+      setTimeout(function() { el.style.display = 'none'; }, 3500);
+    }
+    function 글(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function 숫자글(n) { return n ? Number(n).toLocaleString('ko-KR') : ''; }
+
+    var 현재품목목록 = [];
+
+    (function 반납월기본값() {
+      var d = new Date();
+      document.getElementById('반납월').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    })();
+
+    function 제목갱신() {
+      var 월값 = document.getElementById('반납월').value;
+      if (!월값) { document.getElementById('제목미리보기').textContent = '(반납 월을 고르세요)'; return; }
+      var 기간 = _보은불량_기간문자(document.getElementById('기간시작').value, document.getElementById('기간끝').value);
+      document.getElementById('제목미리보기').textContent =
+        월값.slice(2, 4) + '년 ' + Number(월값.slice(5, 7)) + '월 불량 반납' + (기간 ? '(' + 기간 + ')' : '');
+    }
+    ['반납월', '기간시작', '기간끝'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', 제목갱신);
+    });
+    제목갱신();
+
+    function 미리보기렌더(읽은결과) {
+      var 전체 = 읽은결과.행목록;
+      var 노란 = 전체.filter(function(h) { return h.노란색; }).length;
+      var 불량항목 = APP_CONFIG.보은불량반납.불량항목;
+      var 총합 = 현재품목목록.reduce(function(s, p) {
+        return s + p.lot목록.reduce(function(t, h) { return t + h.수량.reduce(function(a, b) { return a + b; }, 0); }, 0);
+      }, 0);
+
+      document.getElementById('결과영역').style.display = 'block';
+      document.getElementById('결과요약').innerHTML =
+        '<div class="결과카드"><div class="레이블">원본 LOT (' + 글(읽은결과.시트이름) + ')</div><div class="값">' + 전체.length + '</div></div>' +
+        '<div class="결과카드' + (노란 ? ' 강조' : ' 경고') + '"><div class="레이블">노란색 표시 LOT (반납 대상)</div><div class="값">' + 노란 + '</div></div>' +
+        '<div class="결과카드"><div class="레이블">품목 수</div><div class="값">' + 현재품목목록.length + '</div></div>' +
+        '<div class="결과카드"><div class="레이블">불량 합계 (EA)</div><div class="값">' + 총합.toLocaleString('ko-KR') + '</div></div>';
+
+      document.getElementById('미리보기').innerHTML = 현재품목목록.map(function(p) {
+        var 소계 = [0, 0, 0];
+        var 줄 = p.lot목록.map(function(h, i) {
+          h.수량.forEach(function(v, k) { 소계[k] += v; });
+          var 합 = h.수량.reduce(function(a, b) { return a + b; }, 0);
+          return '<tr><td style="text-align:center">' + (i + 1) + '</td><td style="text-align:center">' + 글(h.lot) + '</td>' +
+            h.수량.map(function(v) { return '<td class="수">' + 숫자글(v) + '</td>'; }).join('') +
+            '<td class="수">' + 숫자글(합) + '</td></tr>';
+        }).join('');
+        var 소계합 = 소계.reduce(function(a, b) { return a + b; }, 0);
+        return '<div class="품목제목">' + 글(p.품명) + '  (' + p.lot목록.length + ' LOT)</div>' +
+          '<table class="미리보기표"><thead><tr><th style="width:44px">No</th><th>LOT번호</th>' +
+          불량항목.map(function(h) { return '<th>' + 글(h) + '</th>'; }).join('') + '<th>합계</th></tr></thead><tbody>' + 줄 +
+          '<tr class="소계"><td colspan="2" style="text-align:center">소계</td>' +
+          소계.map(function(v) { return '<td class="수">' + 숫자글(v) + '</td>'; }).join('') +
+          '<td class="수">' + 숫자글(소계합) + '</td></tr></tbody></table>';
+      }).join('');
+    }
+
+    async function 파일선택(fileList) {
+      var 파일 = fileList && fileList[0];
+      if (!파일) return;
+      document.getElementById('선택파일명').textContent = 파일.name;
+      document.getElementById('출력버튼').disabled = true;
+      현재품목목록 = [];
+      try {
+        var 읽은결과 = await 보은불량_파일읽기(파일);
+        현재품목목록 = 보은불량_집계(읽은결과.행목록);
+        미리보기렌더(읽은결과);
+        if (!현재품목목록.length) {
+          알림표시('노란색으로 표시한 LOT이 없습니다. 엑셀에서 반납할 LOT을 노란색으로 칠한 뒤 다시 올려주세요.', '오류');
+          return;
+        }
+        document.getElementById('출력버튼').disabled = false;
+        알림표시('노란색 LOT ' + 현재품목목록.reduce(function(s, p) { return s + p.lot목록.length; }, 0) + '개를 읽었습니다. 아래 내용을 확인하고 출력하세요.', '성공');
+      } catch (err) {
+        document.getElementById('결과영역').style.display = 'none';
+        알림표시('파일 읽기 실패: ' + (err.message || err), '오류');
+        console.error(err);
+      }
+    }
+
+    document.getElementById('파일입력').addEventListener('change', function(e) {
+      파일선택(e.target.files);
+      e.target.value = '';
+    });
+    var 업로드박스 = document.getElementById('업로드박스');
+    ['dragenter', 'dragover'].forEach(function(evt) {
+      업로드박스.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); 업로드박스.classList.add('드래그중'); });
+    });
+    ['dragleave', 'drop'].forEach(function(evt) {
+      업로드박스.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); 업로드박스.classList.remove('드래그중'); });
+    });
+    업로드박스.addEventListener('drop', function(e) { 파일선택(e.dataTransfer.files); });
+
+    async function 엑셀출력() {
+      var 월값 = document.getElementById('반납월').value;
+      var 시작 = document.getElementById('기간시작').value, 끝 = document.getElementById('기간끝').value;
+      if (!월값) { 알림표시('반납 월을 고르세요.', '오류'); return; }
+      if (시작 && 끝 && 시작 > 끝) { 알림표시('기간 시작일이 끝일보다 늦습니다.', '오류'); return; }
+      if (!현재품목목록.length) return;
+      var 버튼 = document.getElementById('출력버튼');
+      버튼.disabled = true;
+      버튼.textContent = '만드는 중...';
+      try {
+        var 결과 = await 보은불량_다운로드(현재품목목록, 월값, 시작, 끝);
+        알림표시(결과.파일명 + ' 을(를) 다운로드했습니다.', '성공');
+      } catch (err) {
+        알림표시('출력 실패: ' + (err.message || err), '오류');
+        console.error(err);
+      } finally {
+        버튼.disabled = false;
+        버튼.textContent = '불량 반납 엑셀 출력';
+      }
+    }
+  </script>
+</body>
+</html>
