@@ -176,8 +176,30 @@ function 보은불량_엑셀만들기(품목목록, 반납월, 시작일, 끝일
   제목칸.alignment = { horizontal: 'left', vertical: 'middle' };
   ws.getRow(1).height = 30;
 
+  /* 결재란 — 2~3행 오른쪽(C~F열): "결재" 세로 제목 + 작성·검토·승인 칸, 아래는 서명 칸 */
+  ws.mergeCells('C2:C3');
+  var 결재제목 = ws.getCell('C2');
+  결재제목.value = '결\n\n재';
+  결재제목.font = 글꼴({ bold: true, color: { argb: 'FFFFFFFF' } });
+  결재제목.fill = 채움(서.머리글배경);
+  결재제목.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  결재제목.border = 테두리;
+  APP_CONFIG.보은불량반납.결재란.forEach(function(이름, i) {
+    var 열 = String.fromCharCode(68 + i);
+    var 머리 = ws.getCell(열 + '2'), 서명 = ws.getCell(열 + '3');
+    머리.value = 이름;
+    머리.font = 글꼴({ bold: true, color: { argb: 'FFFFFFFF' } });
+    머리.fill = 채움(서.머리글배경);
+    머리.alignment = { horizontal: 'center', vertical: 'middle' };
+    머리.border = 테두리;
+    서명.border = 테두리;
+  });
+  ws.getRow(2).height = 18;
+  ws.getRow(3).height = 42;
+
   ws.getCell('A3').value = '품목별 요약';
   ws.getCell('A3').font = 글꼴({ bold: true, size: 12, color: { argb: 서.강조색 } });
+  ws.getCell('A3').alignment = { vertical: 'bottom' };
   표머리(4, '품명');
 
   품목목록.forEach(function(품목, i) {
