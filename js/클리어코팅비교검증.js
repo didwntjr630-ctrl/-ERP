@@ -180,6 +180,13 @@ function _클리어코팅_월시트확보(workbook, 월번호) {
   model.name = 시트이름;
   model.mergeCells = model.merges; /* ExcelJS는 merges로 내보내고 mergeCells로 읽어서, 그대로 두면 병합이 전부 사라짐 */
   ws.model = model;
+
+  /* model 복제는 값 없는 칸의 서식(테두리·배경)을 빠뜨리므로 칸마다 다시 옮김 */
+  원본.eachRow({ includeEmpty: true }, function(원본행, 행번호) {
+    원본행.eachCell({ includeEmpty: true }, function(원본칸, 열번호) {
+      ws.getCell(행번호, 열번호).style = JSON.parse(JSON.stringify(원본칸.style || {}));
+    });
+  });
   return ws;
 }
 
@@ -259,7 +266,12 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
       ws.getCell('C' + 행).numFmt = 'yyyy-mm-dd';
       마지막일자 = rec.출고일자;
     }
-    ws.getCell('D' + 행).value = rec.lot번호;
+    var lot칸 = ws.getCell('D' + 행);
+    lot칸.value = rec.lot번호;
+    /* 불러온 셀끼리 서식 객체를 함께 쓰므로 fill만 바꾸지 않고 서식을 새로 만들어 넣음 */
+    if (rec.LOT오타의심) {
+      lot칸.style = Object.assign({}, lot칸.style, { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } } });
+    }
     ws.getCell('E' + 행).value = rec.출고수량;
     ws.getCell('F' + 행).value = rec.차종;
     ws.getCell('G' + 행).value = rec.색상;
