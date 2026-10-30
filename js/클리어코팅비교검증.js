@@ -235,6 +235,36 @@ function _클리어코팅_요약수식기입(ws, 마지막행) {
   });
 }
 
+/* ─────────── 결재란 — 제목을 B~M열로 줄이고 비는 오른쪽 위(N~Q열, 1~2행)에 넣음 ─────────── */
+function _클리어코팅_결재란넣기(ws) {
+  ws.unMergeCells('B2:Q2');
+  ws.mergeCells('B2:M2');
+  ws.getCell('B2').alignment = Object.assign({}, ws.getCell('B2').alignment, { shrinkToFit: true });
+  ws.mergeCells('N1:N2');
+
+  var 선 = { style: 'thin' };
+  var 테두리 = { top: 선, left: 선, bottom: 선, right: 선 };
+  var 머리글서식 = function(정렬) {
+    return {
+      font: { name: '맑은 고딕', size: 10, bold: true },
+      fill: JSON.parse(JSON.stringify(ws.getCell('H5').fill)),
+      alignment: 정렬,
+      border: 테두리
+    };
+  };
+  var 제목칸 = ws.getCell('N1');
+  제목칸.value = '결\n재';
+  제목칸.style = 머리글서식({ horizontal: 'center', vertical: 'middle', wrapText: true });
+
+  ['O', 'P', 'Q'].forEach(function(열, i) {
+    var 머리 = ws.getCell(열 + '1');
+    머리.value = APP_CONFIG.클리어코팅결재란[i];
+    머리.style = 머리글서식({ horizontal: 'center', vertical: 'middle' });
+    ws.getCell(열 + '2').style = { border: 테두리 };
+  });
+  ws.getRow(1).height = 18;
+}
+
 /* ─────────── 이미 로드된 워크북에 한 달 분량 시트를 채움 ─────────── */
 function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) {
   var 월번호 = Number(연월.slice(5, 7));
@@ -310,6 +340,7 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
   });
 
   _클리어코팅_요약수식기입(ws, 마지막행);
+  _클리어코팅_결재란넣기(ws);
   return { 건수: 정렬.length };
 }
 
