@@ -99,20 +99,39 @@ async function _클리어코팅_매칭(로트측정값맵) {
     if (key) 코팅입고LOT[key] = true;
   });
 
-  var 미매칭목록 = [];
+  var 측정완비 = function(key) { return !!(로트측정값맵[key] && 로트측정값맵[key].length === 5); };
+
+  /* 전산에 없는 파일 LOT 중 전산 LOT과 한 글자만 다른 것(오타 의심) 찾기 — 전산에 없는 나머지는 조용히 건너뜀 */
+  var 미매칭목록 = [], 오타후보 = [], 전산측연결수 = {};
   Object.keys(로트측정값맵).forEach(function(key) {
-    var 측정값들 = 로트측정값맵[key];
-    if (측정값들.length !== 5) {
-      미매칭목록.push({ lot: key, 사유: '측정값이 5개가 아님(' + 측정값들.length + '개)' });
+    if (!측정완비(key)) {
+      미매칭목록.push({ lot: key, 사유: '측정값이 5개가 아님(' + 로트측정값맵[key].length + '개)' });
       return;
     }
     if (코팅입고LOT[key]) return;
-    /* 전산에 없는 LOT은 원래 조용히 건너뛰지만, 전산 LOT과 한 글자만 다르면 오타일 수 있어 확인 필요로 알림 */
-    코팅입고.forEach(function(h) {
-      if (!_클리어코팅_한글자차이(key, _클리어코팅_LOT정규화(h['lot번호']))) return;
+    var 비슷한 = 코팅입고.filter(function(h) {
+      return _클리어코팅_한글자차이(key, _클리어코팅_LOT정규화(h['lot번호']));
+    });
+    if (!비슷한.length) return;
+    오타후보.push({ 파일LOT: key, 비슷한: 비슷한 });
+    비슷한.forEach(function(h) {
+      var k = _클리어코팅_LOT정규화(h['lot번호']);
+      전산측연결수[k] = (전산측연결수[k] || 0) + 1;
+    });
+  });
+
+  /* 후보가 하나뿐이고, 그 전산 LOT에 자기 측정값이 없을 때만 측정값을 연결 (둘 다 "확인 필요"에는 계속 표시) */
+  var 오타연결 = {};
+  오타후보.forEach(function(후보) {
+    var 첫후보 = 후보.비슷한[0];
+    var 전산key = _클리어코팅_LOT정규화(첫후보['lot번호']);
+    var 연결가능 = 후보.비슷한.length === 1 && 전산측연결수[전산key] === 1 && !측정완비(전산key);
+    if (연결가능) 오타연결[전산key] = 후보.파일LOT;
+    후보.비슷한.forEach(function(h) {
       미매칭목록.push({
-        lot: key,
-        사유: 'LOT 번호 확인 필요 — 전산의 ' + h['lot번호'] + ' (' + (h.품명 || '') + ', ' + (h.출고일자 || '') + ')와 한 글자 다름'
+        lot: 후보.파일LOT,
+        사유: 'LOT 번호 확인 필요 — 전산의 ' + h['lot번호'] + ' (' + (h.품명 || '') + ', ' + (h.출고일자 || '') + ')와 한 글자 다름' +
+          (연결가능 ? ' → 이 측정값을 넣어 출력함' : ' → 측정값을 넣지 않음')
       });
     });
   });
@@ -120,7 +139,8 @@ async function _클리어코팅_매칭(로트측정값맵) {
   var 코팅입고목록 = [];
   코팅입고.forEach(function(h) {
     var key = _클리어코팅_LOT정규화(h['lot번호']);
-    var 측정값들 = 로트측정값맵[key];
+    var 오타파일LOT = 측정완비(key) ? '' : (오타연결[key] || '');
+    var 측정값들 = 로트측정값맵[오타파일LOT || key];
     var 측정있음 = !!(측정값들 && 측정값들.length === 5);
     var 일자 = h.출고일자 || h.입고일자 || '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(일자)) {
@@ -133,7 +153,8 @@ async function _클리어코팅_매칭(로트측정값맵) {
       출고수량: Number(h.출고수량) || 0,
       차종:    _클리어코팅_차종추출(h.품명),
       색상:    _클리어코팅_색상판별(h.품명),
-      측정값:  측정있음 ? 측정값들 : null
+      측정값:  측정있음 ? 측정값들 : null,
+      LOT오타의심: !!오타파일LOT
     });
   });
 
@@ -157,11 +178,12 @@ function _클리어코팅_월시트확보(workbook, 월번호) {
   var model = JSON.parse(JSON.stringify(원본.model));
   model.id = ws.id;
   model.name = 시트이름;
+  model.mergeCells = model.merges; /* ExcelJS는 merges로 내보내고 mergeCells로 읽어서, 그대로 두면 병합이 전부 사라짐 */
   ws.model = model;
   return ws;
 }
 
-/* ─────────── 한 달이 50건을 넘으면 요약표(평균·최대·최소) 위에 줄을 끼워 넣고 요약 수식 범위를 늘림 ───────────
+/* ─────────── 한 달이 50건을 넘으면 요약표(평균·최대·최소) 위에 줄을 끼워 넣음 ───────────
    반환: 데이터 마지막 행 번호 */
 function _클리어코팅_행늘리기(ws, 필요건수) {
   var 기본마지막행 = 클리어코팅_데이터최대행;
@@ -179,19 +201,31 @@ function _클리어코팅_행늘리기(ws, 필요건수) {
     행.height = 원본행.height;
     for (var c = 2; c <= 17; c++) 행.getCell(c).style = JSON.parse(JSON.stringify(원본행.getCell(c).style || {}));
   }
+  return 새마지막행;
+}
 
-  var 끝행참조 = new RegExp('(\\$?[A-Z]{1,3}\\$?)' + 기본마지막행 + '(?!\\d)', 'g');
-  ws.eachRow(function(row, 행번호) {
-    if (행번호 <= 새마지막행) return;
-    row.eachCell(function(cell) {
-      var v = cell.value;
-      if (!v || typeof v !== 'object' || typeof v.formula !== 'string') return;
-      var 새값 = { formula: v.formula.replace(끝행참조, '$1' + 새마지막행) };
-      if (v.shareType === 'array') { 새값.shareType = 'array'; 새값.ref = cell.address; }
-      cell.value = 새값;
+/* ─────────── 요약표(CN7 PE / 그 외 전체의 평균·최대·최소) 수식을 다시 기입 ───────────
+   "측정값 없음" 행의 빈칸이 0으로 계산되지 않도록 값이 있는 칸만 집계하고, 값이 하나도 없으면 "-" 표시.
+   위치는 템플릿 기준 데이터 마지막 행에서 +3(CN7 PE 평균) ~ +9(그 외 최소), H~N열 */
+function _클리어코팅_요약수식기입(ws, 마지막행) {
+  var 시작 = 클리어코팅_데이터시작행;
+  var 모델 = '$F$' + 시작 + ':$F$' + 마지막행;
+  var 그룹 = [
+    { 첫줄: 마지막행 + 3, 조건: '(' + 모델 + '="CN7 PE")' },
+    { 첫줄: 마지막행 + 7, 조건: '(' + 모델 + '<>"CN7 PE")*(' + 모델 + '<>"")' }
+  ];
+  그룹.forEach(function(g) {
+    ['H', 'I', 'J', 'K', 'L', 'M', 'N'].forEach(function(col) {
+      var 범위 = col + 시작 + ':' + col + 마지막행;
+      var 대상 = g.조건 + '*(' + 범위 + '<>"")';
+      var 집계 = function(함수) { return 'IF(SUM(' + 대상 + ')=0,"-",' + 함수 + '(IF(' + 대상 + ',' + 범위 + ')))'; };
+      [집계('AVERAGE'), 집계('MAX'), 집계('MIN')].forEach(function(수식, i) {
+        var cell = ws.getCell(col + (g.첫줄 + i));
+        cell.value = { formula: 수식, shareType: 'array', ref: cell.address };
+        cell.alignment = Object.assign({}, cell.alignment, { horizontal: 'right' });
+      });
     });
   });
-  return 새마지막행;
 }
 
 /* ─────────── 이미 로드된 워크북에 한 달 분량 시트를 채움 ─────────── */
@@ -256,15 +290,14 @@ function _클리어코팅_월시트채우기(workbook, 연월, 레코드목록) 
     ws.getCell('P' + 행).value = { formula: 'IF(AND(M' + 행 + '>=' + 범위[0] + ', M' + 행 + '<=' + 범위[1] + '), "합격", "불합격")' };
     /* 비고: 기존 합격/불합격 판정은 그대로 두고, CN7 PE(15~21)만 보정값이 경계값(15, 21)에 정확히 걸리는지 별도 확인
        (그 외 품목은 위에서 7.0~7.9로 강제 고정되므로 이 별도 확인이 필요 없음) */
-    ws.getCell('Q' + 행).value = { formula:
-      'IF(P' + 행 + '="불합격", "규격 이탈 확인", ' +
-        'IF(F' + 행 + '="CN7 PE", ' +
-          'IF(OR(COUNTIF(H' + 행 + ':L' + 행 + ',15)>0, COUNTIF(H' + 행 + ':L' + 행 + ',21)>0), "보정값 경계값(15,21) 확인", "-"), ' +
-          '"-")' +
-      ')'
-    };
+    var 정상비고 = rec.LOT오타의심 ? '"LOT 오타 확인"' :
+      'IF(F' + 행 + '="CN7 PE", ' +
+        'IF(OR(COUNTIF(H' + 행 + ':L' + 행 + ',15)>0, COUNTIF(H' + 행 + ':L' + 행 + ',21)>0), "보정값 경계값(15,21) 확인", "-"), ' +
+        '"-")';
+    ws.getCell('Q' + 행).value = { formula: 'IF(P' + 행 + '="불합격", "규격 이탈 확인", ' + 정상비고 + ')' };
   });
 
+  _클리어코팅_요약수식기입(ws, 마지막행);
   return { 건수: 정렬.length };
 }
 
@@ -318,7 +351,17 @@ async function 클리어코팅_생성및다운로드(파일목록, 시작일, �
   await workbook.xlsx.load(buf.buffer);
 
   var 월목록 = Object.keys(월별).sort();
+  /* 시트를 먼저 전부 확보 — 채운 뒤 복제하면 줄이 늘어난 달의 틀이 그대로 복사됨 */
+  var 출력시트 = 월목록.map(function(연월) { return _클리어코팅_월시트확보(workbook, Number(연월.slice(5, 7))).name; });
   월목록.forEach(function(연월) { _클리어코팅_월시트채우기(workbook, 연월, 월별[연월]); });
+
+  /* 조회한 기간의 달 시트만 남김 (템플릿의 다른 달 시트 제거) */
+  workbook.worksheets.slice().forEach(function(s) {
+    if (출력시트.indexOf(s.name) < 0) workbook.removeWorksheet(s.id);
+  });
+  workbook.worksheets.forEach(function(s, i) {
+    (s.views || []).forEach(function(v) { v.tabSelected = (i === 0); });
+  });
 
   workbook.calcProperties.fullCalcOnLoad = true;
 
