@@ -120,12 +120,33 @@ async function _품질현황_재계산강제(zip) {
   zip.file('xl/workbook.xml', wbXml);
 }
 
+/* MX5는 별도 관리 — 템플릿의 MX5 행(라벨·0 값)이 보이지 않도록 숨김. 일자 시트: 삼양 40~44, 태산 80~84, 합계 86·88 / 월마감: 15(삼양)·28(태산) */
+var 품질현황_MX5숨김행_일자 = [40, 41, 42, 43, 44, 80, 81, 82, 83, 84, 86, 88];
+var 품질현황_MX5숨김행_월마감 = [15, 28];
+
+function _품질현황_행숨기기(xml, 행목록) {
+  행목록.forEach(function(행) {
+    var re = new RegExp('<row r="' + 행 + '"([^>]*?)(/?)>');
+    xml = xml.replace(re, function(m, attrs, 닫힘) {
+      return '<row r="' + 행 + '"' + attrs.replace(/\s*hidden="[^"]*"/, '') + ' hidden="1"' + 닫힘 + '>';
+    });
+  });
+  return xml;
+}
+
+/* 태산(보은 출고) 줄의 LOT은 앞 4자리(날짜)를 보은 출고일(출하검사 출고일자 MMDD)로 바꿔 표기 */
+function _품질현황_보은출고LOT(lot, 출고일자) {
+  lot = String(lot || '');
+  if (!/^\d{4}/.test(lot) || !/^\d{4}-\d{2}-\d{2}$/.test(출고일자 || '')) return lot;
+  return 출고일자.slice(5, 7) + 출고일자.slice(8, 10) + lot.slice(4);
+}
+
 /* ─────────── 5행 초과 시 초과분을 5번째 행에 합산 ─────────── */
 function _품질현황_행병합(목록) {
   if (목록.length <= 5) return 목록;
   var 유지 = 목록.slice(0, 4);
   var 나머지 = 목록.slice(4);
-  var 합침 = { lot번호: 나머지.map(function(r){return r.lot번호||'';}).filter(Boolean).join(','), 입고수량: 0, A급수량: 0, 불량내역: [] };
+  var 합침 = { lot번호: 나머지.map(function(r){return r.표시lot||r.lot번호||'';}).filter(Boolean).join(','), 입고수량: 0, A급수량: 0, 불량내역: [] };
   나머지.forEach(function(r) {
     합침.입고수량 += Number(r.입고수량) || 0;
     합침.A급수량  += Number(r.A급수량)  || 0;
@@ -176,7 +197,7 @@ function _품질현황_구역채우기(xml, 하루기록, 슬롯맵) {
     var 목록 = _품질현황_행병합(정렬된);
     목록.forEach(function(항목, idx) {
       var 행 = 시작행 + idx;
-      xml = _품질현황_셀쓰기(xml, 'E' + 행, 항목.lot번호 || 항목.출고번호 || '', true);
+      xml = _품질현황_셀쓰기(xml, 'E' + 행, 항목.표시lot || 항목.lot번호 || 항목.출고번호 || '', true);
       xml = _품질현황_셀쓰기(xml, 'F' + 행, Number(항목.입고수량) || 0, false);
       if (Number(항목.A급수량) > 0) {
         xml = _품질현황_셀쓰기(xml, 'Y' + 행, Number(항목.A급수량), false);
@@ -276,7 +297,7 @@ function _품질현황_상세표채우기(xml, 하루기록_출하검사, 공정
         if (!열) return;
         열합계2[열] = (열합계2[열] || 0) + (Number(b.수량) || 0);
       });
-      xml = _품질현황_셀쓰기(xml, 'E' + r2, lot, true);
+      xml = _품질현황_셀쓰기(xml, 'E' + r2, 출하검사기록.표시lot || lot, true);
       xml = _품질현황_셀쓰기(xml, 'F' + r2, Number(출하검사기록.입고수량) || 0, false);
       xml = _품질현황_셀쓰기(xml, 'G' + r2, Number(출하검사기록.출고수량) || 0, false);
       xml = _품질현황_셀쓰기(xml, 'H' + r2, Number(출하검사기록.불량수량) || 0, false);
@@ -335,7 +356,7 @@ function _품질현황_일자시트작성(xml, 연, 월, 일, 하루기록_삼�
     xml = _품질현황_시트탭색상(xml, 'FFFFFF00');
   }
 
-  return xml;
+  return _품질현황_행숨기기(xml, 품질현황_MX5숨김행_일자);
 }
 
 /* ─────────── 메인: 연/월 지정해서 워크북 생성 ─────────── */
@@ -366,12 +387,23 @@ async function 품질현황_생성(연, 월) {
       공정검사_lot맵[h['lot번호']] = h;
     }
   });
+  /* 태산 줄은 날짜·LOT 표기만 출하검사(보은 출고) 기준이고, 수량·불량은 같은 LOT의 태산입고(코팅입고) 기록을 씀
+     (출하검사 기록은 불량 0으로 넘어오므로 그대로 쓰면 태산 불량이 합산되지 않음) */
   var 대상_출하검사 = 전체.filter(function(h) {
     return h.공정 === '출하검사' && h.완료여부 !== false &&
       (h.출고일자 || '').slice(0, 7) === (연 + '-' + 월문자);
   }).map(function(h) {
     var 태산기록 = 태산입고_lot맵[h['lot번호']];
-    return Object.assign({}, h, { 불량내역: (태산기록 && 태산기록.불량내역) || h.불량내역 || [] });
+    var 표시lot = _품질현황_보은출고LOT(h['lot번호'], h.출고일자);
+    if (!태산기록) return Object.assign({}, h, { 불량내역: h.불량내역 || [], 표시lot: 표시lot });
+    return Object.assign({}, h, {
+      입고수량: 태산기록.입고수량,
+      출고수량: 태산기록.출고수량,
+      불량수량: 태산기록.불량수량,
+      A급수량:  태산기록.A급수량,
+      불량내역: 태산기록.불량내역 || [],
+      표시lot:  표시lot
+    });
   });
 
   var 일자별 = {};
@@ -402,6 +434,12 @@ async function 품질현황_생성(연, 월) {
   if (월마감파일 && zip.file(월마감파일)) {
     var mXml = await zip.file(월마감파일).async('string');
     mXml = _품질현황_셀쓰기(mXml, 'B2', '삼양이엔지 일일 품질현황 (' + 연 + '년 ' + 월문자 + '월)', true);
+    mXml = _품질현황_행숨기기(mXml, 품질현황_MX5숨김행_월마감);
+    /* 날짜 시트에서 '제네시스' 칸을 GN7 F/L로 재활용하므로 월마감 해당 줄(삼양 13·태산 26) 이름도 맞춤 */
+    [13, 26].forEach(function(행) {
+      mXml = _품질현황_셀쓰기(mXml, 'C' + 행, 'GN7 F/L', true);
+      mXml = _품질현황_셀쓰기(mXml, 'D' + 행, 'GN7 FL', true);
+    });
     zip.file(월마감파일, mXml);
   }
 
